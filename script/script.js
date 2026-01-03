@@ -1,98 +1,23 @@
 // --- CONFIGURATION ---
 const API_KEY = "TA_CLE_API_ICI"; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
+// UTILISATION DE GEMINI 3 FLASH PREVIEW (Basé sur ta capture d'écran)
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
 
 let conversationHistory = [];
 const chatHistory = document.getElementById('chat-history');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
 
-// --- 1. PARTIE VISUELLE : CANVAS NEURAL NETWORK ---
-const canvas = document.getElementById('neural-canvas');
-const ctx = canvas.getContext('2d');
-let particlesArray;
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-class Particle {
-    constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2 + 0.1; // Taille petite
-        this.speedX = (Math.random() * 1.5) - 0.75;
-        this.speedY = (Math.random() * 1.5) - 0.75;
-        // Couleur un peu mystique (cyan/violet pâle)
-        this.color = Math.random() > 0.5 ? 'rgba(0, 243, 255, 0.7)' : 'rgba(188, 19, 254, 0.7)';
-    }
-    update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX;
-        if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY;
-    }
-    draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
-function initCanvas() {
-    particlesArray = [];
-    const numberOfParticles = (canvas.height * canvas.width) / 15000; // Densité
-    for (let i = 0; i < numberOfParticles; i++) {
-        particlesArray.push(new Particle());
-    }
-}
-
-function animateCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < particlesArray.length; i++) {
-        particlesArray[i].update();
-        particlesArray[i].draw();
-        connectParticles(i);
-    }
-    requestAnimationFrame(animateCanvas);
-}
-
-function connectParticles(a) {
-    for (let b = a; b < particlesArray.length; b++) {
-        let dx = particlesArray[a].x - particlesArray[b].x;
-        let dy = particlesArray[a].y - particlesArray[b].y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 100) {
-            ctx.strokeStyle = 'rgba(100, 100, 255, ' + (1 - distance/100) * 0.15 + ')';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
-            ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
-            ctx.stroke();
-        }
-    }
-}
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    initCanvas();
-});
-initCanvas();
-animateCanvas();
-
-
-// --- 2. PARTIE LOGIQUE : CHARGEMENT DONNÉES & CHATBOT ---
+// --- CHARGEMENT ---
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         const response = await fetch('config/data.json');
         const data = await response.json();
         
-        // Remplissage UI
+        // Remplissage de l'interface
         document.getElementById('profile-name').textContent = data.profile.name;
         document.getElementById('profile-role').textContent = data.profile.role;
-        document.getElementById('profile-bio').innerHTML = "> " + data.profile.short_bio; // Ajout du > style terminal
+        document.getElementById('profile-bio').innerHTML = "> " + data.profile.short_bio;
         document.getElementById('profile-img').src = data.profile.photo_url;
         document.getElementById('link-linkedin').href = data.profile.linkedin_url;
         document.getElementById('link-cv').href = data.profile.cv_file;
@@ -100,31 +25,40 @@ document.addEventListener("DOMContentLoaded", async () => {
         initBot(data);
     } catch (error) {
         console.error("Erreur chargement:", error);
-        appendMessage("SYSTEM ERROR: Failed to load profile data module.", "bot");
     }
 });
 
+// --- INITIALISATION DU CERVEAU ---
 function initBot(data) {
+    const sys = data.system_instruction;
     const ctx = data.ai_context;
-    
-    // Prompt avec une légère teinte "personnalité tech"
+
+    // Prompt Système "Jumeau Numérique" Renforcé
     const systemPrompt = `
-    Tu es l'IA Assistant de ${data.profile.name}.
-    Ton ton est : ${ctx.tone}.
-    Tu dois agir de manière très professionnelle mais avec une précision "chirurgicale" propre à un ingénieur expérimenté.
-    Données :
-    - Skills: ${ctx.skills.join(", ")}
-    - Expériences: ${ctx.experience.join(". ")}
-    - Projets: ${ctx.projects.join(". ")}
-    - Motivation: ${ctx.motivation}
+    IDENTITÉ ABSOLUE : ${sys.identity}
+    CONTEXTE : Tu es le jumeau numérique de Florian.
+    TON STYLE : ${sys.tone}
+    OBJECTIF : ${sys.mission}
+
+    TA MÉMOIRE (Données réelles de Florian) :
+    - Hard Skills : ${ctx.hard_skills.join(" || ")}
+    - Expériences : ${ctx.experience_highlights.join(" || ")}
+    - Projets Clés : ${ctx.key_projects.join(" || ")}
+
+    RÈGLES D'INTERACTION :
+    1. IMPÉRATIF : Parle toujours à la première personne ("Je"). Tu N'ES PAS une IA assistant, tu es la conscience numérique de Florian.
+    2. Si on te demande "Qui es-tu ?", réponds "Je suis Florian BOBO."
+    3. Sois technique et précis. Pas de blabla inutile. 
+    4. Tes réponses doivent être courtes et contenir quelques traits d'humour.
     `;
 
     conversationHistory.push({ role: "user", parts: [{ text: systemPrompt }] });
-    conversationHistory.push({ role: "model", parts: [{ text: "System Online." }] });
+    conversationHistory.push({ role: "model", parts: [{ text: "Identité chargée. Je suis Florian BOBO. Prêt." }] });
 
-    appendMessage(`> INITIALISATION COMPLETE.\n> Bonjour. Je suis l'interface virtuelle de Florian. Comment puis-je vous assister ?`, "bot");
+    appendMessage(`> GEMINI 3 FLASH PREVIEW ONLINE.\n> Bonjour. Je suis le jumeau numérique de Florian. Je suis prêt à parler architecture Transformers ou infra Kubernetes.`, "bot");
 }
 
+// --- ENVOI MESSAGE ---
 async function sendMessage() {
     const text = userInput.value.trim();
     if (!text) return;
@@ -133,7 +67,7 @@ async function sendMessage() {
     userInput.value = '';
     conversationHistory.push({ role: "user", parts: [{ text: text }] });
 
-    const loadingId = appendMessage("Analying query...", 'bot', true); 
+    const loadingId = appendMessage("Computing...", 'bot', true); 
 
     try {
         const response = await fetch(API_URL, {
@@ -150,23 +84,25 @@ async function sendMessage() {
             appendMessage(reply, 'bot');
             conversationHistory.push({ role: "model", parts: [{ text: reply }] });
         } else {
-            appendMessage("ERROR: Neural Link unstable.", 'bot');
+            // Si erreur, on affiche un message stylé
+            appendMessage("ERROR: Neural Link unstable (API Error).", 'bot');
+            console.error(data);
         }
 
     } catch (error) {
         removeMessage(loadingId);
         appendMessage("CRITICAL ERROR: Connection lost.", 'bot');
+        console.error(error);
     }
 }
 
+// Fonctions d'affichage (Ne changent pas)
 function appendMessage(text, sender, isLoading = false) {
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
     if(isLoading) msgDiv.id = "loading-msg";
-    
-    // Effet "Typewriter" très rapide pour le bot (optionnel, ici texte direct pour performance)
-    msgDiv.innerText = text;
-    
+    let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); // Gras simple
+    msgDiv.innerHTML = formattedText;
     chatHistory.appendChild(msgDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
     return msgDiv.id;
@@ -179,3 +115,4 @@ function removeMessage(id) {
 
 sendBtn.addEventListener('click', sendMessage);
 userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
