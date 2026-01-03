@@ -3,49 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Florian BOBO - Tech Lead IA & MLOps</title>
+    <title>Florian BOBO | Neural Interface</title>
     <link rel="stylesheet" href="style/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
+    <canvas id="neural-canvas"></canvas>
+    
+    <div class="scanlines"></div>
+
     <div class="container">
-        <aside class="sidebar">
+        <aside class="sidebar glass-panel">
             <div class="profile-header">
-                <div class="avatar">
-                    <img id="profile-img" src="" alt="Florian BOBO">
+                <div class="avatar-container">
+                    <img id="profile-img" src="" alt="Avatar">
+                    <div class="glitch-effect"></div>
                 </div>
-                <h1 id="profile-name">Chargement...</h1>
-                <h2 id="profile-role">...</h2>
-                <p id="profile-bio" class="bio-short">...</p>
+                <h1 id="profile-name" class="neon-text">INITIALIZING...</h1>
+                <h2 id="profile-role" class="holo-text">...</h2>
+                <div class="bio-box">
+                    <p id="profile-bio" class="terminal-text">...</p>
+                </div>
             </div>
 
             <div class="links-section">
-                <a id="link-linkedin" href="#" target="_blank" class="btn btn-linkedin">
-                    <i class="fab fa-linkedin"></i> LinkedIn
+                <a id="link-linkedin" href="#" target="_blank" class="cyber-btn">
+                    <span class="icon"><i class="fab fa-linkedin"></i></span>
+                    <span class="text">LINKEDIN_UPLINK</span>
                 </a>
-                <a id="link-cv" href="#" target="_blank" class="btn btn-cv">
-                    <i class="fas fa-file-pdf"></i> Voir mon CV
+                <a id="link-cv" href="#" target="_blank" class="cyber-btn btn-secondary">
+                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                    <span class="text">DOWNLOAD_DATA.PDF</span>
                 </a>
             </div>
 
-            <div class="footer-sidebar">
-                <p><small>&copy; 2024 - AI Powered Profile</small></p>
+            <div class="status-bar">
+                <div class="status-indicator"></div>
+                <span>SYSTEM: ONLINE</span>
             </div>
         </aside>
 
-        <main class="chat-interface">
+        <main class="chat-interface glass-panel">
             <div class="chat-header">
-                <h3><i class="fas fa-robot"></i> Assistant Virtuel</h3>
-                <p>Posez-moi des questions sur mon expertise Data Science ou MLOps.</p>
+                <h3><i class="fas fa-microchip"></i> AI_CORE // GEMINI_BRIDGE</h3>
+                <p>Accessing memory banks... Ask about MLOps protocols or Neural Architecture.</p>
             </div>
 
-            <div class="chat-history" id="chat-history"></div>
+            <div class="chat-history custom-scrollbar" id="chat-history"></div>
 
             <div class="chat-input-area">
                 <div class="input-wrapper">
-                    <input type="text" id="user-input" placeholder="Ex: Comment industrialises-tu un modèle de NLP ?" autocomplete="off">
-                    <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+                    <span class="prompt-sign">></span>
+                    <input type="text" id="user-input" placeholder="Enter command or query..." autocomplete="off">
+                    <button id="send-btn" class="send-cyber"><i class="fas fa-bolt"></i></button>
                 </div>
             </div>
         </main>
