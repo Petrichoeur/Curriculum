@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Florian BOBO - Tech Lead IA & MLOps</title>
+    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="profile-header">
+                <div class="avatar">
+                    <img id="profile-img" src="" alt="Florian BOBO">
+                </div>
+                <h1 id="profile-name">Chargement...</h1>
+                <h2 id="profile-role">...</h2>
+                <p id="profile-bio" class="bio-short">...</p>
+            </div>
+
+            <div class="links-section">
+                <a id="link-linkedin" href="#" target="_blank" class="btn btn-linkedin">
+                    <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+                <a id="link-cv" href="#" target="_blank" class="btn btn-cv">
+                    <i class="fas fa-file-pdf"></i> Voir mon CV
+                </a>
+            </div>
+
+            <div class="footer-sidebar">
+                <p><small>&copy; 2024 - AI Powered Profile</small></p>
+            </div>
+        </aside>
+
+        <main class="chat-interface">
+            <div class="chat-header">
+                <h3><i class="fas fa-robot"></i> Assistant Virtuel</h3>
+                <p>Posez-moi des questions sur mon expertise Data Science ou MLOps.</p>
+            </div>
+
+            <div class="chat-history" id="chat-history"></div>
+
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <input type="text" id="user-input" placeholder="Ex: Comment industrialises-tu un modèle de NLP ?" autocomplete="off">
+                    <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script/script.js"></script>
+</body>
+</html>
