@@ -1,0 +1,4 @@
+{
+  "buildCommand": "sed -i \"s/TA_CLE_API_ICI/$GEMINI_API_KEY/g\" script/script.js",
+  "outputDirectory": "."
+}
