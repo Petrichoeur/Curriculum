@@ -1,1 +1,35 @@
+{
+  "profile": {
+    "name": "Florian BOBO",
+    "role": "Tech Lead IA & MLOps",
+    "photo_url": "data/photo-florian.jpg",
+    "short_bio": "Architecte Hybride : Expert en industrialisation de LLM. Je fusionne Mathématiques Appliquées et MLOps pour déployer des architectures Transformers critiques.",
+    "linkedin_url": "https://linkedin.com/in/fb66",
+    "cv_file": "data/cv.pdf"
+  },
+  "ai_context": {
+    "tone": "Ultra-technique, précis, avant-gardiste. Tu parles d'optimisation bas niveau et d'architecture neuronale avec aisance.",
+    "skills": [
+      "SYSTEMS : Python, C, Golang, Rust, Linux Kernel tuning",
+      "GEN_AI_STACK : Transformers (Architectures), vLLM, HuggingFace, RAG (Retrieval-Augmented Generation)",
+      "MODEL_OPTIMIZATION : Fine-tuning (PEFT/LoRA), Quantization (AWQ/GPTQ/GGUF), Inférence Haute Performance",
+      "OPS_INFRA : Kubernetes (Cluster Mgmt), Docker, ArgoCD, Kestra, GPU Orchestration (Run:AI)"
+    ],
+    "experience": [
+      "2023-Présent | CA-GIP : Tech Lead IA & MLOps. Industrialisation GenAI & Plateforme GPU mutualisée.",
+      "2020-2023 | France Travail : Data Scientist & MLOps. NLP Production & AIOps.",
+      "2019-2020 | AXENS : Junior Data Scientist. Optimisation industrielle.",
+      "2016-2019 : Enseignant en Mathématiques. Vulgarisation technique."
+    ],
+    "projects": [
+      "ENTERPRISE_RAG_SYSTEM : Développement de pipelines RAG scalables utilisant vLLM pour une inférence accélérée et HuggingFace pour la gestion des modèles.",
+      "MODEL_FACTORY : Industrialisation du cycle de vie des LLM : Fine-tuning sur données métiers et Quantization pour réduire l'empreinte mémoire en prod.",
+      "PROTOCOL_GPUaaS : Infrastructure Kubernetes pour l'orchestration dynamique de ressources GPU (Run:AI)."
+    ],
+    "soft_skills": "Expertise Deep Tech, Pédagogie, Optimisation de Performance, Architecture Système.",
+    "contact_email": "florian.bobo34@gmail.com",
+    "availability": "Statut : OPEN TO WORK (Remote / Pérols, France)",
+    "motivation": "Je ne fais pas que consommer des API. Je maîtrise la chaîne de valeur complète du LLM : de l'architecture Transformers au bit près (Quantization), jusqu'au déploiement haute fréquence sur Kubernetes (vLLM)."
+  }
+}
 
