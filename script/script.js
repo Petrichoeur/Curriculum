@@ -1,6 +1,6 @@
 // --- CONFIGURATION ---
 const API_KEY = "TA_CLE_API_ICI"; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
 
 let conversationHistory = [];
 const chatHistory = document.getElementById('chat-history');
