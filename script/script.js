@@ -4,7 +4,7 @@
 
 // ⚠️ COLLE TA CLÉ API GEMINI CI-DESSOUS
 const GEMINI_API_KEY = "TA_CLE_API_ICI"; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent?key=${GEMINI_API_KEY}`;
 
 let configData = {};
 let conversationHistory = [];
