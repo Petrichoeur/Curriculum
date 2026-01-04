@@ -1,58 +1,78 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Florian BOBO | Neural Interface</title>
-    <link rel="stylesheet" href="style/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Florian Bobo - Digital Twin v2</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="main-layout">
-        <aside class="sidebar">
+    <div class="container">
+        <aside class="profile-card">
             <div class="profile-header">
-                <div class="avatar-wrapper">
-                    <img id="profile-img" src="" alt="Avatar">
-                    <div class="status-dot"></div>
+                <div class="avatar-container">
+                    <div class="avatar">FB</div>
+                    <div class="status-indicator" title="Cerveau en ébullition"></div>
                 </div>
-                <div class="profile-info">
-                    <h1 id="profile-name">Loading...</h1>
-                    <h2 id="profile-role">...</h2>
-                </div>
+                <h1 id="name-placeholder">Chargement...</h1>
+                <p class="role-text" id="title-placeholder">...</p>
+                <p class="tagline" id="tagline-placeholder"></p>
             </div>
 
-            <div class="actions">
-                <a id="link-linkedin" href="#" target="_blank" class="btn btn-primary">
-                    <i class="fab fa-linkedin"></i> LinkedIn
-                </a>
-                <a id="link-cv" href="#" target="_blank" class="btn btn-outline">
-                    <i class="fas fa-file-pdf"></i> CV
-                </a>
+            <hr class="divider">
+
+            <div class="bio-section">
+                <h3>// CONTEXTE & DATA</h3>
+                <div id="bio-text">Initialisation du système...</div>
             </div>
 
-            <div class="ai-controls">
-                <div class="tech-badge">
-                    <i class="fas fa-microchip"></i>
-                    <span>CORE: GEMINI 3 FLASH PREVIEW</span>
-                </div>
+            <div class="skills-section">
+                <h3>// STACK PRINCIPALE (God Tier & Expert)</h3>
+                <div id="expert-skills" class="tags-container"></div>
+                
+                <h3>// EXPLORATION & NOTIONS</h3>
+                <div id="notion-skills" class="tags-container-secondary"></div>
+            </div>
+
+            <div class="hobbies-section">
+                <h3>// INPUT & INSPIRATION</h3>
+                <ul id="interests-list" class="hobbies-list"></ul>
+            </div>
+            
+            <div class="footer-links">
+                <a href="#" id="linkedin-link" target="_blank">LinkedIn</a>
+                <span class="version">Sys. v2.4.1</span>
             </div>
         </aside>
 
-        <main class="chat-container">
-            <div id="chat-history" class="chat-feed"></div>
-            
-            <div class="input-area">
-                <div class="input-box">
-                    <input type="text" id="user-input" placeholder="Initialiser la communication..." autocomplete="off">
-                    <button id="send-btn"><i class="fas fa-arrow-up"></i></button>
+        <main class="chat-interface">
+            <div class="chat-header">
+                <div class="header-info">
+                    <h2>Terminal de Discussion</h2>
+                    <span class="subtitle">Interact with Digital Twin</span>
                 </div>
+                <div class="status-badge">
+                    <span class="status-dot"></span> Système Neural Actif
+                </div>
+            </div>
+            
+            <div id="chat-window" class="chat-window">
+                <div class="message system-msg">
+                    <strong>SYSTEM:</strong> Initialisation du profil Florian Bobo terminée.<br>
+                    Contexte chargé : Hyperactivité [Actif], Mode Malinois [Actif], Stack Python [Loaded].<br>
+                    En attente d'input...
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="user-input" placeholder="Parle-moi de MLOps, de Green IT ou de mon chien..." autocomplete="off">
+                <button id="send-btn">EXECUTE</button>
             </div>
         </main>
     </div>
 
-    <script src="script/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
