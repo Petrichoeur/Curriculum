@@ -1,12 +1,12 @@
 // --- CONFIGURATION ---
-const API_KEY = "TA_CLE_API_ICI"; 
-// UTILISATION DE GEMINI 3 FLASH PREVIEW (Basé sur ta capture d'écran)
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
+const API_KEY = "TA_CLE_API_ICI"; // Sera remplacée par Vercel
+let currentModel = "gemini-3-flash-preview"; 
 
 let conversationHistory = [];
 const chatHistory = document.getElementById('chat-history');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
+const modelSelect = document.getElementById('model-select');
 
 // --- CHARGEMENT ---
 document.addEventListener("DOMContentLoaded", async () => {
@@ -14,10 +14,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const response = await fetch('config/data.json');
         const data = await response.json();
         
-        // Remplissage de l'interface
+        // UI Population
         document.getElementById('profile-name').textContent = data.profile.name;
         document.getElementById('profile-role').textContent = data.profile.role;
-        document.getElementById('profile-bio').innerHTML = "> " + data.profile.short_bio;
+        document.getElementById('profile-bio').textContent = data.profile.short_bio;
         document.getElementById('profile-img').src = data.profile.photo_url;
         document.getElementById('link-linkedin').href = data.profile.linkedin_url;
         document.getElementById('link-cv').href = data.profile.cv_file;
@@ -28,37 +28,55 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// --- INITIALISATION DU CERVEAU ---
+// --- SWITCHER ---
+modelSelect.addEventListener('change', (e) => {
+    currentModel = e.target.value;
+    const badge = document.createElement('div');
+    badge.className = 'system-badge';
+    badge.innerText = `Moteur IA basculé sur : ${currentModel.replace('preview', '').toUpperCase()}`;
+    chatHistory.appendChild(badge);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+});
+
+// --- INITIALISATION ---
 function initBot(data) {
     const sys = data.system_instruction;
     const ctx = data.ai_context;
+    const pers = data.personal_core;
 
-    // Prompt Système "Jumeau Numérique" Renforcé
     const systemPrompt = `
-    IDENTITÉ ABSOLUE : ${sys.identity}
-    CONTEXTE : Tu es le jumeau numérique de Florian.
-    TON STYLE : ${sys.tone}
+    RÔLE : ${sys.identity}
+    TON : ${sys.tone}
     OBJECTIF : ${sys.mission}
 
-    TA MÉMOIRE (Données réelles de Florian) :
-    - Hard Skills : ${ctx.hard_skills.join(" || ")}
-    - Expériences : ${ctx.experience_highlights.join(" || ")}
-    - Projets Clés : ${ctx.key_projects.join(" || ")}
+    COMPÉTENCES TECHNIQUES (Vraie stack) :
+    ${ctx.hard_skills.map(s => `- ${s}`).join('\n')}
+
+    PARCOURS :
+    ${ctx.experience_highlights.map(e => `- ${e}`).join('\n')}
+
+    PROJETS :
+    ${ctx.key_projects.map(p => `- ${p}`).join('\n')}
+
+    VIE PERSO (Pour humaniser) :
+    - Enfants : ${pers.family}
+    - Chien : ${pers.companion}
+    - Hobbies : ${pers.geek_culture.join(", ")}, ${pers.music}
 
     RÈGLES D'INTERACTION :
-    1. IMPÉRATIF : Parle toujours à la première personne ("Je"). Tu N'ES PAS une IA assistant, tu es la conscience numérique de Florian.
-    2. Si on te demande "Qui es-tu ?", réponds "Je suis Florian BOBO."
-    3. Sois technique et précis. Pas de blabla inutile. 
-    4. Tes réponses doivent être courtes et contenir quelques traits d'humour.
+    1. "Qui es-tu ?" -> "Je suis Florian BOBO."
+    2. SOIS HONNÊTE : Je maîtrise Python/C/Cython. J'ai des notions en Rust/Go.
+    3. EXPLICITE : Mentionne mes compétences en Sysadmin/Réseau/OpenShift si on parle d'infra.
+    4. EXPLICITE : Mentionne SVM/XGBoost/Stats si on parle de Data Science.
     `;
 
     conversationHistory.push({ role: "user", parts: [{ text: systemPrompt }] });
-    conversationHistory.push({ role: "model", parts: [{ text: "Identité chargée. Je suis Florian BOBO. Prêt." }] });
+    conversationHistory.push({ role: "model", parts: [{ text: "Identité chargée. Je suis Florian. Stack technique mise à jour. Prêt." }] });
 
-    appendMessage(`> GEMINI 3 FLASH PREVIEW ONLINE.\n> Bonjour. Je suis le jumeau numérique de Florian. Je suis prêt à parler architecture Transformers ou infra Kubernetes.`, "bot");
+    appendMessage(`👋 Bonjour. Je suis le Jumeau Numérique de Florian.\nJe peux parler **Sysadmin/Réseau**, algorithmes **ML (SVM/XGBoost)** ou de mon chien **Gojo** !`, "bot");
 }
 
-// --- ENVOI MESSAGE ---
+// --- ENVOI ---
 async function sendMessage() {
     const text = userInput.value.trim();
     if (!text) return;
@@ -67,10 +85,12 @@ async function sendMessage() {
     userInput.value = '';
     conversationHistory.push({ role: "user", parts: [{ text: text }] });
 
-    const loadingId = appendMessage("Computing...", 'bot', true); 
+    const loadingId = appendMessage("...", 'bot', true); 
 
     try {
-        const response = await fetch(API_URL, {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${API_KEY}`;
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: conversationHistory })
@@ -84,25 +104,25 @@ async function sendMessage() {
             appendMessage(reply, 'bot');
             conversationHistory.push({ role: "model", parts: [{ text: reply }] });
         } else {
-            // Si erreur, on affiche un message stylé
-            appendMessage("ERROR: Neural Link unstable (API Error).", 'bot');
-            console.error(data);
+            appendMessage("⚠️ Erreur API", 'bot');
         }
 
     } catch (error) {
         removeMessage(loadingId);
-        appendMessage("CRITICAL ERROR: Connection lost.", 'bot');
-        console.error(error);
+        appendMessage("⚠️ Erreur Réseau", 'bot');
     }
 }
 
-// Fonctions d'affichage (Ne changent pas)
+// --- DISPLAY ---
 function appendMessage(text, sender, isLoading = false) {
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
     if(isLoading) msgDiv.id = "loading-msg";
-    let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); // Gras simple
-    msgDiv.innerHTML = formattedText;
+    
+    // Formatage simple
+    let formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    msgDiv.innerHTML = formatted;
+    
     chatHistory.appendChild(msgDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
     return msgDiv.id;
@@ -115,4 +135,3 @@ function removeMessage(id) {
 
 sendBtn.addEventListener('click', sendMessage);
 userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-
