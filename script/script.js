@@ -27,7 +27,7 @@ async function loadConfig() {
         addMessageToChat('system', `
             <strong>SYSTEM:</strong> Digital Twin v3.0 [ONLINE]<br>
             <strong>Contextes chargés :</strong><br>
-            - Profil Psychologique : HPI/TDAH [ACTIF]<br>
+            - Profil Psychologique : Hyperactif et Passionné[ACTIF]<br>
             - Mode : Malinois (Énergie/Fidélité)<br>
             - Stack : ${configData.hard_skills.god_tier.length} skills God Tier.<br>
             En attente d'input...
