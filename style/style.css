@@ -269,3 +269,14 @@ button {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+#neural-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999; /* Au-dessus de tout */
+    pointer-events: none; /* LA CLÉ : Les clics traversent le canvas pour aller sur les boutons */
+    opacity: 0.8; /* Légère transparence globale pour ne pas être agressif */
+    mix-blend-mode: screen; /* Fusionne avec le fond pour un effet lumineux */
+}
