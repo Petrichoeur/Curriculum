@@ -1,129 +1,187 @@
+// Configuration globale
+let configData = {};
+let conversationHistory = []; // La mémoire vive du jumeau
 
-// --- CONFIGURATION ---
-const API_KEY = "TA_CLE_API_ICI"; 
+document.addEventListener("DOMContentLoaded", () => {
+    loadConfig();
+    setupEventListeners();
+});
 
-// MODÈLE UNIQUE IMPOSÉ
-const MODEL_ID = "gemini-3-flash-preview"; 
-
-let conversationHistory = [];
-
-document.addEventListener("DOMContentLoaded", async () => {
-    
-    const chatHistory = document.getElementById('chat-history');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-
-    // 1. Chargement des données Profil
+async function loadConfig() {
     try {
-        const response = await fetch('config/data.json');
-        const data = await response.json();
+        const response = await fetch('config.json');
+        configData = await response.json();
         
-        if(document.getElementById('profile-name')) document.getElementById('profile-name').textContent = data.profile.name;
-        if(document.getElementById('profile-role')) document.getElementById('profile-role').textContent = data.profile.role;
-        if(document.getElementById('profile-img')) document.getElementById('profile-img').src = data.profile.photo_url;
-        if(document.getElementById('link-linkedin')) document.getElementById('link-linkedin').href = data.profile.linkedin_url;
-        if(document.getElementById('link-cv')) document.getElementById('link-cv').href = data.profile.cv_file;
+        // 1. Initialisation Visuelle (Profil)
+        renderProfile(configData);
+        
+        // 2. Initialisation Cognitive (Prompt Système)
+        // On construit un prompt système ultra-détaillé qui sera invisible pour l'utilisateur
+        // mais qui conditionne toutes les réponses futures.
+        const systemMessage = buildSystemPrompt(configData);
+        conversationHistory.push({ role: "system", content: systemMessage });
 
-        initBot(data);
+        console.log("Système Neural Florian Bobo : INITIALISÉ.");
     } catch (error) {
-        console.error("Erreur chargement data:", error);
-        appendMessage("⚠️ Erreur critique: Impossible de charger le profil.", 'bot');
+        console.error("Erreur chargement config:", error);
     }
+}
 
-    // 2. Fonction d'envoi
-    async function sendMessage() {
-        const text = userInput.value.trim();
+function buildSystemPrompt(data) {
+    const today = new Date();
+    const age = calculateAge(data.identity.birth_date);
+    const sonAge = calculateAge(data.inner_circle.son.birth);
+    const daughterAge = calculateAge(data.inner_circle.daughter.birth);
+
+    // On transforme le JSON en texte narratif dense pour l'IA
+    return `${data.system_prompt_narrative}
+
+    [DONNÉES TEMPORELLES ACTUELLES]
+    Nous sommes le ${today.toLocaleDateString('fr-FR')}.
+    J'ai ${age} ans.
+    Mon fils a ${sonAge} ans (né fév 2017).
+    Ma fille a ${daughterAge} ans (née déc 2020).
+    Mon chien Gojo (Labrador/Braque) est né en sept 2025.
+
+    [MON PARCOURS PRO - DÉTAILS CRITIQUES]
+    Actuellement : Tech Lead @ ${data.career_timeline[0].company}. Projet GPU-as-a-Service.
+    Avant : ${data.career_timeline[1].company} (AutoDevOps, AIOps).
+    Avant : ${data.career_timeline[2].company} (Industrie 4.0).
+    Début : Prof de Maths (2016-2019).
+
+    [MES COMPETENCES TECHNIQUES]
+    TOP NIVEAU : ${data.hard_skills.god_tier.join(', ')}.
+    EXPERT : ${data.hard_skills.expert.join(', ')}.
+    NOTIONS (Être humble) : ${data.hard_skills.notions_hobbies.join(', ')}.
+
+    [DIRECTIVE MÉMOIRE]
+    Prends en compte TOUT l'historique de la conversation ci-dessous pour répondre. Sois cohérent.`;
+}
+
+function renderProfile(data) {
+    // Remplissage simple du DOM (Nom, Titre, Bio...)
+    document.getElementById('tagline-placeholder').textContent = `"${data.identity.tagline}"`;
+    document.getElementById('name-placeholder').textContent = data.identity.name;
+    document.getElementById('title-placeholder').textContent = data.identity.role;
+    
+    // Bio "Vibe"
+    const bioHTML = `
+        <div class="bio-line">📍 ${data.identity.location}</div>
+        <div class="bio-line">⚡ ${data.psychology.cognitive_style.split('(')[0]}</div>
+        <div class="bio-line">🐶 Maître de Gojo</div>
+    `;
+    document.getElementById('bio-text').innerHTML = bioHTML;
+
+    // Skills
+    renderTags(data.hard_skills.god_tier, 'expert-skills', 'tag-god');
+    renderTags(data.hard_skills.expert, 'expert-skills', 'tag-expert');
+    renderTags(data.hard_skills.notions_hobbies, 'notion-skills', 'tag-notion');
+    
+    // Hobbies
+    const hobbiesList = document.getElementById('interests-list');
+    [...data.interests.music, ...data.interests.reading].slice(0, 5).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        hobbiesList.appendChild(li);
+    });
+}
+
+function renderTags(items, containerId, className) {
+    const container = document.getElementById(containerId);
+    items.forEach(item => {
+        const span = document.createElement('span');
+        span.className = `tag ${className}`;
+        span.textContent = item.split('(')[0].trim(); // On affiche court
+        span.title = item; // Info-bulle avec le détail
+        container.appendChild(span);
+    });
+}
+
+// --- LOGIQUE DE DISCUSSION ---
+
+function setupEventListeners() {
+    const input = document.getElementById('user-input');
+    const btn = document.getElementById('send-btn');
+
+    const handleSend = () => {
+        const text = input.value.trim();
         if (!text) return;
 
-        // UI Utilisateur
-        appendMessage(text, 'user');
-        userInput.value = '';
-        conversationHistory.push({ role: "user", parts: [{ text: text }] });
+        // 1. Afficher User Msg
+        addMessageToChat('user', text);
+        input.value = '';
 
-        // Indicateur de chargement
-        const loadingId = appendMessage("Analyse en cours...", 'bot', true); 
+        // 2. Mettre à jour la mémoire
+        conversationHistory.push({ role: "user", content: text });
 
-        try {
-            // Construction URL directe avec le modèle imposé
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${API_KEY}`;
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: conversationHistory })
-            });
+        // 3. Appeler l'intelligence
+        simulateAIResponse();
+    };
 
-            const data = await response.json();
-            removeMessage(loadingId);
+    btn.addEventListener('click', handleSend);
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSend();
+    });
+}
 
-            if (data.error) {
-                // Gestion explicite des erreurs API (ex: modèle introuvable)
-                console.error("API Error:", data.error);
-                appendMessage(`⚠️ Erreur API: ${data.error.message}`, 'bot');
-            } 
-            else if (data.candidates && data.candidates[0].content) {
-                const reply = data.candidates[0].content.parts[0].text;
-                appendMessage(reply, 'bot');
-                conversationHistory.push({ role: "model", parts: [{ text: reply }] });
-            } 
-            else {
-                appendMessage("⚠️ Réponse vide du modèle.", 'bot');
-            }
+function addMessageToChat(role, text) {
+    const chatWindow = document.getElementById('chat-window');
+    const div = document.createElement('div');
+    div.className = `message ${role}-msg`;
+    div.innerHTML = text.replace(/\n/g, '<br>');
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
 
-        } catch (error) {
-            removeMessage(loadingId);
-            appendMessage("⚠️ Erreur Réseau (Check Logs).", 'bot');
-            console.error(error);
+async function simulateAIResponse() {
+    // Indicateur de frappe
+    const chatWindow = document.getElementById('chat-window');
+    const typing = document.createElement('div');
+    typing.className = 'message bot-msg typing';
+    typing.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+    chatWindow.appendChild(typing);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    // ICI : Simulation de l'appel API (à remplacer par ton fetch vers OpenAI/Mistral)
+    // On enverrait : JSON.stringify({ messages: conversationHistory })
+    
+    setTimeout(() => {
+        typing.remove();
+        
+        // Logique de réponse simulée basée sur les mots clés ET l'historique
+        const lastUserMsg = conversationHistory[conversationHistory.length - 1].content.toLowerCase();
+        let reply = "";
+
+        // EXEMPLES DE RÉPONSES CONTEXTUELLES (Simulation)
+        if (lastUserMsg.includes("parcours") || lastUserMsg.includes("expérience")) {
+            reply = "C'est un chemin un peu atypique ! J'ai commencé **Prof de Maths** (2016-2019), ce qui m'a appris la pédagogie. \n\nEnsuite, grand saut dans la Data chez **Axens** (Industrie 4.0) et **Pôle Emploi** où j'ai monté de l'AIOps. Aujourd'hui, je suis Tech Lead chez **CA-GIP**, je bosse sur du GPU-as-a-Service et de l'IA Générative. C'est intense mais passionnant.";
         }
+        else if (lastUserMsg.includes("python")) {
+            reply = "Python, c'est mon couteau suisse absolu. 🐍\n\nJe ne l'utilise pas juste pour scripter, je vais chercher la perf avec **Cython** ou de l'async. C'est indispensable pour faire du MLOps propre. Tu as une question précise sur du code ?";
+        }
+        else if (lastUserMsg.includes("rust") || lastUserMsg.includes("go")) {
+            reply = "Alors Rust et Go... J'ai des notions, je respecte énormément ces langages pour leur efficacité (surtout Rust pour la mémoire). Mais pour être honnête, je ne suis pas expert. Je préfère optimiser du Python que de me battre avec le borrow checker de Rust pour l'instant ! 😉";
+        }
+        else if (lastUserMsg.includes("famille") || lastUserMsg.includes("perso")) {
+            reply = "Côté perso, c'est rythmé ! Entre mon fils (2017), ma fille (2020) et **Gojo**, mon chiot Labrador/Braque qui vient d'arriver (né en 2025), je ne m'ennuie pas. Je compense avec beaucoup de musique (Metal/Synthwave) et de lecture.";
+        }
+        else {
+            reply = "Yes, je vois. Avec mon profil un peu 'TDAH', ça me fait penser à plusieurs choses à la fois. 🤔\n\nTu veux qu'on creuse l'aspect technique ou plutôt la vision produit/MLOps de ça ?";
+        }
+
+        conversationHistory.push({ role: "assistant", content: reply });
+        addMessageToChat('bot', reply);
+
+    }, 1500); // Délai de réflexion
+}
+
+function calculateAge(dateString) {
+    const today = new Date();
+    const birthDate = new Date(dateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
     }
-
-    // 3. Initialisation Système
-    function initBot(data) {
-        const sys = data.system_instruction;
-        const ctx = data.ai_context;
-        const pers = data.personal_core;
-
-        const systemPrompt = `
-        IDENTITY: ${sys.identity}
-        TONE: ${sys.tone}
-        GOAL: ${sys.mission}
-        
-        TECH STACK: ${ctx.hard_skills.join(" || ")}
-        PROJECTS: ${ctx.key_projects.map(p => typeof p === 'string' ? p : JSON.stringify(p)).join(" || ")}
-        EXPERIENCE: ${ctx.experience_highlights.join(" || ")}
-        AWARDS: ${JSON.stringify(ctx.education_and_awards)}
-        
-        PERSONAL: Family (${pers.family}), Dog (${pers.companion}), Hobbies (${pers.geek_culture.join(", ")})
-
-        RULES: 
-        1. Tu es Florian. Réponds directement.
-        2. Format concis.
-        `;
-
-        conversationHistory.push({ role: "user", parts: [{ text: systemPrompt }] });
-        conversationHistory.push({ role: "model", parts: [{ text: "Système prêt." }] });
-
-        appendMessage(`👋 <b>Online.</b><br>Modèle actif : <code>${MODEL_ID}</code>.<br>Je suis le jumeau numérique de Florian.`, "bot");
-    }
-
-    // Utilitaires
-    function appendMessage(text, sender, isLoading = false) {
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
-        if(isLoading) msgDiv.id = "loading-msg";
-        let formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/`(.*?)`/g, '<code>$1</code>');
-        msgDiv.innerHTML = formatted;
-        chatHistory.appendChild(msgDiv);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-        return msgDiv.id;
-    }
-
-    function removeMessage(id) {
-        const el = document.getElementById(id);
-        if(el) el.remove();
-    }
-
-    // Events
-    if(sendBtn) sendBtn.addEventListener('click', sendMessage);
-    if(userInput) userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-});
+    return age;
+}
