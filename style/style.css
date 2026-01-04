@@ -339,3 +339,6 @@ button:hover { background: #fff; box-shadow: 0 0 15px var(--accent-cyan); }
     .chat-interface { min-height: 500px; }
     body { overflow: auto; }
 }
+#cv-btn {
+    display: none !important;
+}
