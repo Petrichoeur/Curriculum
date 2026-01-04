@@ -1,27 +1,24 @@
-
 // --- CONFIGURATION ---
 const API_KEY = "TA_CLE_API_ICI"; 
-let currentModel = "gemini-3-flash-preview"; 
+
+// MODÈLE UNIQUE IMPOSÉ
+const MODEL_ID = "gemini-3-flash-preview"; 
+
 let conversationHistory = [];
 
-// --- DÉMARRAGE SÉCURISÉ ---
 document.addEventListener("DOMContentLoaded", async () => {
     
-    // Récupération sécurisée des éléments
     const chatHistory = document.getElementById('chat-history');
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
-    const modelSelect = document.getElementById('model-select');
 
-    // 1. Chargement des données
+    // 1. Chargement des données Profil
     try {
         const response = await fetch('config/data.json');
         const data = await response.json();
         
-        // Remplissage UI (avec vérification si l'élément existe)
         if(document.getElementById('profile-name')) document.getElementById('profile-name').textContent = data.profile.name;
         if(document.getElementById('profile-role')) document.getElementById('profile-role').textContent = data.profile.role;
-        if(document.getElementById('profile-bio')) document.getElementById('profile-bio').textContent = data.profile.short_bio;
         if(document.getElementById('profile-img')) document.getElementById('profile-img').src = data.profile.photo_url;
         if(document.getElementById('link-linkedin')) document.getElementById('link-linkedin').href = data.profile.linkedin_url;
         if(document.getElementById('link-cv')) document.getElementById('link-cv').href = data.profile.cv_file;
@@ -29,34 +26,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         initBot(data);
     } catch (error) {
         console.error("Erreur chargement data:", error);
+        appendMessage("⚠️ Erreur critique: Impossible de charger le profil.", 'bot');
     }
 
-    // 2. Gestionnaire du changement de modèle (Si le menu existe)
-    if (modelSelect) {
-        modelSelect.addEventListener('change', (e) => {
-            currentModel = e.target.value;
-            // Feedback visuel discret dans le chat
-            const badge = document.createElement('div');
-            badge.className = 'system-badge';
-            badge.innerHTML = `<i class="fas fa-sync"></i> Moteur basculé sur : <b>${currentModel}</b>`;
-            chatHistory.appendChild(badge);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-        });
-    }
-
-    // 3. Fonctions de Chat
+    // 2. Fonction d'envoi
     async function sendMessage() {
         const text = userInput.value.trim();
         if (!text) return;
 
+        // UI Utilisateur
         appendMessage(text, 'user');
         userInput.value = '';
         conversationHistory.push({ role: "user", parts: [{ text: text }] });
 
-        const loadingId = appendMessage("...", 'bot', true); 
+        // Indicateur de chargement
+        const loadingId = appendMessage("Analyse en cours...", 'bot', true); 
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${API_KEY}`;
+            // Construction URL directe avec le modèle imposé
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${API_KEY}`;
             
             const response = await fetch(url, {
                 method: 'POST',
@@ -67,57 +55,62 @@ document.addEventListener("DOMContentLoaded", async () => {
             const data = await response.json();
             removeMessage(loadingId);
 
-            if (data.candidates && data.candidates[0].content) {
+            if (data.error) {
+                // Gestion explicite des erreurs API (ex: modèle introuvable)
+                console.error("API Error:", data.error);
+                appendMessage(`⚠️ Erreur API: ${data.error.message}`, 'bot');
+            } 
+            else if (data.candidates && data.candidates[0].content) {
                 const reply = data.candidates[0].content.parts[0].text;
                 appendMessage(reply, 'bot');
                 conversationHistory.push({ role: "model", parts: [{ text: reply }] });
-            } else {
-                appendMessage("⚠️ Erreur API (Vérifiez la clé ou le modèle)", 'bot');
-                console.error(data);
+            } 
+            else {
+                appendMessage("⚠️ Réponse vide du modèle.", 'bot');
             }
 
         } catch (error) {
             removeMessage(loadingId);
-            appendMessage("⚠️ Erreur Réseau", 'bot');
+            appendMessage("⚠️ Erreur Réseau (Check Logs).", 'bot');
             console.error(error);
         }
     }
 
-    // Initialisation du contexte
+    // 3. Initialisation Système
     function initBot(data) {
         const sys = data.system_instruction;
         const ctx = data.ai_context;
         const pers = data.personal_core;
 
         const systemPrompt = `
-        RÔLE: ${sys.identity}
-        TON: ${sys.tone}
-        OBJECTIF: ${sys.mission}
+        IDENTITY: ${sys.identity}
+        TONE: ${sys.tone}
+        GOAL: ${sys.mission}
         
-        CONTEXTE TECHNIQUE: ${ctx.hard_skills.join(" | ")}
-        PROJETS CLÉS: ${ctx.key_projects.map(p => typeof p === 'string' ? p : JSON.stringify(p)).join(" | ")}
-        PARCOURS: ${ctx.experience_highlights.join(" | ")}
-        PUBLIS: ${JSON.stringify(ctx.education_and_awards)}
+        TECH STACK: ${ctx.hard_skills.join(" || ")}
+        PROJECTS: ${ctx.key_projects.map(p => typeof p === 'string' ? p : JSON.stringify(p)).join(" || ")}
+        EXPERIENCE: ${ctx.experience_highlights.join(" || ")}
+        AWARDS: ${JSON.stringify(ctx.education_and_awards)}
         
-        CONTEXTE PERSO: Famille (${pers.family}), Chien (${pers.companion}), Passions (${pers.geek_culture.join(", ")})
+        PERSONAL: Family (${pers.family}), Dog (${pers.companion}), Hobbies (${pers.geek_culture.join(", ")})
 
-        RÈGLES: 
-        1. Je suis Florian. 
-        2. Réponses concises.
+        RULES: 
+        1. Tu es Florian. Réponds directement.
+        2. Format concis.
         `;
 
         conversationHistory.push({ role: "user", parts: [{ text: systemPrompt }] });
-        conversationHistory.push({ role: "model", parts: [{ text: "Système synchronisé. Identité Florian active." }] });
+        conversationHistory.push({ role: "model", parts: [{ text: "Système prêt." }] });
 
-        appendMessage(`👋 <b>Online.</b><br>Je suis le jumeau numérique de Florian.<br>Architecture <b>K8s</b>, <b>GenAI</b> ou <b>JDR</b> ? Posez vos questions.`, "bot");
+        appendMessage(`👋 <b>Online.</b><br>Modèle actif : <code>${MODEL_ID}</code>.<br>Je suis le jumeau numérique de Florian.`, "bot");
     }
 
-    // Utilitaires d'affichage
+    // Utilitaires
     function appendMessage(text, sender, isLoading = false) {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
         if(isLoading) msgDiv.id = "loading-msg";
-        let formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        let formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/`(.*?)`/g, '<code>$1</code>');
         msgDiv.innerHTML = formatted;
         chatHistory.appendChild(msgDiv);
         chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -129,7 +122,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if(el) el.remove();
     }
 
-    // Écouteurs d'événements (Attachés seulement si les éléments existent)
+    // Events
     if(sendBtn) sendBtn.addEventListener('click', sendMessage);
     if(userInput) userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 });
