@@ -21,8 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadConfig() {
     try {
-        const response = await fetch('config.json');
-        if (!response.ok) throw new Error("config.json introuvable");
+        const response = await fetch('config/data.json');
+        if (!response.ok) throw new Error("config/data.json introuvable");
         
         configData = await response.json();
         renderProfile(configData);
