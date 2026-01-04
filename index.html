@@ -3,61 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Florian BOBO | Neural Interface</title>
+    <title>Florian BOBO | Digital Twin</title>
     <link rel="stylesheet" href="style/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <canvas id="neural-canvas"></canvas>
-    
-    <div class="scanlines"></div>
-
-    <div class="container">
-        <aside class="sidebar glass-panel">
+    <div class="main-layout">
+        <aside class="sidebar">
             <div class="profile-header">
-                <div class="avatar-container">
+                <div class="avatar-wrapper">
                     <img id="profile-img" src="" alt="Avatar">
-                    <div class="glitch-effect"></div>
+                    <div class="status-dot"></div>
                 </div>
-                <h1 id="profile-name" class="neon-text">INITIALIZING...</h1>
-                <h2 id="profile-role" class="holo-text">...</h2>
-                <div class="bio-box">
-                    <p id="profile-bio" class="terminal-text">...</p>
+                <div class="profile-info">
+                    <h1 id="profile-name">Loading...</h1>
+                    <h2 id="profile-role">...</h2>
                 </div>
             </div>
 
-            <div class="links-section">
-                <a id="link-linkedin" href="#" target="_blank" class="cyber-btn">
-                    <span class="icon"><i class="fab fa-linkedin"></i></span>
-                    <span class="text">LINKEDIN_UPLINK</span>
+            <p id="profile-bio">...</p>
+
+            <div class="actions">
+                <a id="link-linkedin" href="#" target="_blank" class="btn btn-primary">
+                    <i class="fab fa-linkedin"></i> LinkedIn
                 </a>
-                <a id="link-cv" href="#" target="_blank" class="cyber-btn btn-secondary">
-                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
-                    <span class="text">DOWNLOAD_DATA.PDF</span>
+                <a id="link-cv" href="#" target="_blank" class="btn btn-outline">
+                    <i class="fas fa-file-pdf"></i> CV
                 </a>
             </div>
 
-            <div class="status-bar">
-                <div class="status-indicator"></div>
-                <span>SYSTEM: ONLINE</span>
+            <div class="ai-controls">
+                <label><i class="fas fa-microchip"></i> MODÈLE IA</label>
+                <div class="select-wrapper">
+                    <select id="model-select">
+                        <option value="gemini-2.0-flash-exp">Gemini 2.5 Flash (Rapide)</option>
+                        <option value="gemini-3-flash-preview" selected>Gemini 3 Preview (Smart)</option>
+                    </select>
+                    <i class="fas fa-chevron-down arrow-icon"></i>
+                </div>
             </div>
         </aside>
 
-        <main class="chat-interface glass-panel">
-            <div class="chat-header">
-                <h3><i class="fas fa-microchip"></i> AI_CORE // GEMINI_BRIDGE</h3>
-                <p>Accessing memory banks... Ask about MLOps protocols or Neural Architecture.</p>
-            </div>
-
-            <div class="chat-history custom-scrollbar" id="chat-history"></div>
-
-            <div class="chat-input-area">
-                <div class="input-wrapper">
-                    <span class="prompt-sign">></span>
-                    <input type="text" id="user-input" placeholder="Enter command or query..." autocomplete="off">
-                    <button id="send-btn" class="send-cyber"><i class="fas fa-bolt"></i></button>
+        <main class="chat-container">
+            <div id="chat-history" class="chat-feed"></div>
+            
+            <div class="input-area">
+                <div class="input-box">
+                    <input type="text" id="user-input" placeholder="Posez une question..." autocomplete="off">
+                    <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </main>
@@ -66,3 +61,4 @@
     <script src="script/script.js"></script>
 </body>
 </html>
+
