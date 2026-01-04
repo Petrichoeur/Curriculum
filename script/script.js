@@ -185,3 +185,166 @@ function calculateAge(dateString) {
     }
     return age;
 }
+
+
+/* ==========================================
+   MOTEUR NEURAL - EFFET VISUEL MYSTIQUE
+   ========================================== */
+
+const canvas = document.getElementById('neural-canvas');
+const ctx = canvas.getContext('2d');
+let particlesArray;
+let pulsesArray = []; // Pour stocker les ondes de clic
+
+// Configuration de l'effet
+const configNeural = {
+    particleColor: 'rgba(0, 210, 255, 0.3)', // Cyan très discret
+    lineColor: 'rgba(189, 0, 255, 0.05)',   // Violet presque invisible (repos)
+    activeColor: 'rgba(0, 255, 157, 0.8)',  // Vert "Green IT" pour l'activation
+    particleCount: 80, // Nombre de neurones (ajuster selon puissance PC)
+    connectionDistance: 150,
+    pulseRadius: 200, // Rayon d'activation au clic
+    pulseSpeed: 3
+};
+
+// Gestion de la taille
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initParticles();
+});
+
+// Classe Neurone (Particule)
+class Particle {
+    constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.directionX = (Math.random() * 0.4) - 0.2; // Mouvement très lent
+        this.directionY = (Math.random() * 0.4) - 0.2;
+        this.size = Math.random() * 2 + 1;
+    }
+
+    update() {
+        // Mouvement fluide
+        if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+        if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+        this.x += this.directionX;
+        this.y += this.directionY;
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+        ctx.fillStyle = configNeural.particleColor;
+        ctx.fill();
+    }
+}
+
+// Classe Impulsion (Onde de choc au clic)
+class Pulse {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 1;
+        this.life = 1; // Opacité de vie
+        this.maxRadius = configNeural.pulseRadius;
+    }
+
+    update() {
+        this.radius += configNeural.pulseSpeed;
+        this.life -= 0.02; // Disparaît doucement
+    }
+
+    draw() {
+        // Optionnel : dessiner l'onde elle-même (cercle fin)
+        if (this.life > 0) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            ctx.strokeStyle = `rgba(0, 255, 157, ${this.life * 0.2})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    }
+}
+
+function initParticles() {
+    particlesArray = [];
+    // Densité responsive
+    let numberOfParticles = (canvas.height * canvas.width) / 15000;
+    for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push(new Particle());
+    }
+}
+
+// Moteur de rendu principal
+function animateNeuralNetwork() {
+    requestAnimationFrame(animateNeuralNetwork);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Gérer les impulsions (clics)
+    for (let i = 0; i < pulsesArray.length; i++) {
+        pulsesArray[i].update();
+        pulsesArray[i].draw();
+        if (pulsesArray[i].life <= 0) {
+            pulsesArray.splice(i, 1);
+            i--;
+        }
+    }
+
+    // 2. Gérer les particules et connexions
+    for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+        particlesArray[i].draw();
+
+        // Connecter les particules proches
+        for (let j = i; j < particlesArray.length; j++) {
+            const dx = particlesArray[i].x - particlesArray[j].x;
+            const dy = particlesArray[i].y - particlesArray[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < configNeural.connectionDistance) {
+                // Par défaut : lien sombre
+                let opacity = 1 - (distance / configNeural.connectionDistance);
+                let color = configNeural.lineColor;
+                let lineWidth = 1;
+
+                // EFFET TRANSCENDANT : Vérifier si une impulsion est proche
+                for (let p = 0; p < pulsesArray.length; p++) {
+                    const pulse = pulsesArray[p];
+                    // Distance entre la connexion et l'impulsion
+                    const distToPulse = Math.sqrt(Math.pow(pulse.x - particlesArray[i].x, 2) + Math.pow(pulse.y - particlesArray[i].y, 2));
+                    
+                    // Si la particule est touchée par l'onde
+                    if (Math.abs(distToPulse - pulse.radius) < 30) {
+                        color = `rgba(0, 255, 157, ${pulse.life})`; // Vert électrique
+                        lineWidth = 2; // Épaissir le lien
+                        ctx.beginPath(); // Petit flash sur la particule aussi
+                        ctx.arc(particlesArray[i].x, particlesArray[i].y, particlesArray[i].size * 1.5, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(0, 255, 157, ${pulse.life})`;
+                        ctx.fill();
+                    }
+                }
+
+                ctx.beginPath();
+                ctx.strokeStyle = (color === configNeural.lineColor) ? `rgba(189, 0, 255, ${opacity * 0.1})` : color;
+                ctx.lineWidth = lineWidth;
+                ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+                ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+// Écouteur de clic global pour déclencher l'effet
+window.addEventListener('click', (e) => {
+    // On ajoute une impulsion aux coordonnées de la souris
+    pulsesArray.push(new Pulse(e.x, e.y));
+});
+
+// Lancement
+initParticles();
+animateNeuralNetwork();

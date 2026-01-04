@@ -1,13 +1,25 @@
+/* =========================================
+   1. VARIABLES & RESET
+   ========================================= */
 :root {
-    --bg-dark: #0f111a; /* Fond très sombre, presque noir bleuté */
-    --bg-panel: #1a1c29;
-    --text-primary: #e6e6e6;
-    --text-secondary: #949eb3;
-    --accent-cyan: #00d2ff; /* Cyberpunk Cyan */
-    --accent-purple: #bd00ff; /* Synthwave Purple */
-    --accent-green: #00ff9d; /* Green IT */
+    --bg-dark: #0f111a;        /* Fond principal très sombre */
+    --bg-panel: #1a1c29;       /* Fond des panneaux */
+    --text-primary: #e6e6e6;   /* Texte blanc cassé */
+    --text-secondary: #949eb3; /* Texte gris bleuté */
+    
+    /* Palette Synthwave / Green IT */
+    --accent-cyan: #00d2ff;    /* Cyberpunk Cyan (Python God Tier) */
+    --accent-purple: #bd00ff;  /* Synthwave Purple (IA/Neurones) */
+    --accent-green: #00ff9d;   /* Green IT (Status & Docker) */
+    
     --font-code: 'Fira Code', monospace;
     --font-main: 'Inter', sans-serif;
+    
+    --border-color: #2a2e40;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -15,100 +27,64 @@ body {
     color: var(--text-primary);
     font-family: var(--font-main);
     margin: 0;
+    padding: 0;
     display: flex;
     justify-content: center;
     height: 100vh;
+    overflow: hidden; /* Empêche le scroll global */
 }
 
+/* =========================================
+   2. NEURAL NETWORK OVERLAY (CANVAS)
+   ========================================= */
+#neural-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999; /* Au-dessus de tout */
+    pointer-events: none; /* ESSENTIEL : Les clics traversent le canvas */
+    opacity: 0.8; 
+    mix-blend-mode: screen; /* Fusion lumineuse */
+}
+
+/* =========================================
+   3. LAYOUT PRINCIPAL
+   ========================================= */
 .container {
     display: flex;
     width: 100%;
     max-width: 1600px;
     height: 100vh;
-    overflow: hidden;
+    background-color: var(--bg-dark);
+    position: relative;
+    z-index: 1; /* Sous le canvas */
 }
 
-/* SIDEBAR PROFIL */
-.profile-card {
-    width: 400px;
-    background-color: var(--bg-panel);
-    border-right: 1px solid #2a2e40;
-    padding: 2rem;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
+/* Scrollbar personnalisée pour un look Tech */
+::-webkit-scrollbar {
+    width: 8px;
 }
-
-.profile-header h1 {
-    font-size: 1.8rem;
-    margin: 0;
-    background: linear-gradient(90deg, var(--text-primary), var(--accent-cyan));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.role-text {
-    color: var(--accent-cyan);
-    font-family: var(--font-code);
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-}
-
-.bio-line {
-    margin: 0.5rem 0;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-}
-
-h3 {
-    font-family: var(--font-code);
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
-    border-bottom: 1px solid #2a2e40;
-    padding-bottom: 0.5rem;
-}
-
-/* TAGS */
-.tag {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-family: var(--font-code);
-    margin: 0 5px 5px 0;
-    border: 1px solid transparent;
-}
-
-.tag-god {
-    background: rgba(0, 210, 255, 0.1);
-    color: var(--accent-cyan);
-    border-color: rgba(0, 210, 255, 0.3);
-}
-
-.tag-expert {
-    background: rgba(0, 255, 157, 0.05);
-    color: var(--accent-green);
-    border-color: rgba(0, 255, 157, 0.2);
-}
-
-.tag-notion {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-}
-
-/* CHAT AREA */
-.chat-interface {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+::-webkit-scrollbar-track {
     background: var(--bg-dark);
 }
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-cyan);
+}
 
-.chat-window {
-    flex: 1;
+/* =========================================
+   4. SIDEBAR (PROFIL)
+   ========================================= */
+.profile-card {
+    width: 400px;
+    min-width: 320px;
+    background-color: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
     padding: 2rem;
     overflow-y: auto;
     display: flex;
@@ -116,63 +92,7 @@ h3 {
     gap: 1.5rem;
 }
 
-.message {
-    max-width: 80%;
-    padding: 1.2rem;
-    border-radius: 12px;
-    line-height: 1.6;
-    font-size: 1rem;
-}
-
-.bot-msg {
-    background-color: var(--bg-panel);
-    border-left: 3px solid var(--accent-purple);
-    color: var(--text-primary);
-    align-self: flex-start;
-}
-
-.user-msg {
-    background-color: rgba(0, 210, 255, 0.05);
-    border-right: 3px solid var(--accent-cyan);
-    color: var(--text-primary);
-    align-self: flex-end;
-}
-
-.input-area {
-    padding: 2rem;
-    background-color: var(--bg-panel);
-    display: flex;
-    gap: 1rem;
-    border-top: 1px solid #2a2e40;
-}
-
-input {
-    flex: 1;
-    background: #0f111a;
-    border: 1px solid #2a2e40;
-    padding: 1rem;
-    color: white;
-    font-family: var(--font-main);
-    border-radius: 6px;
-}
-
-input:focus {
-    outline: none;
-    border-color: var(--accent-cyan);
-}
-
-button {
-    background: var(--accent-cyan);
-    color: #0f111a;
-    border: none;
-    padding: 0 2rem;
-    font-weight: bold;
-    cursor: pointer;
-    text-transform: uppercase;
-    font-family: var(--font-code);
-}
-/* Ajoute ça à ton style.css pour la finition */
-
+/* Avatar & Status */
 .avatar-container {
     position: relative;
     width: 80px;
@@ -188,6 +108,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: var(--font-code);
     font-size: 1.5rem;
     font-weight: bold;
     color: #fff;
@@ -196,51 +117,179 @@ button {
 
 .status-indicator {
     position: absolute;
-    bottom: 5px;
-    right: 5px;
-    width: 15px;
-    height: 15px;
-    background-color: #00ff9d; /* Green IT status */
+    bottom: 0px;
+    right: 0px;
+    width: 18px;
+    height: 18px;
+    background-color: var(--accent-green);
     border-radius: 50%;
     border: 3px solid var(--bg-panel);
+    box-shadow: 0 0 5px var(--accent-green);
+}
+
+/* LE CORRECTIF DU H1 EST ICI */
+.profile-header h1 {
+    font-family: var(--font-code);
+    font-size: 1.8rem;
+    margin: 0;
+    /* Méthode robuste pour le gradient text */
+    background: linear-gradient(90deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
+    background-clip: text; /* Standard */
+    -webkit-background-clip: text; /* Safari/Chrome */
+    -webkit-text-fill-color: transparent; /* Rend le texte transparent pour voir le fond */
+    color: var(--text-primary); /* Fallback */
+    display: inline-block; /* Souvent nécessaire pour que le clip fonctionne bien */
+}
+
+.role-text {
+    color: var(--accent-cyan);
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
 }
 
 .tagline {
     font-style: italic;
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     margin-top: 1rem;
-    line-height: 1.4;
-    border-left: 2px solid var(--accent-purple);
-    padding-left: 10px;
+    line-height: 1.5;
+    border-left: 3px solid var(--accent-purple);
+    padding-left: 12px;
 }
 
 .divider {
     border: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, #2a2e40, transparent);
-    margin: 1.5rem 0;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    margin: 0.5rem 0;
 }
 
+/* Sections Bio & Skills */
+h3 {
+    font-family: var(--font-code);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.bio-line {
+    margin: 0.6rem 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Tags Skills */
+.tags-container, .tags-container-secondary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: var(--font-code);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.tag-god {
+    background: rgba(0, 210, 255, 0.1);
+    color: var(--accent-cyan);
+    border-color: rgba(0, 210, 255, 0.3);
+    box-shadow: 0 0 5px rgba(0, 210, 255, 0.1);
+}
+
+.tag-expert {
+    background: rgba(0, 255, 157, 0.05);
+    color: var(--accent-green);
+    border-color: rgba(0, 255, 157, 0.2);
+}
+
+.tag-notion {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border-color: #444;
+}
+
+/* Liste Hobbies */
 .hobbies-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
-
 .hobbies-list li {
     font-size: 0.9rem;
     color: var(--text-secondary);
-    margin-bottom: 0.4rem;
-    padding-left: 1rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1.2rem;
     position: relative;
 }
-
 .hobbies-list li::before {
     content: "▹";
     position: absolute;
     left: 0;
     color: var(--accent-purple);
+    font-family: var(--font-code);
+}
+
+.footer-links {
+    margin-top: auto;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-secondary);
+}
+.footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+.footer-links a:hover {
+    color: var(--accent-cyan);
+}
+
+/* =========================================
+   5. INTERFACE DE CHAT
+   ========================================= */
+.chat-interface {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-dark);
+}
+
+.chat-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(15, 17, 26, 0.95);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-info h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-family: var(--font-code);
+}
+.subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
 }
 
 .status-badge {
@@ -251,8 +300,9 @@ button {
     color: var(--accent-green);
     font-family: var(--font-code);
     border: 1px solid rgba(0, 255, 157, 0.2);
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 20px;
+    background: rgba(0, 255, 157, 0.05);
 }
 
 .status-dot {
@@ -264,8 +314,145 @@ button {
     animation: pulse 2s infinite;
 }
 
+/* Zone des messages */
+.chat-window {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    scroll-behavior: smooth;
+}
+
+.message {
+    max-width: 80%;
+    padding: 1.2rem;
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 1rem;
+    position: relative;
+    word-wrap: break-word;
+}
+
+/* Message Système (Welcome) */
+.system-msg {
+    align-self: flex-start;
+    background-color: rgba(189, 0, 255, 0.08);
+    border-left: 3px solid var(--accent-purple);
+    color: var(--text-primary);
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+}
+
+/* Message Bot (Florian) */
+.bot-msg {
+    align-self: flex-start;
+    background-color: var(--bg-panel);
+    border-left: 3px solid var(--accent-cyan);
+    color: var(--text-primary);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+/* Message Utilisateur */
+.user-msg {
+    align-self: flex-end;
+    background-color: rgba(0, 210, 255, 0.1);
+    border-right: 3px solid var(--accent-cyan);
+    color: var(--text-primary);
+    text-align: right;
+}
+
+/* Animation Typing (...) */
+.typing span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    margin: 0 2px;
+    animation: blink 1.4s infinite both;
+}
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+
+/* Zone de saisie */
+.input-area {
+    padding: 2rem;
+    background-color: var(--bg-panel);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 1rem;
+}
+
+input {
+    flex: 1;
+    background: #0f111a;
+    border: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+    color: white;
+    font-family: var(--font-main);
+    font-size: 1rem;
+    border-radius: 6px;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
+}
+
+button {
+    background: var(--accent-cyan);
+    color: #0f111a;
+    border: none;
+    padding: 0 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-family: var(--font-code);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+button:hover {
+    background: #fff;
+    box-shadow: 0 0 15px var(--accent-cyan);
+}
+
+/* =========================================
+   6. ANIMATIONS KEYFRAMES
+   ========================================= */
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes blink {
+    0% { opacity: 0.2; transform: translateY(0); }
+    20% { opacity: 1; transform: translateY(-3px); }
+    100% { opacity: 0.2; transform: translateY(0); }
+}
+
+/* Responsive basique */
+@media (max-width: 900px) {
+    .container {
+        flex-direction: column;
+        height: auto;
+        overflow-y: auto;
+    }
+    .profile-card {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .chat-interface {
+        height: 600px; /* Hauteur fixe sur mobile */
+    }
+    body {
+        overflow: auto; /* Réactive le scroll sur mobile */
+    }
 }
