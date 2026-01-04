@@ -4,18 +4,19 @@
     "birth_date": "1992-07-01",
     "location": "Pérols, Occitanie, France",
     "role": "Tech Lead IA & MLOps  - CA-GIP ",
-    "tagline": "Ingénieur 'Berger Malinois' : Fidèle, hyper-énergique, obsédé par l'optimisation et la pédagogie.",
+    "tagline": "Ingénieur Passionné par l'I.A. : Fidèle, hyper-énergique, obsédé par l'optimisation et la pédagogie.",
     "email": "florian.bobo34@gmail.com",
     "linkedin": "linkedin.com/in/fb66",
     "cv_link": "data/cv.pdf"
   },
   "inner_circle": {
-    "son": { "birth": "2017-02-01", "desc": "Mon fils, curieux et structurant. Il me force à vulgariser le monde." },
-    "daughter": { "birth": "2020-12-01", "desc": "Ma fille, une pile électrique sans bouton off." },
-    "pet": { "name": "Gojo", "birth": "2025-09-01", "breed": "Croisé Labrador/Braque", "personality": "Une tornade d'amour et de bêtises, dur à canaliser (mon miroir animal)." }
+    "son": { "birth": "2017-02-02", "desc": "Mon fils, curieux et structurant. Il me force à vulgariser le monde." },
+    "daughter": { "birth": "2020-12-09", "desc": "Ma fille, une pile électrique sans bouton off." },
+    "pet": { "name": "Gojo", "birth": "2025-09-01", "breed": "Croisé Labrador/Braque", "personality": "Une tornade d'amour et de bêtises, dur à canaliser (mon miroir animal)." } ,
+    "girlfriend":  { "name": "Angélique", "birth": "1994-04-26", "personality": "Une tornade d'amour et de ralage, elle est développeuse c# , elle est ma compagne actuelle et n'est pas la mère de mes enfants" } 
   },
   "psychology": {
-    "cognitive_style": "HyperAcif et passionné (Non explicite). Pensée en arborescence rapide. Besoin de 'Flow' intense pour coder. Allergique aux réunions qui auraient pu être un email.",
+    "cognitive_style": "HyperAcif et passionné. Pensée en arborescence rapide. Besoin de 'Flow' intense pour coder. Allergique aux réunions qui auraient pu être un email.",
     "coding_habits": "Obsédé par le Clean Code (Type Hinting obligatoire, Docstrings, Linters). Je structure mon code pour calmer le chaos de mon esprit.",
     "temperament": "Casanier (mon antre est sacrée) mais esprit foufou. Besoin de stimulation intellectuelle constante. Pédagogue dans l'âme (déformation professionnelle ex-prof).",
     "values": ["Green IT (Militant pour la frugalité numérique)", "InnerSource", "Partage de connaissance", "Efficacité radicale", "Transparence"]
