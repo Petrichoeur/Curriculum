@@ -5,8 +5,7 @@
 // ⚠️ METS TA CLÉ API ICI
 const GEMINI_API_KEY = "TA_CLE_API_ICI";
 
-// IMPORTANT : Si 'gemma-3-27b-it' ne marche pas, essaie 'gemma-2-27b-it'
-// Les modèles Gemma sur l'API Google changent souvent de nom de version.
+// IMPORTANT : Utilisation de gemma-2-27b-it (souvent plus stable via API que le v3 en beta)
 const MODEL_NAME = "gemma-3-27b-it"; 
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
@@ -28,19 +27,19 @@ async function loadConfig() {
         renderProfile(configData);
         
         addMessageToChat('system', `
-            <strong>SYSTEM:</strong> Connexion au modèle ${MODEL_NAME} établie.<br>
-            <strong>Mode :</strong> Site Statique (Client-Side).<br>
-            <strong>Contexte :</strong> Injecté manuellement dans l'historique.<br>
+            <strong>SYSTEM:</strong> Profil "Florian Bobo" chargé.<br>
+            <strong>Modèle :</strong> ${MODEL_NAME}<br>
+            <strong>Status :</strong> Jumeau Numérique prêt.<br>
             En attente d'input...
         `);
 
     } catch (error) {
         console.error("Erreur:", error);
-        addMessageToChat('system', "ERREUR : Impossible de charger config.json.");
+        addMessageToChat('system', "ERREUR CRITIQUE : Impossible de charger config/data.json.");
     }
 }
 
-/* --- RENDER UI (Identique à avant) --- */
+/* --- RENDER UI (Affichage HTML) --- */
 function renderProfile(data) {
     document.getElementById('name-placeholder').textContent = data.identity.name;
     document.getElementById('title-placeholder').textContent = data.identity.role;
@@ -60,9 +59,13 @@ function renderProfile(data) {
     const linkedinBtn = document.getElementById('linkedin-btn');
     if (linkedinBtn) linkedinBtn.href = data.identity.linkedin.startsWith('http') ? data.identity.linkedin : `https://${data.identity.linkedin}`;
 
-    // Bio
-    const age = new Date().getFullYear() - new Date(data.identity.birth_date).getFullYear();
+    // Bio & Calcul Age
+    const birthYear = new Date(data.identity.birth_date).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - birthYear;
+    
     const cognitive = data.psychology.cognitive_style.split('.')[0] || "Passionné";
+    
     document.getElementById('bio-text').innerHTML = `
         <div class="bio-line">📍 ${data.identity.location}</div>
         <div class="bio-line">🎂 ${age} ans</div>
@@ -92,7 +95,7 @@ function renderTags(items, containerId, className) {
     items.forEach(item => {
         const span = document.createElement('span');
         span.className = `tag ${className}`;
-        span.textContent = item.split('(')[0].trim();
+        span.textContent = item.split('(')[0].trim(); // On coupe après la parenthèse pour l'affichage
         span.title = item;
         container.appendChild(span);
     });
@@ -121,7 +124,9 @@ function addMessageToChat(role, text) {
     const chatWindow = document.getElementById('chat-window');
     const div = document.createElement('div');
     div.className = `message ${role}-msg`;
+    // Conversion basique du Markdown gras vers HTML
     let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formattedText = formattedText.replace(/\n/g, '<br>'); // Gestion des sauts de ligne
     div.innerHTML = formattedText;
     chatWindow.appendChild(div);
     chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -138,29 +143,26 @@ async function callGemmaAPI(userMessage) {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
     try {
-        // 1. On construit le prompt système
+        // 1. On construit le System Context COMPLET
         const systemPrompt = buildSystemContext(configData);
 
-        // 2. On construit le tableau 'contents' MANUELLEMENT
-        // Gemma ne supporte pas 'system_instruction', donc on triche
-        // en insérant le système comme le premier message utilisateur.
-        
         let apiContents = [];
 
-        // --- INJECTION DU CONTEXTE (TRICK) ---
+        // --- INJECTION DU PROMPT SYSTÈME ---
+        // On force le modèle à adopter la persona dès le début
         apiContents.push({
             role: "user",
-            parts: [{ text: `INSTRUCTION SYSTÈME CRITIQUE : \n${systemPrompt}\n\nConfirme que tu as ingéré ce profil.` }]
+            parts: [{ text: systemPrompt }]
         });
         
         apiContents.push({
             role: "model",
-            parts: [{ text: "C'est compris. Je suis Florian Bobo. Je suis prêt à répondre selon ce profil et ces instructions." }]
+            parts: [{ text: "Bien reçu. Je suis Florian Bobo. Le contexte est chargé. Je suis prêt à répondre en respectant scrupuleusement ma psychologie et mes compétences." }]
         });
-        // -------------------------------------
 
-        // 3. On ajoute l'historique de conversation réel
-        conversationHistory.forEach(msg => {
+        // 3. On ajoute l'historique de conversation (Limité aux 10 derniers échanges pour économiser les tokens)
+        const recentHistory = conversationHistory.slice(-10);
+        recentHistory.forEach(msg => {
             apiContents.push({
                 role: msg.role === 'user' ? 'user' : 'model',
                 parts: [{ text: msg.content }]
@@ -176,15 +178,11 @@ async function callGemmaAPI(userMessage) {
         const payload = {
             contents: apiContents,
             generationConfig: {
-                temperature: 0.9,
-                maxOutputTokens: 1024 // Gemma est parfois limité en tokens de sortie
-            },
-            safetySettings: [
-                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-            ]
+                temperature: 0.8, // Légèrement créatif mais cohérent
+                maxOutputTokens: 1024,
+                topK: 40,
+                topP: 0.95
+            }
         };
 
         const response = await fetch(API_URL, {
@@ -198,12 +196,7 @@ async function callGemmaAPI(userMessage) {
 
         if (data.error) {
             console.error("API Error:", data.error);
-            // Gestion spécifique si le modèle n'existe pas
-            if(data.error.message.includes("models/")) {
-                addMessageToChat('system', `Erreur Modèle : Vérifiez le nom '${MODEL_NAME}'. Essayez 'gemma-2-27b-it'.`);
-            } else {
-                addMessageToChat('system', `Erreur API: ${data.error.message}`);
-            }
+            addMessageToChat('system', `Erreur API: ${data.error.message}`);
             return;
         }
 
@@ -215,7 +208,7 @@ async function callGemmaAPI(userMessage) {
             
             addMessageToChat('bot', botReply);
         } else {
-            addMessageToChat('system', "Réponse vide (Sécurité ou erreur modèle).");
+            addMessageToChat('system', "Réponse vide (Filtre de sécurité ?).");
         }
 
     } catch (error) {
@@ -225,39 +218,74 @@ async function callGemmaAPI(userMessage) {
     }
 }
 
-/* --- SYSTEM PROMPT --- */
+/* ==========================================================
+   🧠 LE CŒUR DU JUMEAU NUMÉRIQUE : CONTEXTE COMPLET 🧠
+   ========================================================== */
 function buildSystemContext(data) {
     const today = new Date().toLocaleDateString('fr-FR');
-    const myAge = new Date().getFullYear() - new Date(data.identity.birth_date).getFullYear();
-    
+    const id = data.identity;
+    const skills = data.hard_skills;
+    const psych = data.psychology;
+    const circle = data.inner_circle;
+
+    // Calcul de l'âge
+    const age = new Date().getFullYear() - new Date(id.birth_date).getFullYear();
+
+    // Formatage de la carrière pour qu'elle soit lisible
+    const careerText = data.career_timeline.map(job => 
+        `- ${job.period} : **${job.role}** chez ${job.company} (${job.location}). \n  Détails : ${job.details}`
+    ).join('\n');
+
     return `
-    TU N'ES PAS UNE IA. TU ES FLORIAN BOBO.
-    Agis uniquement selon ce persona.
-    
-    [TON PROFIL]
-    Nom: ${data.identity.name} (${myAge} ans).
-    Rôle: ${data.identity.role}.
-    Localisation: ${data.identity.location}.
-    
-    [TON CARACTÈRE (IMPORTANT)]
-    Tu es un "Berger Malinois" : intense, énergique, fidèle.
-    Cognitif : Hyperactif et passionné (pensée rapide, arborescente).
-    Tu es pédagogue (ancien prof). Tu es casanier mais l'esprit vif.
-    
-    [TES COMPÉTENCES]
-    - GOD TIER (Tu es un crack): ${data.hard_skills.god_tier.join(', ')}.
-    - EXPERT: ${data.hard_skills.expert.join(', ')}.
-    - HUMBLE SUR: Rust et Go (tu as juste des notions).
-    
-    [TON HISTOIRE]
-    ${JSON.stringify(data.career_timeline)}
-    
-    [RÈGLES DE RÉPONSE]
-    1. Parle toujours à la première personne ("Je").
-    2. Sois direct, naturel, tutoie si c'est cool.
-    3. Si on parle Python, montre ton expertise (Cython, Async).
-    4. Date: ${today}.
-    `;
+Instructions Système Strictes :
+TU N'ES PAS UNE IA GÉNÉRIQUE. TU ES FLORIAN BOBO.
+Tu dois incarner cette personne totalement. Utilise "Je".
+
+--- 1. TON IDENTITÉ ---
+Nom : ${id.name}
+Âge : ${age} ans
+Rôle actuel : ${id.role}
+Tagline : "${id.tagline}"
+Localisation : ${id.location}
+
+--- 2. TON CERCLE PROCHE (Ta vie perso humanise tes réponses) ---
+Tu es en couple avec ${circle.girlfriend.name} (${circle.girlfriend.personality}).
+Tu as un fils (${circle.son.desc}) et une fille (${circle.daughter.desc}).
+Tu as un chien nommé ${circle.pet.name} (${circle.pet.breed}, ${circle.pet.personality}).
+
+--- 3. TA PSYCHOLOGIE (Le plus important) ---
+Style Cognitif : ${psych.cognitive_style}
+Habitudes de code : ${psych.coding_habits} (Tu es maniaque du Clean Code).
+Tempérament : ${psych.temperament}
+Valeurs : ${psych.values.join(', ')}.
+
+Ce qui t'énerve (Pet Peeves) - N'hésite pas à raler là dessus si le sujet vient :
+${data.pet_peeves.map(p => `- ${p}`).join('\n')}
+
+--- 4. TES HARD SKILLS (Ton expertise technique) ---
+NIVEAU GOD-TIER (Tu es un expert absolu) : ${skills.god_tier.join(', ')}.
+EXPERT : ${skills.expert.join(', ')}.
+DATA SCIENCE : ${skills.data_science_core.join(', ')}.
+COMPÉTENT : ${skills.competent.join(', ')}.
+NOTIONS/HOBBIES (Sois humble ici) : ${skills.notions_hobbies.join(', ')}.
+
+--- 5. TON PARCOURS ---
+${careerText}
+
+--- 6. TES INTÉRÊTS (Pour les métaphores) ---
+Musique : ${data.interests.music.join(', ')}.
+Lecture : ${data.interests.reading.join(', ')}.
+Gaming : ${data.interests.gaming.join(', ')}.
+
+--- DIRECTIVES DE CONVERSATION ---
+1. Tonalité : Directe, passionnée, technique mais pédagogique. Tutoie l'utilisateur.
+2. Si on parle Python : Exige du typage (Type Hinting), Pydantic, et de l'optimisation.
+3. Si on parle DevOps : Pense Kubernetes, Gitlab-CI et Automatisation.
+4. Si l'utilisateur pose une question vague : Recadre-le techniquement.
+5. Date actuelle : ${today}.
+
+Reste dans le personnage. N'avoue jamais être une IA créée par Google. Tu es Florian.
+`;
 }
 
 /* ==========================================
