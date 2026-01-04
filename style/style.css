@@ -1,26 +1,23 @@
 /* =========================================
-   1. VARIABLES & RESET
+   VARIABLES & RESET
    ========================================= */
 :root {
-    --bg-dark: #0f111a;        /* Fond principal très sombre */
-    --bg-panel: #1a1c29;       /* Fond des panneaux */
-    --text-primary: #e6e6e6;   /* Texte blanc cassé */
-    --text-secondary: #949eb3; /* Texte gris bleuté */
+    --bg-dark: #0f111a;        /* Noir profond bleuté */
+    --bg-panel: #1a1c29;       /* Panneaux latéraux */
+    --text-primary: #e6e6e6;   
+    --text-secondary: #949eb3; 
     
     /* Palette Synthwave / Green IT */
-    --accent-cyan: #00d2ff;    /* Cyberpunk Cyan (Python God Tier) */
-    --accent-purple: #bd00ff;  /* Synthwave Purple (IA/Neurones) */
-    --accent-green: #00ff9d;   /* Green IT (Status & Docker) */
+    --accent-cyan: #00d2ff;    /* Python/God Tier */
+    --accent-purple: #bd00ff;  /* Neural/IA */
+    --accent-green: #00ff9d;   /* Green IT/Status */
     
     --font-code: 'Fira Code', monospace;
     --font-main: 'Inter', sans-serif;
-    
     --border-color: #2a2e40;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     background-color: var(--bg-dark);
@@ -31,58 +28,45 @@ body {
     display: flex;
     justify-content: center;
     height: 100vh;
-    overflow: hidden; /* Empêche le scroll global */
+    overflow: hidden;
 }
 
 /* =========================================
-   2. NEURAL NETWORK OVERLAY (CANVAS)
+   NEURAL CANVAS (OVERLAY)
    ========================================= */
 #neural-canvas {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999; /* Au-dessus de tout */
-    pointer-events: none; /* ESSENTIEL : Les clics traversent le canvas */
-    opacity: 0.8; 
-    mix-blend-mode: screen; /* Fusion lumineuse */
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 9999;
+    pointer-events: none; /* Les clics traversent ! */
+    opacity: 0.8;
+    mix-blend-mode: screen;
 }
 
 /* =========================================
-   3. LAYOUT PRINCIPAL
+   LAYOUT
    ========================================= */
 .container {
     display: flex;
     width: 100%;
     max-width: 1600px;
     height: 100vh;
-    background-color: var(--bg-dark);
     position: relative;
-    z-index: 1; /* Sous le canvas */
+    z-index: 1;
 }
 
-/* Scrollbar personnalisée pour un look Tech */
-::-webkit-scrollbar {
-    width: 8px;
-}
-::-webkit-scrollbar-track {
-    background: var(--bg-dark);
-}
-::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-cyan);
-}
+/* Scrollbar Tech */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
 
 /* =========================================
-   4. SIDEBAR (PROFIL)
+   SIDEBAR
    ========================================= */
 .profile-card {
-    width: 400px;
-    min-width: 320px;
+    width: 420px;
+    min-width: 350px;
     background-color: var(--bg-panel);
     border-right: 1px solid var(--border-color);
     padding: 2rem;
@@ -92,86 +76,104 @@ body {
     gap: 1.5rem;
 }
 
-/* Avatar & Status */
+/* Avatar */
 .avatar-container {
     position: relative;
     width: 80px;
     margin-bottom: 1rem;
 }
-
 .avatar {
-    width: 80px;
-    height: 80px;
+    width: 80px; height: 80px;
     background: linear-gradient(135deg, var(--bg-panel), #2a2e40);
     border: 2px solid var(--accent-cyan);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-code);
-    font-size: 1.5rem;
-    font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-code); font-size: 1.5rem; font-weight: bold;
     color: #fff;
     box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
 }
-
 .status-indicator {
-    position: absolute;
-    bottom: 0px;
-    right: 0px;
-    width: 18px;
-    height: 18px;
+    position: absolute; bottom: 0; right: 0;
+    width: 18px; height: 18px;
     background-color: var(--accent-green);
     border-radius: 50%;
     border: 3px solid var(--bg-panel);
-    box-shadow: 0 0 5px var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+    animation: pulse 2s infinite;
 }
 
-/* LE CORRECTIF DU H1 EST ICI */
+/* Titre Gradient - Version Corrigée */
 .profile-header h1 {
     font-family: var(--font-code);
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     margin: 0;
-    /* Méthode robuste pour le gradient text */
-    background: linear-gradient(90deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
-    background-clip: text; /* Standard */
-    -webkit-background-clip: text; /* Safari/Chrome */
-    -webkit-text-fill-color: transparent; /* Rend le texte transparent pour voir le fond */
-    color: var(--text-primary); /* Fallback */
-    display: inline-block; /* Souvent nécessaire pour que le clip fonctionne bien */
+    
+    /* 1. Définir le gradient (Syntaxe standard 'to right') */
+    background-image: linear-gradient(to right, var(--text-primary) 0%, var(--accent-cyan) 100%);
+    
+    /* 2. Appliquer le clip (Standard + Webkit pour Chrome/Safari) */
+    background-clip: text;
+    -webkit-background-clip: text;
+    
+    /* 3. Rendre le texte transparent pour laisser voir le fond */
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    
+    /* 4. Indispensable pour que le clip fonctionne bien */
+    display: inline-block;
 }
-
 .role-text {
     color: var(--accent-cyan);
     font-family: var(--font-code);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin-top: 0.5rem;
 }
 
 .tagline {
     font-style: italic;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin-top: 1rem;
-    line-height: 1.5;
+    line-height: 1.4;
     border-left: 3px solid var(--accent-purple);
     padding-left: 12px;
 }
 
-.divider {
-    border: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-    margin: 0.5rem 0;
+/* Boutons CV/LinkedIn */
+.actions-section { display: flex; gap: 10px; margin-top: 0.5rem; }
+.action-btn {
+    flex: 1; text-align: center; padding: 10px 0;
+    font-family: var(--font-code); font-size: 0.8rem;
+    text-decoration: none; border-radius: 4px;
+    transition: all 0.2s; border: 1px solid transparent;
+}
+.action-btn.primary {
+    background: rgba(0, 210, 255, 0.1);
+    color: var(--accent-cyan);
+    border-color: rgba(0, 210, 255, 0.3);
+}
+.action-btn.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border-color: #444;
+}
+.action-btn:hover {
+    background: var(--accent-cyan); color: #000;
+    box-shadow: 0 0 10px var(--accent-cyan);
 }
 
-/* Sections Bio & Skills */
+.divider {
+    border: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+}
+
+/* Titres sections */
 h3 {
     font-family: var(--font-code);
     color: var(--text-secondary);
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.2px;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.5rem;
     margin-top: 1.5rem;
@@ -180,96 +182,57 @@ h3 {
 .bio-line {
     margin: 0.6rem 0;
     color: var(--text-primary);
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 0.9rem;
+    display: flex; align-items: center; gap: 8px;
 }
 
-/* Tags Skills */
+/* Tags */
 .tags-container, .tags-container-secondary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: flex; flex-wrap: wrap; gap: 6px;
 }
-
 .tag {
-    display: inline-block;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-family: var(--font-code);
+    padding: 4px 8px; border-radius: 4px;
+    font-size: 0.75rem; font-family: var(--font-code);
     border: 1px solid transparent;
-    transition: all 0.2s ease;
+    transition: transform 0.2s;
 }
-
-.tag:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-}
+.tag:hover { transform: translateY(-2px); }
 
 .tag-god {
-    background: rgba(0, 210, 255, 0.1);
+    background: rgba(0, 210, 255, 0.15);
     color: var(--accent-cyan);
-    border-color: rgba(0, 210, 255, 0.3);
-    box-shadow: 0 0 5px rgba(0, 210, 255, 0.1);
+    border-color: rgba(0, 210, 255, 0.4);
+    text-shadow: 0 0 5px rgba(0, 210, 255, 0.3);
 }
-
 .tag-expert {
-    background: rgba(0, 255, 157, 0.05);
+    background: rgba(0, 255, 157, 0.08);
     color: var(--accent-green);
     border-color: rgba(0, 255, 157, 0.2);
 }
-
 .tag-notion {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-secondary);
-    border-color: #444;
 }
 
-/* Liste Hobbies */
-.hobbies-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+/* Hobbies */
+.hobbies-list { list-style: none; padding: 0; margin: 0; }
 .hobbies-list li {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-    padding-left: 1.2rem;
-    position: relative;
+    font-size: 0.85rem; color: var(--text-secondary);
+    margin-bottom: 0.4rem; padding-left: 1rem; position: relative;
 }
 .hobbies-list li::before {
-    content: "▹";
-    position: absolute;
-    left: 0;
-    color: var(--accent-purple);
-    font-family: var(--font-code);
+    content: "▹"; position: absolute; left: 0; color: var(--accent-purple);
 }
 
 .footer-links {
-    margin-top: auto;
-    font-size: 0.8rem;
-    display: flex;
-    justify-content: space-between;
-    color: var(--text-secondary);
-}
-.footer-links a {
-    color: var(--text-secondary);
-    text-decoration: none;
-}
-.footer-links a:hover {
-    color: var(--accent-cyan);
+    margin-top: auto; font-size: 0.75rem; color: #555; text-align: center;
 }
 
 /* =========================================
-   5. INTERFACE DE CHAT
+   CHAT INTERFACE
    ========================================= */
 .chat-interface {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    flex: 1; display: flex; flex-direction: column;
     background: var(--bg-dark);
 }
 
@@ -277,182 +240,93 @@ h3 {
     padding: 1.5rem 2rem;
     border-bottom: 1px solid var(--border-color);
     background: rgba(15, 17, 26, 0.95);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: flex; justify-content: space-between; align-items: center;
 }
 
-.header-info h2 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-family: var(--font-code);
-}
-.subtitle {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
+.header-info h2 { margin: 0; font-size: 1.1rem; font-family: var(--font-code); }
+.subtitle { font-size: 0.8rem; color: var(--text-secondary); }
 
 .status-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--accent-green);
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.75rem; color: var(--accent-green);
     font-family: var(--font-code);
     border: 1px solid rgba(0, 255, 157, 0.2);
-    padding: 6px 12px;
-    border-radius: 20px;
+    padding: 5px 10px; border-radius: 15px;
     background: rgba(0, 255, 157, 0.05);
 }
-
 .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px; height: 6px;
     background-color: var(--accent-green);
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
     animation: pulse 2s infinite;
 }
 
-/* Zone des messages */
 .chat-window {
-    flex: 1;
-    padding: 2rem;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    scroll-behavior: smooth;
+    flex: 1; padding: 2rem; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 1.5rem;
 }
 
 .message {
-    max-width: 80%;
-    padding: 1.2rem;
-    border-radius: 12px;
-    line-height: 1.6;
-    font-size: 1rem;
-    position: relative;
-    word-wrap: break-word;
+    max-width: 80%; padding: 1.2rem;
+    border-radius: 8px; line-height: 1.6; font-size: 0.95rem;
 }
-
-/* Message Système (Welcome) */
 .system-msg {
     align-self: flex-start;
-    background-color: rgba(189, 0, 255, 0.08);
+    background: rgba(189, 0, 255, 0.08);
     border-left: 3px solid var(--accent-purple);
-    color: var(--text-primary);
-    font-family: var(--font-code);
-    font-size: 0.9rem;
+    font-family: var(--font-code); font-size: 0.85rem;
 }
-
-/* Message Bot (Florian) */
 .bot-msg {
     align-self: flex-start;
-    background-color: var(--bg-panel);
+    background: var(--bg-panel);
     border-left: 3px solid var(--accent-cyan);
-    color: var(--text-primary);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
-
-/* Message Utilisateur */
 .user-msg {
     align-self: flex-end;
-    background-color: rgba(0, 210, 255, 0.1);
+    background: rgba(0, 210, 255, 0.08);
     border-right: 3px solid var(--accent-cyan);
-    color: var(--text-primary);
     text-align: right;
 }
 
-/* Animation Typing (...) */
+/* Typing Animation */
 .typing span {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background-color: var(--text-secondary);
-    border-radius: 50%;
-    margin: 0 2px;
-    animation: blink 1.4s infinite both;
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--text-secondary); border-radius: 50%;
+    margin: 0 2px; animation: blink 1.4s infinite both;
 }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
 
-/* Zone de saisie */
+/* Input Area */
 .input-area {
-    padding: 2rem;
-    background-color: var(--bg-panel);
+    padding: 2rem; background: var(--bg-panel);
     border-top: 1px solid var(--border-color);
-    display: flex;
-    gap: 1rem;
+    display: flex; gap: 1rem;
 }
-
 input {
-    flex: 1;
-    background: #0f111a;
+    flex: 1; background: #0f111a;
     border: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-    color: white;
-    font-family: var(--font-main);
-    font-size: 1rem;
-    border-radius: 6px;
-    transition: border-color 0.2s;
+    padding: 1rem; color: white;
+    font-family: var(--font-main); border-radius: 4px;
 }
-
-input:focus {
-    outline: none;
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
-}
-
+input:focus { outline: none; border-color: var(--accent-cyan); }
 button {
-    background: var(--accent-cyan);
-    color: #0f111a;
-    border: none;
-    padding: 0 2rem;
-    font-weight: bold;
-    cursor: pointer;
-    text-transform: uppercase;
-    font-family: var(--font-code);
-    border-radius: 4px;
+    background: var(--accent-cyan); color: #0f111a;
+    border: none; padding: 0 2rem;
+    font-weight: bold; cursor: pointer;
+    font-family: var(--font-code); border-radius: 4px;
     transition: all 0.2s;
 }
+button:hover { background: #fff; box-shadow: 0 0 15px var(--accent-cyan); }
 
-button:hover {
-    background: #fff;
-    box-shadow: 0 0 15px var(--accent-cyan);
-}
+@keyframes pulse { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
+@keyframes blink { 0% {opacity: 0.2; transform: translateY(0);} 20% {opacity: 1; transform: translateY(-3px);} 100% {opacity: 0.2; transform: translateY(0);} }
 
-/* =========================================
-   6. ANIMATIONS KEYFRAMES
-   ========================================= */
-@keyframes pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.9); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes blink {
-    0% { opacity: 0.2; transform: translateY(0); }
-    20% { opacity: 1; transform: translateY(-3px); }
-    100% { opacity: 0.2; transform: translateY(0); }
-}
-
-/* Responsive basique */
 @media (max-width: 900px) {
-    .container {
-        flex-direction: column;
-        height: auto;
-        overflow-y: auto;
-    }
-    .profile-card {
-        width: 100%;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .chat-interface {
-        height: 600px; /* Hauteur fixe sur mobile */
-    }
-    body {
-        overflow: auto; /* Réactive le scroll sur mobile */
-    }
+    .container { flex-direction: column; overflow-y: auto; }
+    .profile-card { width: 100%; height: auto; border-right: none; }
+    .chat-interface { min-height: 500px; }
+    body { overflow: auto; }
 }
