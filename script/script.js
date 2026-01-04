@@ -4,7 +4,7 @@
 
 // ⚠️ COLLE TA CLÉ API GEMINI CI-DESSOUS
 const GEMINI_API_KEY = "TA_CLE_API_ICI"; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 let configData = {};
 let conversationHistory = [];
@@ -112,18 +112,22 @@ function setupEventListeners() {
     });
 }
 
+/* --- FONCTION D'AFFICHAGE AMÉLIORÉE --- */
 function addMessageToChat(role, text) {
     const chatWindow = document.getElementById('chat-window');
     const div = document.createElement('div');
     div.className = `message ${role}-msg`;
-    // Formatage basique
-    let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    
+    // On garde le gras **text** mais on laisse le CSS gérer les sauts de ligne (pre-wrap)
+    let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
     div.innerHTML = formattedText;
     chatWindow.appendChild(div);
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 /* --- GEMINI API CALL --- */
+/* --- GEMINI API CALL (CORRIGÉ & BOOSTÉ) --- */
 async function callGeminiAPI(userMessage) {
     const chatWindow = document.getElementById('chat-window');
     
@@ -137,7 +141,7 @@ async function callGeminiAPI(userMessage) {
     try {
         const systemPrompt = buildSystemContext(configData);
         
-        // Préparation historique pour Gemini
+        // Préparation historique
         const contents = conversationHistory.map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.content }]
@@ -148,10 +152,18 @@ async function callGeminiAPI(userMessage) {
         const payload = {
             system_instruction: { parts: [{ text: systemPrompt }] },
             contents: contents,
+            // CONFIGURATION OPTIMISÉE POUR ÉVITER LES COUPURES
             generationConfig: {
-                temperature: 0.9, // High creativity for "Malinois" personality
-                maxOutputTokens: 600
-            }
+                temperature: 0.8, 
+                maxOutputTokens: 2048, // Augmenté de 600 à 2048 pour finir les phrases
+            },
+            // DÉSACTIVATION DES FILTRES DE SÉCURITÉ TROP STRICTS (qui coupent parfois le texte)
+            safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
         };
 
         const response = await fetch(API_URL, {
@@ -164,21 +176,26 @@ async function callGeminiAPI(userMessage) {
         typing.remove();
 
         if (data.error) {
-            addMessageToChat('system', `Erreur API: ${data.error.message}`);
+            console.error("Erreur API:", data.error);
+            addMessageToChat('system', `⚠️ Erreur API: ${data.error.message}`);
             return;
         }
 
-        const botReply = data.candidates[0].content.parts[0].text;
-        
-        conversationHistory.push({ role: "user", content: userMessage });
-        conversationHistory.push({ role: "model", content: botReply });
-        
-        addMessageToChat('bot', botReply);
+        if (data.candidates && data.candidates[0].content) {
+            const botReply = data.candidates[0].content.parts[0].text;
+            
+            conversationHistory.push({ role: "user", content: userMessage });
+            conversationHistory.push({ role: "model", content: botReply });
+            
+            addMessageToChat('bot', botReply);
+        } else {
+            addMessageToChat('system', "⚠️ Réponse vide reçue (Filtre de sécurité actif ?).");
+        }
 
     } catch (error) {
         typing.remove();
         console.error(error);
-        addMessageToChat('system', "Erreur de connexion au cerveau numérique.");
+        addMessageToChat('system', "Erreur réseau. Vérifiez votre connexion.");
     }
 }
 

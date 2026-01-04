@@ -268,8 +268,17 @@ h3 {
 }
 
 .message {
-    max-width: 80%; padding: 1.2rem;
-    border-radius: 8px; line-height: 1.6; font-size: 0.95rem;
+    max-width: 80%;
+    padding: 1.2rem;
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    position: relative;
+    
+    /* CORRECTION COUPURE DE TEXTE */
+    overflow-wrap: break-word; /* Coupe les mots trop longs proprement */
+    word-wrap: break-word;     /* Compatibilité */
+    white-space: pre-wrap;     /* Garde les sauts de ligne de l'IA sans besoin de <br> */
 }
 .system-msg {
     align-self: flex-start;
