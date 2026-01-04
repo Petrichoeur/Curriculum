@@ -2,12 +2,10 @@
    FLORIAN BOBO - DIGITAL TWIN (GEMMA EDITION)
    ========================================== */
 
-// ⚠️ METS TA CLÉ API ICI
-const GEMINI_API_KEY = "TA_CLE_API_ICI";
+const API_PROXY_URL = "/api/chat"
 
 // IMPORTANT : Utilisation de gemma-2-27b-it (souvent plus stable via API que le v3 en beta)
 const MODEL_NAME = "gemma-3-27b-it"; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
 let configData = {};
 let conversationHistory = [];
@@ -133,6 +131,7 @@ function addMessageToChat(role, text) {
 }
 
 /* --- API CALL (GEMMA VERSION) --- */
+/* --- API CALL (VIA VERCEL PROXY) --- */
 async function callGemmaAPI(userMessage) {
     const chatWindow = document.getElementById('chat-window');
     
@@ -143,13 +142,10 @@ async function callGemmaAPI(userMessage) {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
     try {
-        // 1. On construit le System Context COMPLET
         const systemPrompt = buildSystemContext(configData);
-
         let apiContents = [];
 
-        // --- INJECTION DU PROMPT SYSTÈME ---
-        // On force le modèle à adopter la persona dès le début
+        // --- Construction des messages (Pareil qu'avant) ---
         apiContents.push({
             role: "user",
             parts: [{ text: systemPrompt }]
@@ -157,10 +153,9 @@ async function callGemmaAPI(userMessage) {
         
         apiContents.push({
             role: "model",
-            parts: [{ text: "Bien reçu. Je suis Florian Bobo. Le contexte est chargé. Je suis prêt à répondre en respectant scrupuleusement ma psychologie et mes compétences." }]
+            parts: [{ text: "Bien reçu. Je suis Florian Bobo. Le contexte est chargé." }]
         });
 
-        // 3. On ajoute l'historique de conversation (Limité aux 10 derniers échanges pour économiser les tokens)
         const recentHistory = conversationHistory.slice(-10);
         recentHistory.forEach(msg => {
             apiContents.push({
@@ -169,23 +164,22 @@ async function callGemmaAPI(userMessage) {
             });
         });
 
-        // 4. On ajoute le message actuel
         apiContents.push({
             role: "user",
             parts: [{ text: userMessage }]
         });
 
+        // --- APPEL VERS TON PROXY VERCEL ---
         const payload = {
-            contents: apiContents,
+            contents: apiContents, // On envoie juste le contenu, la clé est ajoutée par le serveur
             generationConfig: {
-                temperature: 0.8, // Légèrement créatif mais cohérent
+                temperature: 0.8,
                 maxOutputTokens: 1024,
-                topK: 40,
-                topP: 0.95
             }
         };
 
-        const response = await fetch(API_URL, {
+        // Note: Ici on appelle API_PROXY_URL (/api/chat), pas Google directement
+        const response = await fetch(API_PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -194,30 +188,27 @@ async function callGemmaAPI(userMessage) {
         const data = await response.json();
         typing.remove();
 
-        if (data.error) {
-            console.error("API Error:", data.error);
-            addMessageToChat('system', `Erreur API: ${data.error.message}`);
+        if (!response.ok || data.error) {
+            console.error("Erreur API:", data.error || data);
+            addMessageToChat('system', `Erreur: ${data.error?.message || "Problème serveur"}`);
             return;
         }
 
         if (data.candidates && data.candidates[0].content) {
             const botReply = data.candidates[0].content.parts[0].text;
-            
             conversationHistory.push({ role: "user", content: userMessage });
             conversationHistory.push({ role: "model", content: botReply });
-            
             addMessageToChat('bot', botReply);
         } else {
-            addMessageToChat('system', "Réponse vide (Filtre de sécurité ?).");
+            addMessageToChat('system', "Réponse vide.");
         }
 
     } catch (error) {
         typing.remove();
         console.error(error);
-        addMessageToChat('system', "Erreur réseau. Vérifiez votre connexion.");
+        addMessageToChat('system', "Erreur réseau (Le proxy ne répond pas).");
     }
 }
-
 /* ==========================================================
    🧠 LE CŒUR DU JUMEAU NUMÉRIQUE : CONTEXTE COMPLET 🧠
    ========================================================== */

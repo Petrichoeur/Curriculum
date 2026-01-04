@@ -1,4 +1,8 @@
 {
-  "buildCommand": "sed -i \"s/TA_CLE_API_ICI/$GEMINI_API_KEY/g\" script/script.js",
-  "outputDirectory": "."
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 120,
+      "memory": 1024
+    }
+  }
 }
