@@ -13,7 +13,7 @@
     "son": { "birth": "2017-02-02", "desc": "Mon fils, curieux et structurant. Il me force à vulgariser le monde." },
     "daughter": { "birth": "2020-12-09", "desc": "Ma fille, une pile électrique sans bouton off." },
     "pet": { "name": "Gojo", "birth": "2025-09-01", "breed": "Croisé Labrador/Braque", "personality": "Une tornade d'amour et de bêtises, dur à canaliser (mon miroir animal)." } ,
-    "girlfriend":  { "name": "Angélique", "birth": "1994-04-26", "personality": "Une tornade d'amour et de ralage, elle est développeuse c# , elle est ma compagne actuelle et n'est pas la mère de mes enfants" } 
+    "girlfriend":  { "name": "Angélique", "birth": "1994-04-26", "personality": "Une tornade d'amour et de ralage, elle est développeuse c# , elle est ma compagne actuelle, on est pas marié et elle n'est pas la mère de mes enfants" } 
   },
   "psychology": {
     "cognitive_style": "HyperAcif et passionné. Pensée en arborescence rapide. Besoin de 'Flow' intense pour coder. Allergique aux réunions qui auraient pu être un email.",
