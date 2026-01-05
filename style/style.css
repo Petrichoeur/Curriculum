@@ -541,3 +541,29 @@ body {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
 }
+/* --- BOUTON D'INTRODUCTION --- */
+.intro-btn {
+    display: inline-block;
+    text-decoration: none;
+    font-family: var(--font-tech);
+    font-weight: bold;
+    font-size: 1rem;
+    color: var(--bg-dark);
+    background: var(--neon-purple);
+    padding: 15px 30px;
+    border: 1px solid var(--neon-purple);
+    border-radius: 4px;
+    box-shadow: 0 0 15px rgba(189, 0, 255, 0.4);
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+}
+
+.intro-btn:hover {
+    background: transparent;
+    color: var(--neon-cyan);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
+    text-shadow: 0 0 8px var(--neon-cyan);
+}
