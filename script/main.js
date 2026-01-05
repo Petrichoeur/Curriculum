@@ -1,20 +1,18 @@
 /* ==========================================
-   MAIN.JS - ROUTER & ORCHESTRATOR
+   MAIN.JS - ORCHESTRATOR & VISUAL CORE
    ========================================== */
 
 let globalConfig = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Charger la config globale
+    // 1. Initialiser le fond "Neuronal Lightning" tout de suite
+    initLightningNetwork();
+
+    // 2. Charger la config et l'interface
     await loadGlobalConfig();
 
-    // 2. Initialiser le fond animé
-    if (typeof initNeuralNetwork === 'function') initNeuralNetwork();
-
-    // 3. Lancer le Router (Gestion des URL)
+    // 3. Lancer le Router
     handleRouting();
-
-    // 4. Écouter les changements d'URL (clic sur précèdent/suivant ou onglets)
     window.addEventListener('hashchange', handleRouting);
 });
 
@@ -23,120 +21,154 @@ async function loadGlobalConfig() {
         const response = await fetch('config/data.json');
         globalConfig = await response.json();
         console.log("✅ Config chargée");
+
+        // --- CORRECTION DU BUG SIDEBAR ---
+        // On force le rendu du profil IMMÉDIATEMENT, sans attendre le clic sur l'onglet
+        if (window.DigitalTwin) {
+            window.DigitalTwin.config = globalConfig; // On injecte la data
+            window.DigitalTwin.renderProfile();       // On force l'affichage
+        }
+
     } catch (e) {
         console.error("Erreur config:", e);
     }
 }
 
-/* --- LE SYSTÈME DE ROUTING --- */
 function handleRouting() {
-    // Récupère le hash (ex: "#digital-twin") ou met "home" par défaut
     let hash = window.location.hash.substring(1) || 'home';
-
-    // Sécurité : Vérifie que la section existe, sinon renvoie vers home
     const targetSection = document.getElementById(hash);
-    if (!targetSection) {
-        hash = 'home';
-    }
+    if (!targetSection) hash = 'home';
 
-    console.log(`🧭 Navigation vers : ${hash}`);
-
-    // A. GESTION UI (Afficher/Cacher)
+    // UI Update
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
 
     document.getElementById(hash).classList.add('active');
     
-    // Active le lien dans le menu qui correspond au hash
     const activeLink = document.querySelector(`.nav-link[href="#${hash}"]`);
     if (activeLink) {
         activeLink.classList.add('active');
         
-        // B. CHARGEMENT DYNAMIQUE DU MODULE JS
-        // On regarde l'attribut "data-module" du lien (ex: data-module="DigitalTwin")
+        // Init module dynamique
         const moduleName = activeLink.getAttribute('data-module');
-        
-        // Si un objet global existe avec ce nom (ex: window.DigitalTwin), on l'initie
         if (moduleName && window[moduleName] && typeof window[moduleName].init === 'function') {
-            // On vérifie si on doit l'initier (pour ne pas le faire 2 fois)
             if (!window[moduleName].isInitialized) {
                 window[moduleName].init(globalConfig);
-                window[moduleName].isInitialized = true; // Marqueur pour éviter doublon
+                window[moduleName].isInitialized = true;
             }
         }
     }
 }
 
-/* --- Effet Neural (Raccourci pour l'exemple) --- */
-function initNeuralNetwork() { /* ... ton code canvas ... */ }
 /* ==========================================
-   VISUAL EFFECTS (NEURAL)
+   VISUAL FX: LIGHTNING NEURAL NETWORK
    ========================================== */
-function initNeuralNetwork() {
+function initLightningNetwork() {
     const canvas = document.getElementById('neural-canvas');
-    if(!canvas) return;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let particlesArray = [];
-    let pulsesArray = [];
     
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        initParticles();
-    });
+    let particles = [];
+    
+    // Configuration Cyberpunk
+    const config = {
+        particleColor: 'rgba(0, 255, 157, 0.5)', // Neon Green
+        lineColor: 'rgba(0, 243, 255, 0.15)',    // Cyan dim
+        lightningColor: 'rgba(255, 0, 255, 0.8)', // Magenta Flash
+        particleCount: 60,
+        connectionDistance: 150
+    };
 
     class Particle {
         constructor() {
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
-            this.vx = (Math.random() * 0.4) - 0.2;
-            this.vy = (Math.random() * 0.4) - 0.2;
+            this.vx = (Math.random() - 0.5) * 1.5; // Plus rapide
+            this.vy = (Math.random() - 0.5) * 1.5;
             this.size = Math.random() * 2 + 1;
         }
         update() {
-            if (this.x > canvas.width || this.x < 0) this.vx = -this.vx;
-            if (this.y > canvas.height || this.y < 0) this.vy = -this.vy;
-            this.x += this.vx; this.y += this.vy;
+            this.x += this.vx;
+            this.y += this.vy;
+            
+            // Rebond sur les bords
+            if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
         }
         draw() {
+            ctx.fillStyle = config.particleColor;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0, 210, 255, 0.3)';
             ctx.fill();
         }
     }
 
-    class Pulse {
-        constructor(x, y) { this.x = x; this.y = y; this.r = 1; this.life = 1; }
-        update() { this.r += 4; this.life -= 0.02; }
-    }
-
-    function initParticles() {
-        particlesArray = [];
-        let nb = (canvas.height * canvas.width) / 15000;
-        for (let i = 0; i < nb; i++) particlesArray.push(new Particle());
+    function init() {
+        particles = [];
+        for (let i = 0; i < config.particleCount; i++) particles.push(new Particle());
     }
 
     function animate() {
-        requestAnimationFrame(animate);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        pulsesArray.forEach((p, i) => { p.update(); if (p.life <= 0) pulsesArray.splice(i, 1); });
-        particlesArray.forEach(p => {
-            p.update(); p.draw();
-            particlesArray.forEach(p2 => {
-                const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                if (dist < 150) {
-                    let c = 'rgba(189, 0, 255, 0.05)'; let w = 1;
-                    pulsesArray.forEach(pu => { if (Math.abs(Math.hypot(pu.x - p.x, pu.y - p.y) - pu.r) < 30) { c = `rgba(0, 255, 157, ${pu.life})`; w = 2; } });
-                    ctx.beginPath(); ctx.strokeStyle = c; ctx.lineWidth = w; ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-                }
-            });
+        
+        // 1. Mise à jour des particules
+        particles.forEach(p => {
+            p.update();
+            p.draw();
         });
+
+        // 2. Création des connexions (Neurones)
+        particles.forEach((a, index) => {
+            for (let j = index + 1; j < particles.length; j++) {
+                const b = particles[j];
+                const dx = a.x - b.x;
+                const dy = a.y - b.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < config.connectionDistance) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = config.lineColor;
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+            }
+        });
+
+        // 3. L'EFFET "ÉCLAIR" (Le Waouw Effect)
+        // De temps en temps, on trace un éclair violent entre plusieurs points aléatoires
+        if (Math.random() > 0.96) { // 4% de chance par frame
+            const p1 = particles[Math.floor(Math.random() * particles.length)];
+            const p2 = particles[Math.floor(Math.random() * particles.length)];
+            const p3 = particles[Math.floor(Math.random() * particles.length)];
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#fff'; // Coeur blanc
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = config.lightningColor; // Glow Magenta/Cyan
+            ctx.lineWidth = 2;
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.stroke();
+            
+            // Reset shadow pour ne pas affecter le reste
+            ctx.shadowBlur = 0;
+        }
+
+        requestAnimationFrame(animate);
     }
-    window.addEventListener('click', (e) => pulsesArray.push(new Pulse(e.x, e.y)));
-    initParticles();
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        init();
+    });
+
+    init();
     animate();
 }
