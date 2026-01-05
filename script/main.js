@@ -1,12 +1,12 @@
 /* ==========================================
-   MAIN.JS - ORCHESTRATOR & VISUAL CORE (SHADOWRUN EDITION)
+   MAIN.JS - ORCHESTRATOR & NEURAL CORE
    ========================================== */
 
 let globalConfig = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Initialiser le fond interactif
-    initInteractiveNetwork();
+    // 1. Initialiser le Cerveau Numérique (Nouvelle version)
+    initNeuralNetwork();
 
     // 2. Initialiser les effets de Glitch sur la navbar
     initGlitchEffect();
@@ -22,7 +22,6 @@ async function loadGlobalConfig() {
         const response = await fetch('config/data.json');
         globalConfig = await response.json();
         
-        // Force le rendu Sidebar immédiat
         if (window.DigitalTwin) {
             window.DigitalTwin.config = globalConfig;
             window.DigitalTwin.renderProfile();
@@ -55,28 +54,20 @@ function handleRouting() {
     }
 }
 
-/* ==========================================
-   EFFECT: GLITCH ON CLICK
-   ========================================== */
 function initGlitchEffect() {
     const links = document.querySelectorAll('.nav-link');
     links.forEach(link => {
         link.addEventListener('click', (e) => {
-            // Ajoute la classe glitch
             link.classList.add('glitch-effect');
-            
-            // La retire après 300ms (court instant TV static)
-            setTimeout(() => {
-                link.classList.remove('glitch-effect');
-            }, 300);
+            setTimeout(() => { link.classList.remove('glitch-effect'); }, 300);
         });
     });
 }
 
 /* ==========================================
-   VISUAL FX: INTERACTIVE PULSE NETWORK
+   VISUAL FX: ORGANIC NEURAL NETWORK (WAVE EDITION)
    ========================================= */
-function initInteractiveNetwork() {
+function initNeuralNetwork() {
     const canvas = document.getElementById('neural-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -85,136 +76,150 @@ function initInteractiveNetwork() {
     canvas.height = window.innerHeight;
 
     let particles = [];
-    let pulses = []; // Stocke les ondes de choc
-
-    // Config couleurs violettes / épurées
+    
+    // Configuration "Spectaculaire"
     const config = {
-        bgParticles: 'rgba(100, 0, 255, 0.3)', // Particules calmes
-        highlightColor: 'rgba(0, 243, 255, 1)', // Cyan quand activé
-        lineBase: 'rgba(189, 0, 255, 0.05)',    // Liens très sombres par défaut
-        lineActive: 'rgba(189, 0, 255, 0.8)',   // Liens brillants quand touchés
-        pulseSpeed: 4,
-        pulseFade: 0.02
+        particleCount: 160,       // Plus dense
+        connectionDist: 140,      // Distance de connexion
+        mouseRadius: 250,         // Rayon de l'onde autour de la souris
+        baseAlpha: 0.15,          // Opacité de repos (faible)
+        activeAlpha: 1,           // Opacité quand activé
+        decay: 0.03,              // Vitesse de disparition de l'onde (Plus petit = trainée plus longue)
+        speed: 0.4                // Vitesse très lente pour l'effet "Ordonné/Structure"
     };
 
-    // Gestion du clic pour lancer une onde
-    window.addEventListener('click', (e) => {
-        pulses.push({
-            x: e.clientX,
-            y: e.clientY,
-            radius: 0,
-            alpha: 1
-        });
+    // Suivi de la souris
+    let mouse = { x: null, y: null };
+
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.x;
+        mouse.y = e.y;
+    });
+
+    // Reset souris quand on sort de la fenêtre
+    window.addEventListener('mouseout', () => {
+        mouse.x = undefined;
+        mouse.y = undefined;
     });
 
     class Particle {
         constructor() {
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
-            this.vx = (Math.random() - 0.5) * 0.5; // Mouvement lent
-            this.vy = (Math.random() - 0.5) * 0.5;
+            // Vitesse lente et direction constante pour l'aspect "Ordonné"
+            this.vx = (Math.random() - 0.5) * config.speed; 
+            this.vy = (Math.random() - 0.5) * config.speed; 
             this.size = Math.random() * 2 + 1;
-            this.highlight = 0; // 0 = normal, 1 = illuminé
+            
+            // "Energy" gère l'effet d'onde. 0 = repos, 1 = illuminé à fond
+            this.energy = 0; 
         }
+
         update() {
+            // Mouvement
             this.x += this.vx;
             this.y += this.vy;
+
+            // Rebond sur les bords (Keep order)
             if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
             if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-            
-            // Diminue l'illumination progressivement
-            if (this.highlight > 0) this.highlight -= 0.02;
-            if (this.highlight < 0) this.highlight = 0;
+
+            // LOGIQUE DE L'ONDE (Interaction Souris)
+            // Calcul distance souris
+            if (mouse.x != undefined) {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+
+                if (distance < config.mouseRadius) {
+                    // Si on est dans le rayon, on charge l'énergie au max
+                    this.energy = 1;
+                }
+            }
+
+            // Décroissance de l'énergie (Fade out effect)
+            if (this.energy > 0) {
+                this.energy -= config.decay;
+            } else {
+                this.energy = 0;
+            }
         }
+
         draw() {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            // Si illuminé, devient Cyan, sinon Violet sombre
-            if(this.highlight > 0.1) {
-                ctx.fillStyle = config.highlightColor;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = config.highlightColor;
+            
+            // La couleur dépend de l'énergie.
+            // Repos = Violet Sombre / Activé = Cyan Brillant
+            if (this.energy > 0.1) {
+                ctx.fillStyle = `rgba(0, 243, 255, ${this.energy})`; // Cyan
+                ctx.shadowBlur = 15 * this.energy;
+                ctx.shadowColor = `rgba(0, 243, 255, ${this.energy})`;
             } else {
-                ctx.fillStyle = config.bgParticles;
+                ctx.fillStyle = `rgba(189, 0, 255, ${config.baseAlpha})`; // Violet
                 ctx.shadowBlur = 0;
             }
+            
             ctx.fill();
-            ctx.shadowBlur = 0; // Reset
+            ctx.shadowBlur = 0; // Reset pour perf
         }
     }
 
     function init() {
         particles = [];
-        const nbParticles = (canvas.width * canvas.height) / 12000;
-        for (let i = 0; i < nbParticles; i++) particles.push(new Particle());
+        // Densité calculée selon la taille écran pour éviter la surcharge sur mobile
+        const density = (canvas.width * canvas.height) / 9000; 
+        for (let i = 0; i < density; i++) {
+            particles.push(new Particle());
+        }
     }
 
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // 1. GESTION DES ONDES (PULSES)
-        for (let i = pulses.length - 1; i >= 0; i--) {
-            let p = pulses[i];
-            p.radius += config.pulseSpeed; // L'onde s'agrandit
-            p.alpha -= config.pulseFade;   // L'onde disparait
-
-            // Cercle visuel de l'onde (optionnel, très subtil)
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(189, 0, 255, ${p.alpha * 0.3})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            if (p.alpha <= 0) pulses.splice(i, 1);
-        }
-
-        // 2. PARTICULES & CONNECTIONS
-        particles.forEach(pt => {
-            // Vérifie si une onde touche cette particule
-            pulses.forEach(pulse => {
-                const dx = pt.x - pulse.x;
-                const dy = pt.y - pulse.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                // Si la particule est sur le bord de l'onde (zone active)
-                if (Math.abs(dist - pulse.radius) < 30) {
-                    pt.highlight = 1; // ACTIVATION !
-                }
-            });
-
-            pt.update();
-            pt.draw();
-        });
-
-        // 3. DESSIN DES LIGNES
-        // On ne dessine les lignes brillantes que si les deux points sont actifs
         for (let i = 0; i < particles.length; i++) {
-            for (let j = i + 1; j < particles.length; j++) {
-                const a = particles[i];
-                const b = particles[j];
-                const dist = Math.hypot(a.x - b.x, a.y - b.y);
+            particles[i].update();
+            particles[i].draw();
 
-                if (dist < 120) {
+            // GESTION DES CONNEXIONS (Lignes)
+            // On ne dessine les lignes que si l'une des particules a de l'énergie
+            // Cela économise les ressources et crée l'effet "Zone Active"
+            if (particles[i].energy <= 0) continue; 
+
+            for (let j = i; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < config.connectionDist) {
                     ctx.beginPath();
-                    ctx.moveTo(a.x, a.y);
-                    ctx.lineTo(b.x, b.y);
+                    
+                    // L'opacité du lien dépend de l'énergie combinée des deux neurones
+                    // Cela crée le gradient lumineux demandé
+                    const opacity = Math.min(particles[i].energy, particles[j].energy || 0.1); // On prend le min ou une base
+                    
+                    if (opacity > 0.05) {
+                        ctx.strokeStyle = `rgba(189, 0, 255, ${opacity})`; // Violet de base
+                        
+                        // Si très actif -> Devient Cyan et plus épais
+                        if (opacity > 0.6) {
+                            ctx.strokeStyle = `rgba(0, 243, 255, ${opacity})`;
+                            ctx.lineWidth = 1.5;
+                        } else {
+                            ctx.lineWidth = 0.5;
+                        }
 
-                    // Si les deux points sont illuminés par l'onde -> Ligne brillante
-                    if (a.highlight > 0.1 && b.highlight > 0.1) {
-                        ctx.strokeStyle = `rgba(0, 243, 255, ${Math.min(a.highlight, b.highlight)})`;
-                        ctx.lineWidth = 1.5;
-                    } else {
-                        // Sinon ligne très discrète (presque invisible)
-                        ctx.strokeStyle = config.lineBase;
-                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
                     }
-                    ctx.stroke();
                 }
             }
         }
-
         requestAnimationFrame(animate);
     }
 
+    // Gestion redimensionnement
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
