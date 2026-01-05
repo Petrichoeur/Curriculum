@@ -79,9 +79,13 @@ const DigitalTwin = {
             liBtn.href = id.linkedin.startsWith('http') ? id.linkedin : `https://${id.linkedin}`;
         }
 
-        const birthYear = new Date(id.birth_date).getFullYear();
-        const currentYear = new Date().getFullYear();
-        const age = currentYear - birthYear;
+        const birthDate = new Date(id.birth_date);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
         const cognitive = data.psychology.cognitive_style.split('.')[0]; 
 
         const bioEl = document.getElementById('bio-text');

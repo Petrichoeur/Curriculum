@@ -27,7 +27,8 @@
       "Cython (Optimisation bas niveau, wrapping C)", 
       "Architecture MLOps (Design patterns, Scalability)",
       "Pydantic & FastAPI (Mon duo gagnant pour les API)" , 
-      "Mathématiques"
+      "Mathématiques (Pas de bon ML sans stats)",
+       "Nvidia Run:AI (Un excellent orchestrateur GPU)"
     ],
     "expert": [
       "Kubernetes (Admin cluster, GPU sharing, Operator pattern)",  
