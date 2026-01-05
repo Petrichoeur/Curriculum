@@ -2,377 +2,406 @@
    VARIABLES & RESET
    ========================================= */
 :root {
-    --bg-dark: #0f111a;        /* Noir profond bleuté */
-    --bg-panel: #1a1c29;       /* Panneaux latéraux */
-    --text-primary: #e6e6e6;   
-    --text-secondary: #949eb3; 
+    --primary: #00ff9d;        /* Vert Cyberpunk */
+    --secondary: #00d2ff;      /* Bleu Futuriste */
+    --bg-dark: #050505;        /* Fond très sombre */
+    --text-main: #e0e0e0;
+    --text-dim: #a0a0a0;
     
-    /* Palette Synthwave / Green IT */
-    --accent-cyan: #00d2ff;    /* Python/God Tier */
-    --accent-purple: #bd00ff;  /* Neural/IA */
-    --accent-green: #00ff9d;   /* Green IT/Status */
+    /* Glassmorphism Configuration */
+    --glass-bg: rgba(10, 15, 20, 0.7); 
+    --glass-border: 1px solid rgba(0, 255, 157, 0.15);
+    --blur-amount: 12px;
     
-    --font-code: 'Fira Code', monospace;
-    --font-main: 'Inter', sans-serif;
-    --border-color: #2a2e40;
+    --sidebar-width: 320px;
 }
 
-* { box-sizing: border-box; }
-
-body {
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
-    font-family: var(--font-main);
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    height: 100vh;
-    overflow: hidden;
 }
 
 /* =========================================
-   NEURAL CANVAS (OVERLAY)
+   LAYOUT GLOBAL (LA CLÉ DU SUCCÈS)
    ========================================= */
+body {
+    font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;       /* Prend toute la hauteur de l'écran */
+    width: 100vw;
+    display: flex;       /* FORCE L'AFFICHAGE CÔTE À CÔTE */
+    overflow: hidden;    /* Empêche le scroll global (on scroll dans les zones) */
+}
+
+/* Le fond animé (Neural Network) */
 #neural-canvas {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 9999;
-    pointer-events: none; /* Les clics traversent ! */
-    opacity: 0.8;
-    mix-blend-mode: screen;
-}
-
-/* =========================================
-   LAYOUT
-   ========================================= */
-.container {
-    display: flex;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 1600px;
-    height: 100vh;
-    position: relative;
-    z-index: 1;
+    height: 100%;
+    z-index: 0;          /* Tout au fond */
+    pointer-events: none; /* Laisse passer les clics */
 }
 
-/* Scrollbar Tech */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-dark); }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
-
 /* =========================================
-   SIDEBAR
+   1. SIDEBAR (GAUCHE - FIXE)
    ========================================= */
-.profile-card {
-    width: 420px;
-    min-width: 350px;
-    background-color: var(--bg-panel);
-    border-right: 1px solid var(--border-color);
-    padding: 2rem;
-    overflow-y: auto;
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100%;
+    background: rgba(5, 5, 8, 0.9); /* Fond sombre semi-opaque */
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    padding: 30px 20px;
+    gap: 20px;
+    z-index: 100;        /* Au-dessus du canvas */
+    overflow-y: auto;    /* Scroll si l'écran est petit */
+    box-shadow: 5px 0 30px rgba(0,0,0,0.5);
+    flex-shrink: 0;      /* Empêche la sidebar de s'écraser */
 }
 
-/* Avatar */
-.avatar-container {
-    position: relative;
-    width: 80px;
-    margin-bottom: 1rem;
-}
-.avatar {
-    width: 80px; height: 80px;
-    background: linear-gradient(135deg, var(--bg-panel), #2a2e40);
-    border: 2px solid var(--accent-cyan);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-code); font-size: 1.5rem; font-weight: bold;
-    color: #fff;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
-}
-.status-indicator {
-    position: absolute; bottom: 0; right: 0;
-    width: 18px; height: 18px;
-    background-color: var(--accent-green);
-    border-radius: 50%;
-    border: 3px solid var(--bg-panel);
-    box-shadow: 0 0 8px var(--accent-green);
-    animation: pulse 2s infinite;
+/* Profil */
+.profile-section {
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 20px;
 }
 
-/* Titre Gradient - Version Corrigée */
-.profile-header h1 {
-    font-family: var(--font-code);
-    font-size: 1.6rem;
-    margin: 0;
-    
-    /* 1. Définir le gradient (Syntaxe standard 'to right') */
-    background-image: linear-gradient(to right, var(--text-primary) 0%, var(--accent-cyan) 100%);
-    
-    /* 2. Appliquer le clip (Standard + Webkit pour Chrome/Safari) */
-    background-clip: text;
-    -webkit-background-clip: text;
-    
-    /* 3. Rendre le texte transparent pour laisser voir le fond */
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-    
-    /* 4. Indispensable pour que le clip fonctionne bien */
-    display: inline-block;
+.photo-container {
+    margin-bottom: 15px;
 }
-.role-text {
-    color: var(--accent-cyan);
-    font-family: var(--font-code);
+
+.profile-pic {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 3px solid var(--primary);
+    box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+    object-fit: cover;
+}
+
+h1 { font-size: 1.6rem; color: var(--primary); margin-bottom: 5px; letter-spacing: 1px; }
+h2 { font-size: 0.95rem; color: var(--secondary); font-weight: 400; margin-bottom: 10px; }
+.tagline { font-size: 0.85rem; color: var(--text-dim); font-style: italic; line-height: 1.4; margin-bottom: 20px; }
+
+/* Boutons Réseaux */
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.social-btn {
+    text-decoration: none;
     font-size: 0.8rem;
-    margin-top: 0.5rem;
-}
-
-.tagline {
-    font-style: italic;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    margin-top: 1rem;
-    line-height: 1.4;
-    border-left: 3px solid var(--accent-purple);
-    padding-left: 12px;
-}
-
-/* Boutons CV/LinkedIn */
-.actions-section { display: flex; gap: 10px; margin-top: 0.5rem; }
-.action-btn {
-    flex: 1; text-align: center; padding: 10px 0;
-    font-family: var(--font-code); font-size: 0.8rem;
-    text-decoration: none; border-radius: 4px;
-    transition: all 0.2s; border: 1px solid transparent;
-}
-.action-btn.primary {
-    background: rgba(0, 210, 255, 0.1);
-    color: var(--accent-cyan);
-    border-color: rgba(0, 210, 255, 0.3);
-}
-.action-btn.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-    border-color: #444;
-}
-.action-btn:hover {
-    background: var(--accent-cyan); color: #000;
-    box-shadow: 0 0 10px var(--accent-cyan);
-}
-
-.divider {
-    border: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-}
-
-/* Titres sections */
-h3 {
-    font-family: var(--font-code);
-    color: var(--text-secondary);
+    font-weight: bold;
+    color: #000;
+    background: var(--primary);
+    padding: 6px 14px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 1.2px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
-    margin-top: 1.5rem;
+}
+.social-btn:hover { background: #fff; box-shadow: 0 0 10px #fff; transform: translateY(-2px); }
+
+/* Infos & Skills */
+.info-section { font-size: 0.9rem; line-height: 1.6; color: var(--text-main); }
+.bio-line { margin-bottom: 8px; }
+
+.skills-section h3, .interests-section h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 20px 0 10px 0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
 }
 
-.bio-line {
-    margin: 0.6rem 0;
-    color: var(--text-primary);
-    font-size: 0.9rem;
-    display: flex; align-items: center; gap: 8px;
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
-/* Tags */
-.tags-container, .tags-container-secondary {
-    display: flex; flex-wrap: wrap; gap: 6px;
-}
 .tag {
-    padding: 4px 8px; border-radius: 4px;
-    font-size: 0.75rem; font-family: var(--font-code);
-    border: 1px solid transparent;
-    transition: transform 0.2s;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #333;
+    transition: all 0.2s;
+    cursor: default;
 }
-.tag:hover { transform: translateY(-2px); }
+.tag:hover { border-color: var(--primary); }
 
-.tag-god {
-    background: rgba(0, 210, 255, 0.15);
-    color: var(--accent-cyan);
-    border-color: rgba(0, 210, 255, 0.4);
-    text-shadow: 0 0 5px rgba(0, 210, 255, 0.3);
-}
-.tag-expert {
-    background: rgba(0, 255, 157, 0.08);
-    color: var(--accent-green);
-    border-color: rgba(0, 255, 157, 0.2);
-}
-.tag-notion {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-}
+.tag-god { color: var(--primary); border-color: rgba(0, 255, 157, 0.4); background: rgba(0, 255, 157, 0.05); }
+.tag-expert { color: var(--secondary); }
+.tag-notion { color: #777; font-style: italic; }
 
-/* Hobbies */
-.hobbies-list { list-style: none; padding: 0; margin: 0; }
-.hobbies-list li {
-    font-size: 0.85rem; color: var(--text-secondary);
-    margin-bottom: 0.4rem; padding-left: 1rem; position: relative;
-}
-.hobbies-list li::before {
-    content: "▹"; position: absolute; left: 0; color: var(--accent-purple);
-}
+.interests-section ul { list-style: none; padding-left: 5px; }
+.interests-section li { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 5px; }
+.interests-section li::before { content: "• "; color: var(--primary); }
 
-.footer-links {
-    margin-top: auto; font-size: 0.75rem; color: #555; text-align: center;
-}
 
 /* =========================================
-   CHAT INTERFACE
+   2. MAIN CONTAINER (DROITE - FLUIDE)
    ========================================= */
-.chat-interface {
-    flex: 1; display: flex; flex-direction: column;
-    background: var(--bg-dark);
+.main-container {
+    flex: 1;              /* Prend tout l'espace restant */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 5;           /* Au-dessus du canvas, en-dessous de la sidebar (si overlay) */
+    height: 100vh;
 }
 
-.chat-header {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border-color);
-    background: rgba(15, 17, 26, 0.95);
-    display: flex; justify-content: space-between; align-items: center;
+/* --- NAVIGATION DU HAUT --- */
+.top-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;      /* Marge haut/bas */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    z-index: 20;
+    flex-shrink: 0;       /* La nav ne rétrécit pas */
+    overflow-x: auto;     /* Scroll horizontal sur mobile */
+    gap: 10px;
 }
 
-.header-info h2 { margin: 0; font-size: 1.1rem; font-family: var(--font-code); }
-.subtitle { font-size: 0.8rem; color: var(--text-secondary); }
-
-.status-badge {
-    display: flex; align-items: center; gap: 0.5rem;
-    font-size: 0.75rem; color: var(--accent-green);
-    font-family: var(--font-code);
-    border: 1px solid rgba(0, 255, 157, 0.2);
-    padding: 5px 10px; border-radius: 15px;
-    background: rgba(0, 255, 157, 0.05);
+.nav-link {
+    text-decoration: none;
+    color: var(--text-dim);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+    white-space: nowrap;  /* Empêche le texte de passer à la ligne */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.05);
 }
-.status-dot {
-    width: 6px; height: 6px;
-    background-color: var(--accent-green);
-    border-radius: 50%;
-    box-shadow: 0 0 6px var(--accent-green);
-    animation: pulse 2s infinite;
+
+.nav-link:hover { color: var(--primary); background: rgba(255, 255, 255, 0.1); }
+
+.nav-link.active {
+    color: var(--bg-dark);
+    background: var(--primary);
+    border-color: var(--primary);
+    font-weight: bold;
+    box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+}
+
+/* --- ZONE DE CONTENU (WRAPPER) --- */
+.content-wrapper {
+    flex: 1;              /* Prend le reste de la hauteur */
+    overflow-y: auto;     /* Scroll vertical indépendant */
+    padding: 20px 40px 60px 40px; /* Marges : Haut Droite Bas Gauche */
+    display: flex;
+    flex-direction: column;
+    align-items: center;  /* Centre les panneaux au milieu */
+}
+
+/* Scrollbar personnalisée Chrome/Safari */
+.content-wrapper::-webkit-scrollbar, .sidebar::-webkit-scrollbar { width: 6px; }
+.content-wrapper::-webkit-scrollbar-thumb, .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.content-wrapper::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+
+/* =========================================
+   STYLES DES ONGLETS & PANNEAUX (GLASS)
+   ========================================= */
+
+.tab-content {
+    display: none;        /* Caché par défaut */
+    width: 100%;
+    max-width: 900px;     /* Largeur max pour la lecture */
+    animation: fadeIn 0.5s ease-out;
+    justify-content: center;
+}
+
+.tab-content.active {
+    display: flex;        /* Visible quand actif */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* LE STYLE "VERRE" (GLASSMORPHISM) */
+.glass-panel {
+    width: 100%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-amount));
+    border: var(--glass-border);
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    margin-top: 10px;     /* Petite marge sup */
+}
+
+.center-content { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; }
+.center-content h1 { font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,255,157,0.3); }
+
+.placeholder-container h2 {
+    color: var(--primary);
+    border-bottom: 1px solid rgba(0, 255, 157, 0.2);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+
+/* =========================================
+   STYLE DU CHAT (JUMEAU NUMÉRIQUE)
+   ========================================= */
+
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 75vh;         /* Hauteur fixe pour le panneau de chat */
+    padding: 20px;
 }
 
 .chat-window {
-    flex: 1; padding: 2rem; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 1.5rem;
+    flex: 1;              /* Prend tout l'espace dispo */
+    overflow-y: auto;     /* Scroll interne */
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .message {
-    max-width: 80%;
-    padding: 1.2rem;
-    border-radius: 12px;
-    line-height: 1.6;
+    margin-bottom: 15px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    max-width: 85%;
+    line-height: 1.5;
     font-size: 0.95rem;
     position: relative;
-    
-    /* CORRECTION COUPURE DE TEXTE */
-    overflow-wrap: break-word; /* Coupe les mots trop longs proprement */
-    word-wrap: break-word;     /* Compatibilité */
-    white-space: pre-wrap;     /* Garde les sauts de ligne de l'IA sans besoin de <br> */
+    word-wrap: break-word;
 }
+
+/* Styles des bulles */
 .system-msg {
-    align-self: flex-start;
-    background: rgba(189, 0, 255, 0.08);
-    border-left: 3px solid var(--accent-purple);
-    font-family: var(--font-code); font-size: 0.85rem;
+    width: 100%;
+    max-width: 100%;
+    background: rgba(255, 165, 0, 0.08);
+    color: #ffb84d;
+    border-left: 2px solid #ffb84d;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
 }
+
 .bot-msg {
     align-self: flex-start;
-    background: var(--bg-panel);
-    border-left: 3px solid var(--accent-cyan);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    background: rgba(0, 255, 157, 0.08);
+    color: #d1ffea;
+    border-left: 3px solid var(--primary);
+    margin-right: auto;
 }
+
 .user-msg {
     align-self: flex-end;
-    background: rgba(0, 210, 255, 0.08);
-    border-right: 3px solid var(--accent-cyan);
+    background: rgba(0, 210, 255, 0.15);
+    color: #fff;
+    border-right: 3px solid var(--secondary);
+    margin-left: auto;
     text-align: right;
 }
 
-/* Typing Animation */
+/* Input Area */
+.input-area {
+    display: flex;
+    gap: 15px;
+}
+
+#user-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s;
+}
+
+#user-input:focus {
+    border-color: var(--secondary);
+    background: rgba(0,0,0,0.2);
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
+}
+
+#send-btn {
+    background: var(--secondary);
+    color: #000;
+    border: none;
+    padding: 0 30px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+#send-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 15px var(--secondary);
+}
+
+/* Animation de frappe (...) */
 .typing span {
-    display: inline-block; width: 6px; height: 6px;
-    background: var(--text-secondary); border-radius: 50%;
-    margin: 0 2px; animation: blink 1.4s infinite both;
+    animation: blink 1.4s infinite both;
+    margin: 0 2px;
+    font-size: 1.5rem;
 }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
 
-/* Input Area */
-.input-area {
-    padding: 2rem; background: var(--bg-panel);
-    border-top: 1px solid var(--border-color);
-    display: flex; gap: 1rem;
+@keyframes blink {
+    0% { opacity: 0.2; }
+    20% { opacity: 1; }
+    100% { opacity: 0.2; }
 }
-input {
-    flex: 1; background: #0f111a;
-    border: 1px solid var(--border-color);
-    padding: 1rem; color: white;
-    font-family: var(--font-main); border-radius: 4px;
-}
-input:focus { outline: none; border-color: var(--accent-cyan); }
-button {
-    background: var(--accent-cyan); color: #0f111a;
-    border: none; padding: 0 2rem;
-    font-weight: bold; cursor: pointer;
-    font-family: var(--font-code); border-radius: 4px;
-    transition: all 0.2s;
-}
-button:hover { background: #fff; box-shadow: 0 0 15px var(--accent-cyan); }
 
-@keyframes pulse { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
-@keyframes blink { 0% {opacity: 0.2; transform: translateY(0);} 20% {opacity: 1; transform: translateY(-3px);} 100% {opacity: 0.2; transform: translateY(0);} }
-
+/* =========================================
+   RESPONSIVE (MOBILE)
+   ========================================= */
 @media (max-width: 900px) {
-    .container { flex-direction: column; overflow-y: auto; }
-    .profile-card { width: 100%; height: auto; border-right: none; }
-    .chat-interface { min-height: 500px; }
-    body { overflow: auto; }
-}
-#cv-btn {
-    display: none !important;
-}
+    body {
+        flex-direction: column; /* La sidebar passe au dessus ou disparait */
+        height: auto;
+        overflow: auto;
+    }
 
-/* Navigation */
-.nav-link {
-    text-decoration: none; /* Enlève le soulignement des liens */
-    color: #a0a0a0;
-    padding: 8px 16px;
-    border: 1px solid transparent;
-    transition: all 0.3s;
-}
+    .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row; /* Layout horizontal sur mobile ? */
+        flex-wrap: wrap;
+        padding: 20px;
+        gap: 20px;
+        border-right: none;
+        border-bottom: 1px solid #333;
+    }
+    
+    .profile-section { display: flex; align-items: center; gap: 20px; text-align: left; border: none; padding: 0; }
+    .photo-container { margin: 0; }
+    .profile-pic { width: 80px; height: 80px; }
+    
+    .skills-section, .interests-section, .info-section { display: none; /* On cache les détails sur mobile pour simplifier */ }
 
-.nav-link:hover {
-    color: #00ff9d;
-}
-
-.nav-link.active {
-    color: #00ff9d;
-    background: rgba(0, 255, 157, 0.1);
-    border: 1px solid #00ff9d;
-    box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
-}
-
-/* Contenu */
-.tab-content {
-    display: none; /* Tout caché par défaut */
-    opacity: 0;
-    transition: opacity 0.3s ease-in;
-}
-
-.tab-content.active {
-    display: flex; /* Ou block selon ton layout */
-    flex-direction: column;
-    height: 100%;
-    opacity: 1;
+    .main-container { height: auto; }
+    .content-wrapper { padding: 20px; }
+    
+    .top-nav { justify-content: flex-start; padding: 15px 20px; }
 }

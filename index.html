@@ -4,10 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Florian Bobo - IA & MLOps</title>
-    <link rel="stylesheet" href="style/style.css">
-    </head>
+    <link rel="stylesheet" href="style/style.css"> 
+</head>
 <body>
+
+    <aside class="sidebar">
+        <div class="profile-section">
+            <div class="photo-container">
+                <img src="https://ui-avatars.com/api/?name=Florian+Bobo&background=00ff9d&color=000&size=128" alt="Avatar" class="profile-pic">
+            </div>
+            
+            <h1 id="name-placeholder">Chargement...</h1>
+            <h2 id="title-placeholder">...</h2>
+            <p id="tagline-placeholder" class="tagline">...</p>
+            
+            <div class="social-links">
+                <a id="linkedin-btn" href="#" target="_blank" class="social-btn">LinkedIn</a>
+                <a id="cv-btn" href="#" target="_blank" class="social-btn">CV</a>
+            </div>
+        </div>
+
+        <div class="info-section" id="bio-text"></div>
+
+        <div class="skills-section">
+            <h3>God Tier</h3>
+            <div id="god-skills" class="tags-container"></div>
+            
+            <h3>Expert</h3>
+            <div id="expert-skills" class="tags-container"></div>
+            
+            <h3>Notions</h3>
+            <div id="notion-skills" class="tags-container"></div>
+        </div>
+
+        <div class="interests-section">
+            <h3>Intérêts</h3>
+            <ul id="interests-list"></ul>
+        </div>
+    </aside>
+
     <main class="main-container">
+        
         <nav class="top-nav">
             <a href="#home" class="nav-link" data-module="Home">Accueil</a>
             <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
@@ -19,32 +56,44 @@
         </nav>
 
         <div class="content-wrapper">
+            
             <section id="home" class="tab-content">
-                <div class="placeholder-container">
+                <div class="glass-panel center-content">
                     <h1>Bienvenue sur mon Espace</h1>
                     <p>Selectionnez un onglet pour explorer mon univers.</p>
                 </div>
             </section>
 
             <section id="digital-twin" class="tab-content">
-                <div id="chat-window" class="chat-window"></div>
-                <div class="input-area">
-                    <input type="text" id="user-input" placeholder="Parlez avec mon IA..." autocomplete="off">
-                    <button id="send-btn">Envoyer</button>
+                <div class="glass-panel chat-wrapper">
+                    <div id="chat-window" class="chat-window"></div>
+                    <div class="input-area">
+                        <input type="text" id="user-input" placeholder="Parlez avec mon IA..." autocomplete="off">
+                        <button id="send-btn">Envoyer</button>
+                    </div>
                 </div>
             </section>
 
             <section id="projects" class="tab-content">
-                <div class="placeholder-container">
+                <div class="glass-panel">
                     <h2>🚀 Mes Projets</h2>
-                    <div id="projects-list">Chargement...</div>
+                    <div id="projects-list">Chargement des projets...</div>
                 </div>
             </section>
 
-            <section id="challenges" class="tab-content"><div class="placeholder-container"><h2>🏆 Challenges</h2></div></section>
-            <section id="educational" class="tab-content"><div class="placeholder-container"><h2>🎓 Pédagogie</h2></div></section>
-            <section id="music" class="tab-content"><div class="placeholder-container"><h2>🎸 Musique</h2></div></section>
-            <section id="rpg" class="tab-content"><div class="placeholder-container"><h2>🎲 JDR</h2></div></section>
+            <section id="challenges" class="tab-content">
+                <div class="glass-panel"><h2>🏆 Challenges</h2><p>WIP...</p></div>
+            </section>
+            <section id="educational" class="tab-content">
+                <div class="glass-panel"><h2>🎓 Pédagogie</h2><p>WIP...</p></div>
+            </section>
+            <section id="music" class="tab-content">
+                <div class="glass-panel"><h2>🎸 Musique</h2><p>WIP...</p></div>
+            </section>
+            <section id="rpg" class="tab-content">
+                <div class="glass-panel"><h2>🎲 JDR</h2><p>WIP...</p></div>
+            </section>
+
         </div>
     </main>
     
