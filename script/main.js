@@ -5,13 +5,8 @@
 let globalConfig = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Initialiser le Cerveau Numérique (Nouvelle version)
-    initNeuralNetwork();
-
-    // 2. Initialiser les effets de Glitch sur la navbar
+    initNeuralNetwork(); // Le nouveau réseau coloré
     initGlitchEffect();
-
-    // 3. Charger config & Routing
     await loadGlobalConfig();
     handleRouting();
     window.addEventListener('hashchange', handleRouting);
@@ -65,7 +60,7 @@ function initGlitchEffect() {
 }
 
 /* ==========================================
-   VISUAL FX: ORGANIC NEURAL NETWORK (WAVE EDITION)
+   VISUAL FX: MULTICOLOR AURORA NETWORK (SOFT & WAOUW)
    ========================================= */
 function initNeuralNetwork() {
     const canvas = document.getElementById('neural-canvas');
@@ -76,99 +71,90 @@ function initNeuralNetwork() {
     canvas.height = window.innerHeight;
 
     let particles = [];
+    // Variable pour faire tourner les couleurs globalement
+    let globalHue = 0; 
     
-    // Configuration "Spectaculaire"
     const config = {
-        particleCount: 160,       // Plus dense
-        connectionDist: 140,      // Distance de connexion
-        mouseRadius: 250,         // Rayon de l'onde autour de la souris
-        baseAlpha: 0.15,          // Opacité de repos (faible)
-        activeAlpha: 1,           // Opacité quand activé
-        decay: 0.03,              // Vitesse de disparition de l'onde (Plus petit = trainée plus longue)
-        speed: 0.4                // Vitesse très lente pour l'effet "Ordonné/Structure"
+        particleCount: 150,
+        connectionDist: 140,
+        mouseRadius: 280,    // Rayon d'activation un peu plus large
+        baseAlpha: 0.12,     // Repos très discret
+        activeAlpha: 0.7,    // Max opacité réduite (c'était 1.0 avant) pour la douceur
+        decay: 0.025,        // Traînée plus longue
+        speed: 0.35,         // Mouvement lent
+        hueSpeed: 0.2,       // Vitesse de changement de couleur global
+        glowStrength: 8      // Force du halo réduite (c'était 15)
     };
 
-    // Suivi de la souris
     let mouse = { x: null, y: null };
 
     window.addEventListener('mousemove', (e) => {
-        mouse.x = e.x;
-        mouse.y = e.y;
+        mouse.x = e.x; mouse.y = e.y;
     });
-
-    // Reset souris quand on sort de la fenêtre
     window.addEventListener('mouseout', () => {
-        mouse.x = undefined;
-        mouse.y = undefined;
+        mouse.x = undefined; mouse.y = undefined;
     });
 
     class Particle {
         constructor() {
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
-            // Vitesse lente et direction constante pour l'aspect "Ordonné"
             this.vx = (Math.random() - 0.5) * config.speed; 
             this.vy = (Math.random() - 0.5) * config.speed; 
-            this.size = Math.random() * 2 + 1;
-            
-            // "Energy" gère l'effet d'onde. 0 = repos, 1 = illuminé à fond
+            this.size = Math.random() * 2 + 1.2;
             this.energy = 0; 
+            // Chaque particule a sa propre teinte de départ
+            this.baseHue = Math.random() * 360; 
         }
 
         update() {
-            // Mouvement
-            this.x += this.vx;
-            this.y += this.vy;
-
-            // Rebond sur les bords (Keep order)
+            this.x += this.vx; this.y += this.vy;
             if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
             if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
 
-            // LOGIQUE DE L'ONDE (Interaction Souris)
-            // Calcul distance souris
             if (mouse.x != undefined) {
                 let dx = mouse.x - this.x;
                 let dy = mouse.y - this.y;
                 let distance = Math.sqrt(dx*dx + dy*dy);
-
                 if (distance < config.mouseRadius) {
-                    // Si on est dans le rayon, on charge l'énergie au max
                     this.energy = 1;
                 }
             }
-
-            // Décroissance de l'énergie (Fade out effect)
-            if (this.energy > 0) {
-                this.energy -= config.decay;
-            } else {
-                this.energy = 0;
-            }
+            this.energy = this.energy > 0 ? this.energy - config.decay : 0;
         }
 
         draw() {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             
-            // La couleur dépend de l'énergie.
-            // Repos = Violet Sombre / Activé = Cyan Brillant
-            if (this.energy > 0.1) {
-                ctx.fillStyle = `rgba(0, 243, 255, ${this.energy})`; // Cyan
-                ctx.shadowBlur = 15 * this.energy;
-                ctx.shadowColor = `rgba(0, 243, 255, ${this.energy})`;
+            // Calcul de la couleur HSL
+            // La teinte est un mélange de sa base + la rotation globale
+            const currentHue = (this.baseHue + globalHue) % 360;
+            // La luminosité augmente avec l'énergie (de sombre à pastel lumineux)
+            const lightness = 30 + (this.energy * 40); 
+            // L'opacité dépend de l'énergie
+            const alpha = config.baseAlpha + (this.energy * (config.activeAlpha - config.baseAlpha));
+
+            if (this.energy > 0.05) {
+                // ACTIVE : Couleur HSL dynamique + Halo doux
+                ctx.fillStyle = `hsla(${currentHue}, 80%, ${lightness}%, ${alpha})`;
+                ctx.shadowBlur = config.glowStrength * this.energy;
+                // Le halo est de la même couleur mais plus transparent
+                ctx.shadowColor = `hsla(${currentHue}, 80%, 60%, ${alpha * 0.5})`;
             } else {
-                ctx.fillStyle = `rgba(189, 0, 255, ${config.baseAlpha})`; // Violet
+                // REPOS : Reste sur le thème violet sombre de base pour le fond
+                ctx.fillStyle = `rgba(189, 0, 255, ${config.baseAlpha})`;
                 ctx.shadowBlur = 0;
             }
             
             ctx.fill();
-            ctx.shadowBlur = 0; // Reset pour perf
+            ctx.shadowBlur = 0;
         }
     }
 
     function init() {
         particles = [];
-        // Densité calculée selon la taille écran pour éviter la surcharge sur mobile
-        const density = (canvas.width * canvas.height) / 9000; 
+        const density = (canvas.width * canvas.height) / 10000; 
         for (let i = 0; i < density; i++) {
             particles.push(new Particle());
         }
@@ -177,14 +163,14 @@ function initNeuralNetwork() {
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
+        // On fait tourner la roue des couleurs doucement à chaque frame
+        globalHue += config.hueSpeed;
+
         for (let i = 0; i < particles.length; i++) {
             particles[i].update();
             particles[i].draw();
 
-            // GESTION DES CONNEXIONS (Lignes)
-            // On ne dessine les lignes que si l'une des particules a de l'énergie
-            // Cela économise les ressources et crée l'effet "Zone Active"
-            if (particles[i].energy <= 0) continue; 
+            if (particles[i].energy <= 0.05) continue; 
 
             for (let j = i; j < particles.length; j++) {
                 const dx = particles[i].x - particles[j].x;
@@ -192,22 +178,21 @@ function initNeuralNetwork() {
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < config.connectionDist) {
-                    ctx.beginPath();
+                    // Énergie combinée des deux points
+                    const combinedEnergy = (particles[i].energy + particles[j].energy) / 2;
                     
-                    // L'opacité du lien dépend de l'énergie combinée des deux neurones
-                    // Cela crée le gradient lumineux demandé
-                    const opacity = Math.min(particles[i].energy, particles[j].energy || 0.1); // On prend le min ou une base
-                    
-                    if (opacity > 0.05) {
-                        ctx.strokeStyle = `rgba(189, 0, 255, ${opacity})`; // Violet de base
+                    if (combinedEnergy > 0.05) {
+                        ctx.beginPath();
                         
-                        // Si très actif -> Devient Cyan et plus épais
-                        if (opacity > 0.6) {
-                            ctx.strokeStyle = `rgba(0, 243, 255, ${opacity})`;
-                            ctx.lineWidth = 1.5;
-                        } else {
-                            ctx.lineWidth = 0.5;
-                        }
+                        // Moyenne des teintes des deux particules pour la ligne
+                        const avgHue = ((particles[i].baseHue + particles[j].baseHue) / 2 + globalHue) % 360;
+                        const lightness = 30 + (combinedEnergy * 40);
+                        const opacity = combinedEnergy * config.activeAlpha;
+
+                        // Ligne HSL multicolore
+                        ctx.strokeStyle = `hsla(${avgHue}, 70%, ${lightness}%, ${opacity})`;
+                        // Épaisseur variable selon l'énergie, mais reste fine
+                        ctx.lineWidth = 0.5 + combinedEnergy;
 
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(particles[j].x, particles[j].y);
@@ -219,7 +204,6 @@ function initNeuralNetwork() {
         requestAnimationFrame(animate);
     }
 
-    // Gestion redimensionnement
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
