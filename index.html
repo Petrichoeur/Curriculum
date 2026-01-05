@@ -3,81 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Florian Bobo - Digital Twin v3.0</title>
-    <link rel="stylesheet" href="style/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-</head>
+    <title>Florian Bobo - IA & MLOps</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
 <body>
+    <main class="main-container">
+        <nav class="top-nav">
+            <a href="#home" class="nav-link" data-module="Home">Accueil</a>
+            <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
+            <a href="#projects" class="nav-link" data-module="Projects">Projets</a>
+            <a href="#challenges" class="nav-link" data-module="Challenges">Challenges</a>
+            <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a>
+            <a href="#music" class="nav-link" data-module="Music">Musique</a>
+            <a href="#rpg" class="nav-link" data-module="RPG">JDR</a>
+        </nav>
+
+        <div class="content-wrapper">
+            <section id="home" class="tab-content">
+                <div class="placeholder-container">
+                    <h1>Bienvenue sur mon Espace</h1>
+                    <p>Selectionnez un onglet pour explorer mon univers.</p>
+                </div>
+            </section>
+
+            <section id="digital-twin" class="tab-content">
+                <div id="chat-window" class="chat-window"></div>
+                <div class="input-area">
+                    <input type="text" id="user-input" placeholder="Parlez avec mon IA..." autocomplete="off">
+                    <button id="send-btn">Envoyer</button>
+                </div>
+            </section>
+
+            <section id="projects" class="tab-content">
+                <div class="placeholder-container">
+                    <h2>🚀 Mes Projets</h2>
+                    <div id="projects-list">Chargement...</div>
+                </div>
+            </section>
+
+            <section id="challenges" class="tab-content"><div class="placeholder-container"><h2>🏆 Challenges</h2></div></section>
+            <section id="educational" class="tab-content"><div class="placeholder-container"><h2>🎓 Pédagogie</h2></div></section>
+            <section id="music" class="tab-content"><div class="placeholder-container"><h2>🎸 Musique</h2></div></section>
+            <section id="rpg" class="tab-content"><div class="placeholder-container"><h2>🎲 JDR</h2></div></section>
+        </div>
+    </main>
+    
     <canvas id="neural-canvas"></canvas>
 
-    <div class="container">
-        <aside class="profile-card">
-            <div class="profile-header">
-                <div class="avatar-container">
-                    <div class="avatar">FB</div>
-                    <div class="status-indicator" title="Système Neural Actif"></div>
-                </div>
-                <h1 id="name-placeholder">Initialisation...</h1>
-                <p class="role-text" id="title-placeholder">...</p>
-                <p class="tagline" id="tagline-placeholder"></p>
-            </div>
-
-            <div class="actions-section">
-                <a href="#" id="cv-btn" class="action-btn primary" target="_blank">📄 CV.pdf</a>
-                <a href="#" id="linkedin-btn" class="action-btn secondary" target="_blank">🔗 LinkedIn</a>
-            </div>
-
-            <hr class="divider">
-
-            <div class="bio-section">
-                <h3>// CONTEXTE & PSYCHOLOGIE</h3>
-                <div id="bio-text">Chargement du noyau...</div>
-            </div>
-
-            <div class="skills-section">
-                <h3>// GOD TIER (Core)</h3>
-                <div id="god-skills" class="tags-container"></div>
-
-                <h3>// DATA & EXPERTISE</h3>
-                <div id="expert-skills" class="tags-container"></div>
-                
-                <h3>// NOTIONS & HOBBIES</h3>
-                <div id="notion-skills" class="tags-container-secondary"></div>
-            </div>
-
-            <div class="hobbies-section">
-                <h3>// INPUTS (Musique/Lecture)</h3>
-                <ul id="interests-list" class="hobbies-list"></ul>
-            </div>
-            
-            <div class="footer-links">
-                <span>Sys. v3.0 (Gemini 1.5)</span>
-            </div>
-        </aside>
-
-        <main class="chat-interface">
-            <div class="chat-header">
-                <div class="header-info">
-                    <h2>Terminal de Discussion</h2>
-                    <span class="subtitle">Neural Link with Florian Bobo</span>
-                </div>
-                <div class="status-badge">
-                    <span class="status-dot"></span> Online
-                </div>
-            </div>
-            
-            <div id="chat-window" class="chat-window">
-                </div>
-
-            <div class="input-area">
-                <input type="text" id="user-input" placeholder="Pose une question sur l'optimisation Python, MLOps ou le Green IT..." autocomplete="off">
-                <button id="send-btn">EXECUTE</button>
-            </div>
-        </main>
-    </div>
-
     <script src="script/digital-twin.js"></script>
-    <script src="script/placeholder.js"></script>
-    <script src="script/main.js"></script>
+    <script src="script/projects.js"></script>
+    <script src="script/main.js"></script> 
+
 </body>
 </html>

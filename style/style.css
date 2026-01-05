@@ -342,3 +342,37 @@ button:hover { background: #fff; box-shadow: 0 0 15px var(--accent-cyan); }
 #cv-btn {
     display: none !important;
 }
+
+/* Navigation */
+.nav-link {
+    text-decoration: none; /* Enlève le soulignement des liens */
+    color: #a0a0a0;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    transition: all 0.3s;
+}
+
+.nav-link:hover {
+    color: #00ff9d;
+}
+
+.nav-link.active {
+    color: #00ff9d;
+    background: rgba(0, 255, 157, 0.1);
+    border: 1px solid #00ff9d;
+    box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+/* Contenu */
+.tab-content {
+    display: none; /* Tout caché par défaut */
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+}
+
+.tab-content.active {
+    display: flex; /* Ou block selon ton layout */
+    flex-direction: column;
+    height: 100%;
+    opacity: 1;
+}

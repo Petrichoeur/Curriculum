@@ -1,54 +1,74 @@
 /* ==========================================
-   MAIN.JS - ORCHESTRATOR
+   MAIN.JS - ROUTER & ORCHESTRATOR
    ========================================== */
 
 let globalConfig = {};
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadGlobalConfig();
-    initTabs();
-    initNeuralNetwork(); // Le fond animé reste global
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Charger la config globale
+    await loadGlobalConfig();
+
+    // 2. Initialiser le fond animé
+    if (typeof initNeuralNetwork === 'function') initNeuralNetwork();
+
+    // 3. Lancer le Router (Gestion des URL)
+    handleRouting();
+
+    // 4. Écouter les changements d'URL (clic sur précèdent/suivant ou onglets)
+    window.addEventListener('hashchange', handleRouting);
 });
 
 async function loadGlobalConfig() {
     try {
         const response = await fetch('config/data.json');
-        if (!response.ok) throw new Error("Config introuvable");
         globalConfig = await response.json();
-
-        console.log("✅ Config chargée.");
-
-        // --- INITIALISATION DES MODULES ---
-        // On passe la config à chaque module une fois chargée
-        
-        if (typeof DigitalTwin !== 'undefined') DigitalTwin.init(globalConfig);
-        if (typeof Challenges !== 'undefined') Challenges.init(globalConfig);
-        if (typeof Projects !== 'undefined') Projects.init(globalConfig);
-        // ... Idem pour les autres si besoin
-
-    } catch (error) {
-        console.error("Erreur Main:", error);
+        console.log("✅ Config chargée");
+    } catch (e) {
+        console.error("Erreur config:", e);
     }
 }
 
-/* --- GESTION DES ONGLETS --- */
-function initTabs() {
-    const buttons = document.querySelectorAll('.nav-btn');
-    const contents = document.querySelectorAll('.tab-content');
+/* --- LE SYSTÈME DE ROUTING --- */
+function handleRouting() {
+    // Récupère le hash (ex: "#digital-twin") ou met "home" par défaut
+    let hash = window.location.hash.substring(1) || 'home';
 
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // UI Update
-            buttons.forEach(b => b.classList.remove('active'));
-            contents.forEach(c => c.classList.remove('active'));
-            
-            btn.classList.add('active');
-            const tabId = btn.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-        });
-    });
+    // Sécurité : Vérifie que la section existe, sinon renvoie vers home
+    const targetSection = document.getElementById(hash);
+    if (!targetSection) {
+        hash = 'home';
+    }
+
+    console.log(`🧭 Navigation vers : ${hash}`);
+
+    // A. GESTION UI (Afficher/Cacher)
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+
+    document.getElementById(hash).classList.add('active');
+    
+    // Active le lien dans le menu qui correspond au hash
+    const activeLink = document.querySelector(`.nav-link[href="#${hash}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+        
+        // B. CHARGEMENT DYNAMIQUE DU MODULE JS
+        // On regarde l'attribut "data-module" du lien (ex: data-module="DigitalTwin")
+        const moduleName = activeLink.getAttribute('data-module');
+        
+        // Si un objet global existe avec ce nom (ex: window.DigitalTwin), on l'initie
+        if (moduleName && window[moduleName] && typeof window[moduleName].init === 'function') {
+            // On vérifie si on doit l'initier (pour ne pas le faire 2 fois)
+            if (!window[moduleName].isInitialized) {
+                window[moduleName].init(globalConfig);
+                window[moduleName].isInitialized = true; // Marqueur pour éviter doublon
+            }
+        }
+    }
 }
 
+/* --- Effet Neural (Raccourci pour l'exemple) --- */
+function initNeuralNetwork() { /* ... ton code canvas ... */ }
 /* ==========================================
    VISUAL EFFECTS (NEURAL)
    ========================================== */
