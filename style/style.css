@@ -91,10 +91,61 @@ body {
 .photo-container:hover .profile-pic { filter: contrast(1.2) brightness(1.1); }
 
 /* --- SIDEBAR TEXT & INFO --- */
+/* =========================================
+   GLITCH EFFECT for sidebar h1
+   ========================================= */
+
+/* On prépare le titre pour l'effet */
 .sidebar h1 {
-    font-family: var(--font-tech); color: var(--neon-purple); font-size: 1.4rem;
-    text-transform: uppercase; text-align: center; letter-spacing: 2px;
-    text-shadow: 0 0 10px rgba(189, 0, 255, 0.4);
+    position: relative; /* Indispensable pour l'effet */
+    color: var(--neon-purple); /* Couleur de base */
+    /* Le reste de tes styles h1 restent ici... */
+}
+
+/* Création des deux couches de glitch */
+.sidebar h1::before,
+.sidebar h1::after {
+    /* L'astuce magique : récupère le texte directement du HTML */
+    content: attr(data-text); 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+}
+
+/* Couche 1 : Cyan, décalée vers la gauche */
+.sidebar h1::before {
+    color: var(--neon-cyan);
+    z-index: -1;
+    animation: glitch-anim-1 3s infinite linear alternate-reverse;
+}
+
+/* Couche 2 : Rose/Rouge, décalée vers la droite */
+.sidebar h1::after {
+    color: var(--neon-pink); /* Ou var(--neon-red) selon tes gouts */
+    z-index: -2;
+    animation: glitch-anim-2 2.5s infinite linear alternate-reverse;
+}
+
+/* --- KEYFRAMES (Copiés et adaptés de ton exemple) --- */
+@keyframes glitch-anim-1 {
+    0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px,0); }
+    20% { clip-path: inset(60% 0 10% 0); transform: translate(2px,0); }
+    40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px,0); }
+    60% { clip-path: inset(80% 0 5% 0); transform: translate(2px,0); }
+    80% { clip-path: inset(10% 0 60% 0); transform: translate(-2px,0); }
+    100% { clip-path: inset(30% 0 30% 0); transform: translate(2px,0); }
+}
+
+@keyframes glitch-anim-2 {
+    0% { clip-path: inset(10% 0 60% 0); transform: translate(2px,0); }
+    20% { clip-path: inset(80% 0 5% 0); transform: translate(-2px,0); }
+    40% { clip-path: inset(30% 0 20% 0); transform: translate(2px,0); }
+    60% { clip-path: inset(10% 0 80% 0); transform: translate(-2px,0); }
+    80% { clip-path: inset(50% 0 30% 0); transform: translate(2px,0); }
+    100% { clip-path: inset(20% 0 70% 0); transform: translate(-2px,0); }
 }
 
 .sidebar h2 {
@@ -287,15 +338,21 @@ body {
 
 /* --- INPUT AREA (Nouvelle Version Large & Sombre) --- */
 
+/* --- INPUT AREA (Correction Mobile) --- */
 .input-area {
     display: flex;
-    width: 100%;
+    /* width: 100%;  <-- IL FAUT ENLEVER CA */
     gap: 15px;
     padding: 20px;
-    background-color: rgba(10, 10, 15, 0.95); /* Fond très sombre et opaque */
+    background-color: rgba(10, 10, 15, 0.95);
     border: 1px solid rgba(189, 0, 255, 0.2);
-    border-radius: 0 0 8px 8px; /* Colle au bas de la fenetre de chat */
+    border-radius: 0 0 8px 8px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    margin-top: -1px;
+    
+    /* Sécurité pour ne pas dépasser */
+    max-width: 100%; 
+    box-sizing: border-box;
 }
 
 #user-input {
@@ -347,16 +404,140 @@ body {
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--neon-purple); }
 
-/* MOBILE */
+/* =========================================
+   MOBILE RESPONSIVE (OPTIMISÉ)
+   ========================================= */
 @media (max-width: 900px) {
-    body { flex-direction: column; overflow: auto; }
-    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--neon-purple); flex-direction: row; flex-wrap: wrap; gap: 20px; }
-    .profile-section { display: flex; align-items: center; gap: 15px; text-align: left; border: none; margin: 0; padding: 0; }
-    .photo-container { margin: 0; width: 80px; height: 80px; } .profile-pic { width: 70px; height: 70px; }
-    .ring-one, .ring-two { display: none; }
-    .skills-section, .interests-section { display: none; }
-    .top-nav { justify-content: flex-start; padding-left: 20px; }
+    body { 
+        flex-direction: column; 
+        overflow: auto; 
+        height: auto; /* Laisse le body grandir */
+    }
+
+    /* Sidebar passe en haut ou en mode compact */
+    .sidebar { 
+        width: 100%; 
+        height: auto; 
+        border-right: none; 
+        border-bottom: 1px solid var(--neon-purple); 
+        flex-direction: row; 
+        flex-wrap: wrap; 
+        align-items: center; 
+        justify-content: space-between; /* Espace mieux les éléments */
+        gap: 15px; 
+        padding: 15px;
+    }
+
+    /* On simplifie la sidebar sur mobile */
+    .profile-section { 
+        border: none; margin: 0; padding: 0; 
+        flex-direction: row; gap: 10px;
+    }
+    .photo-container { margin: 0; width: 60px; height: 60px; } 
+    .profile-pic { width: 60px; height: 60px; border: 1px solid var(--neon-cyan); }
+    .sidebar h1 { font-size: 1rem; text-align: left; }
+    .sidebar h2, .tagline, .social-links, .ring-one, .ring-two, .skills-section, .interests-section { 
+        display: none; /* On cache le superflu sur mobile */ 
+    }
+
+    /* Navigation scrollable horizontalement */
+    .top-nav { 
+        justify-content: flex-start; 
+        padding: 15px; 
+        gap: 10px;
+    }
     
-    .input-area { padding: 15px; }
-    #send-btn { padding: 0 20px; }
+    /* Contenu principal */
+    .content-wrapper { 
+        padding: 15px; /* Marges réduites (était 40px) */
+    }
+    
+    .glass-panel { 
+        padding: 20px; /* Marges internes réduites (était 40px) */
+        width: 100%;
+    }
+
+    /* Chat & Input */
+    .chat-wrapper { height: 65vh; } /* Un peu moins haut sur mobile */
+    
+    .input-area { 
+        padding: 10px; /* Moins de gras autour de l'input */
+        gap: 8px;
+        flex-wrap: wrap; /* Permet au bouton de passer dessous si l'écran est minuscule (iPhone SE) */
+    }
+    
+    #user-input {
+        padding: 12px;
+        font-size: 0.9rem;
+        width: 100%; /* S'assure qu'il prend la place dispo */
+        min-width: 0; /* Fix flexbox important */
+    }
+
+    #send-btn { 
+        padding: 12px 0; 
+        width: 100%; /* Bouton pleine largeur sur mobile, plus facile à taper */
+        margin-top: 5px;
+    }
+}
+
+/* --- STYLE DU POÈME --- */
+.poem-container {
+    font-family: 'Georgia', serif; /* Police avec serif pour le côté littéraire */
+    font-style: italic;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #ddd;
+    text-shadow: 0 0 5px rgba(189, 0, 255, 0.3);
+    margin-top: 20px;
+}
+
+.poem-container p {
+    margin-bottom: 0;
+}
+
+/* Le titre du poème */
+#home h1 {
+    font-family: var(--font-tech);
+    color: var(--neon-purple);
+    font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+    position: relative;
+    display: inline-block;
+}
+
+#home h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 25%;
+    width: 50%;
+    height: 2px;
+    background: var(--neon-cyan);
+    box-shadow: 0 0 10px var(--neon-cyan);
+}
+
+/* Signature Gemini */
+.ai-signature {
+    font-family: var(--font-tech);
+    font-size: 0.75rem;
+    color: var(--neon-pink);
+    opacity: 0.7;
+    margin-top: 15px;
+    text-align: right;
+    width: 100%;
+    padding-right: 20px;
+    letter-spacing: 1px;
+}
+
+/* Petit effet curseur clignotant à la fin */
+.ai-signature::after {
+    content: '_';
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }

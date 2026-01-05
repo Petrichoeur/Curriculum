@@ -64,7 +64,13 @@ const DigitalTwin = {
             if (el) el.textContent = text;
         };
 
-        setTxt('name-placeholder', id.name);
+        // Identité de base avec effet GLITCH
+        const nameEl = document.getElementById('name-placeholder');
+        if (nameEl) {
+            nameEl.textContent = id.name;
+            // C'est cette ligne qui active l'effet CSS dynamique :
+            nameEl.setAttribute('data-text', id.name); 
+        };
         setTxt('title-placeholder', id.role);
         setTxt('tagline-placeholder', `"${id.tagline}"`);
 
