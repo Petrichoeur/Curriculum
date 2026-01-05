@@ -566,4 +566,181 @@ body {
     border-color: var(--neon-cyan);
     box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
     text-shadow: 0 0 8px var(--neon-cyan);
+} 
+
+/* =========================================
+   SECTION PÉDAGOGIE (MASTER-DETAIL)
+   ========================================= */
+
+/* On enlève le padding par défaut du glass-panel pour gérer nous-même l'espace */
+.pedagogy-panel {
+    padding: 0; 
+    display: flex;
+    overflow: hidden; /* Important pour que le contenu ne dépasse pas */
+    height: 70vh; /* Hauteur fixe pour permettre le scroll interne */
+}
+
+/* --- 1. MENU LATÉRAL (Gauche) --- */
+.pedagogy-menu {
+    width: 250px;
+    background: rgba(0, 0, 0, 0.3);
+    border-right: 1px solid rgba(189, 0, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.pedagogy-menu h3 {
+    font-family: var(--font-tech);
+    color: var(--neon-cyan);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.pedagogy-menu ul {
+    list-style: none;
+}
+
+.course-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: #888;
+    padding: 12px 15px;
+    font-family: var(--font-main);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.course-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.course-btn.active {
+    background: rgba(189, 0, 255, 0.15);
+    color: var(--neon-purple);
+    border-left: 3px solid var(--neon-purple);
+    font-weight: bold;
+}
+
+/* --- 2. ZONE DE CONTENU (Droite) --- */
+.pedagogy-viewer {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto; /* Scroll indépendant pour le texte */
+    background: rgba(0, 0, 0, 0.1);
+}
+
+#pedagogy-content h2 {
+    color: #fff;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    text-shadow: 0 0 10px var(--neon-purple);
+}
+
+#pedagogy-content p {
+    line-height: 1.7;
+    margin-bottom: 15px;
+    color: #ddd;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+    .pedagogy-panel { flex-direction: column; height: auto; }
+    .pedagogy-menu { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #333; }
+    .pedagogy-viewer { height: 500px; }
+} 
+/* =========================================
+   INTEGRATION GOOGLE COLAB (CYBERPUNK STYLE)
+   ========================================= */
+
+.colab-card {
+    margin-top: 30px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #f9ab00; /* Couleur Orange Colab */
+    border-radius: 6px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(249, 171, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+/* Effet de scan en arrière plan */
+.colab-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: #f9ab00;
+}
+
+.colab-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 0 20px rgba(249, 171, 0, 0.2);
+    background: rgba(249, 171, 0, 0.05);
+}
+
+.colab-icon {
+    width: 40px; height: 40px;
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/d/d0/Google_Colaboratory_SVG_Logo.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: drop-shadow(0 0 5px #f9ab00);
+}
+
+.colab-info {
+    flex: 1;
+}
+
+.colab-info h4 {
+    color: #f9ab00;
+    font-family: var(--font-tech);
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+}
+
+.colab-info p {
+    color: #aaa;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.colab-btn {
+    text-decoration: none;
+    font-family: var(--font-tech);
+    background: #f9ab00;
+    color: #000;
+    font-weight: bold;
+    font-size: 0.8rem;
+    padding: 10px 20px;
+    border-radius: 4px;
+    transition: 0.3s;
+    white-space: nowrap;
+}
+
+.colab-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 15px #f9ab00;
+}
+
+/* Adaptation Mobile pour la carte */
+@media (max-width: 600px) {
+    .colab-card { flex-direction: column; text-align: center; }
+    .colab-card::before { width: 100%; height: 4px; top: 0; left: 0; }
+    .colab-btn { width: 100%; }
 }
