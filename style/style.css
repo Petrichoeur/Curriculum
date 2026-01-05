@@ -284,41 +284,145 @@ body {
 }
 
 /* --- CHAT --- */
+/* =========================================
+   CHAT INTERFACE (APP STYLE)
+   ========================================= */
+
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 70vh; /* Hauteur confortable */
+    padding: 0;   /* On gère le padding dans la fenêtre */
+}
+
 .chat-window {
-    background: rgba(0, 0, 0, 0.4);
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2); /* Fond très léger */
     border: 1px solid rgba(255, 255, 255, 0.05);
-    height: 60vh;
+    border-radius: 12px;
     overflow-y: auto;
-    padding: 20px;
-    margin-bottom: 15px;
-    font-family: var(--font-tech);
+    padding: 25px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espace entre les messages */
+    font-family: var(--font-main);
+    scroll-behavior: smooth;
 }
 
+/* Styles des messages */
+.message {
+    max-width: 80%;
+    padding: 14px 18px;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    position: relative;
+    word-wrap: break-word;
+    animation: popIn 0.3s ease-out;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Message du BOT (Florian) */
 .bot-msg {
+    align-self: flex-start;
+    background: linear-gradient(135deg, rgba(30, 30, 40, 0.9), rgba(40, 40, 50, 0.9));
+    border: 1px solid rgba(0, 243, 255, 0.2); /* Bordure subtile cyan */
+    color: #e0e0e0;
+    border-bottom-left-radius: 4px; /* Coin carré pour effet bulle */
+}
+
+/* Nom au dessus du message bot (Optionnel, fait pro) */
+.bot-msg::before {
+    content: 'Florian (AI)';
+    display: block;
+    font-size: 0.7rem;
     color: var(--neon-cyan);
-    border-left: 2px solid var(--neon-cyan);
-    background: linear-gradient(90deg, rgba(0, 243, 255, 0.05), transparent);
+    margin-bottom: 5px;
+    font-family: var(--font-tech);
+    text-transform: uppercase;
 }
 
+/* Message de l'UTILISATEUR */
 .user-msg {
-    color: var(--neon-purple);
-    border-right: 2px solid var(--neon-purple);
-    background: linear-gradient(-90deg, rgba(189, 0, 255, 0.05), transparent);
-    text-align: right; margin-left: auto;
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--neon-purple), #8a00bc);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 15px rgba(189, 0, 255, 0.3);
 }
 
-#user-input {
-    flex: 1; background: rgba(0,0,0,0.3); border: 1px solid #333; color: #fff;
-    padding: 15px; font-family: var(--font-tech); outline: none; transition: 0.3s;
+/* Message SYSTÈME (Centré) */
+.system-msg {
+    align-self: center;
+    max-width: 90%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    color: #888;
+    font-size: 0.8rem;
+    text-align: center;
+    border-radius: 8px;
+    padding: 8px 15px;
 }
-#user-input:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px rgba(189,0,255,0.2); }
 
-#send-btn {
-    background: var(--neon-purple); color: #fff; border: none;
-    padding: 0 25px; cursor: pointer; text-transform: uppercase; font-family: var(--font-tech);
-    transition: 0.3s;
+/* --- BARRE DE CHARGEMENT CYBERPUNK --- */
+.loading-container {
+    align-self: flex-start;
+    width: 300px;
+    background: rgba(10, 10, 15, 0.8);
+    border: 1px solid var(--neon-cyan);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+    animation: pulseBorder 1.5s infinite alternate;
 }
-#send-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+
+@keyframes pulseBorder {
+    from { box-shadow: 0 0 5px rgba(0, 243, 255, 0.1); }
+    to { box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
+}
+
+.loading-text {
+    font-family: var(--font-tech);
+    color: var(--neon-cyan);
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.loading-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.loading-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--neon-purple);
+    box-shadow: 0 0 10px var(--neon-purple);
+    transition: width 0.3s ease-out;
+}
+
+/* Input Area (Plus propre) */
+.input-area {
+    display: flex;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
 
 /* ANIMATIONS */
 .tab-content { display: none; width: 100%; justify-content: center; opacity: 0; transition: opacity 0.5s ease; }

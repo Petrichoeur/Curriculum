@@ -1,35 +1,46 @@
 /* ==========================================
-   MODULE: DIGITAL TWIN (Gestion du Chat & Profil)
+   MODULE: DIGITAL TWIN (Edition Loading Bar)
    ========================================== */
 
 const DigitalTwin = {
-    // Marqueur pour savoir si le module a déjà été chargé (évite le reset du chat)
+    // Marqueur pour savoir si le module a déjà été chargé
     isInitialized: false, 
     
     // Stockage de la configuration JSON
     config: null, 
     
-    // Mémoire de conversation (pour que l'IA se souvienne des échanges précédents)
+    // Mémoire de conversation
     history: [], 
+
+    // --- NOUVEAU : Phrases d'ambiance pour le chargement ---
+    loadingPhrases: [
+        "Récupération des données bio-numériques...",
+        "Initialisation du jumeau numérique...",
+        "Connexion neurale à Florian...",
+        "Reverse-proxy sur Bio-FireWall interne...",
+        "Difficulté à récupérer donnée Génétique du Clone numérique...",
+        "Synchronisation des souvenirs...",
+        "Déchiffrement de la syntaxe mnémotechnique...",
+        "Analyse des schémas cognitifs...",
+        "Recompilation des fragments de personnalité..."
+    ],
 
     /**
      * Point d'entrée principal.
-     * Appelé par main.js quand l'utilisateur arrive sur l'onglet #digital-twin
      */
     init: function(data) {
         console.log("🤖 Module Digital Twin : Initialisation...");
         this.config = data;
         
-        // 1. Remplir la barre latérale (Gauche) avec tes infos
-        // On le fait même si déjà initialisé, au cas où le DOM aurait changé
+        // 1. Remplir la barre latérale
         this.renderProfile(); 
 
         // Si c'est la première fois qu'on lance le module :
         if (!this.isInitialized) {
-            // 2. Activer les écouteurs d'événements (Bouton envoyer, Touche Entrée)
+            // 2. Activer les écouteurs d'événements
             this.setupListeners();
 
-            // 3. Message d'accueil système dans le chat
+            // 3. Message d'accueil système
             this.addMessage('system', `
                 <strong>SYSTEM:</strong> Connexion au Jumeau Numérique établie.<br>
                 <strong>Profil chargé :</strong> ${data.identity.name}<br>
@@ -37,7 +48,6 @@ const DigitalTwin = {
                 <em>(Posez-moi une question sur mon parcours, mes compétences ou mes hobbies...)</em>
             `);
             
-            // On marque le module comme prêt
             this.isInitialized = true;
         }
     },
@@ -49,36 +59,30 @@ const DigitalTwin = {
         const data = this.config;
         const id = data.identity;
 
-        // Fonction utilitaire pour modifier le texte d'un ID en sécurité
         const setTxt = (elementId, text) => {
             const el = document.getElementById(elementId);
             if (el) el.textContent = text;
         };
 
-        // Identité de base
         setTxt('name-placeholder', id.name);
         setTxt('title-placeholder', id.role);
         setTxt('tagline-placeholder', `"${id.tagline}"`);
 
-        // Boutons CV et LinkedIn
         const cvBtn = document.getElementById('cv-btn');
         if (cvBtn) {
             cvBtn.href = id.cv_link || "#";
-            // Cache le bouton si pas de lien CV
             cvBtn.style.display = id.cv_link ? 'inline-block' : 'none';
         }
 
         const liBtn = document.getElementById('linkedin-btn');
         if (liBtn) {
-            // Ajoute https si manquant
             liBtn.href = id.linkedin.startsWith('http') ? id.linkedin : `https://${id.linkedin}`;
         }
 
-        // Bio & Âge (Calcul automatique)
         const birthYear = new Date(id.birth_date).getFullYear();
         const currentYear = new Date().getFullYear();
         const age = currentYear - birthYear;
-        const cognitive = data.psychology.cognitive_style.split('.')[0]; // Prend la 1ère phrase
+        const cognitive = data.psychology.cognitive_style.split('.')[0]; 
 
         const bioEl = document.getElementById('bio-text');
         if (bioEl) {
@@ -89,21 +93,15 @@ const DigitalTwin = {
             `;
         }
 
-        // Tags de compétences (Appel de la fonction helper)
         this.renderTags(data.hard_skills.god_tier, 'god-skills', 'tag-god');
-        
-        // Fusion des tableaux pour les catégories Expert et Notions
         const expertData = [...data.hard_skills.expert, ...data.hard_skills.data_science_core];
         this.renderTags(expertData, 'expert-skills', 'tag-expert');
-
         const notionData = [...data.hard_skills.notions_hobbies, ...data.hard_skills.competent];
         this.renderTags(notionData, 'notion-skills', 'tag-notion');
 
-        // Liste des centres d'intérêt
         const hobbiesList = document.getElementById('interests-list');
         if (hobbiesList) {
-            hobbiesList.innerHTML = ''; // Nettoyage
-            // On prend les 5 premiers items combinés Musique + Lecture
+            hobbiesList.innerHTML = ''; 
             [...data.interests.music, ...data.interests.reading].slice(0, 5).forEach(item => {
                 const li = document.createElement('li');
                 li.textContent = item;
@@ -112,17 +110,14 @@ const DigitalTwin = {
         }
     },
 
-    // Helper pour créer les badges colorés (tags)
     renderTags: function(items, containerId, className) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        container.innerHTML = ''; // Reset du conteneur
+        container.innerHTML = '';
         items.forEach(item => {
             const span = document.createElement('span');
             span.className = `tag ${className}`;
-            // Affiche "Python" au lieu de "Python (Expert)"
             span.textContent = item.split('(')[0].trim();
-            // Affiche tout le texte au survol de la souris
             span.title = item; 
             container.appendChild(span);
         });
@@ -137,84 +132,109 @@ const DigitalTwin = {
         
         if (!input || !btn) return;
         
-        // Astuce : On clone les boutons pour supprimer les anciens écouteurs 
-        // (au cas où cette fonction serait appelée plusieurs fois par erreur)
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
-        
         const newInput = input.cloneNode(true);
         input.parentNode.replaceChild(newInput, input);
 
-        // La fonction qui gère l'envoi
         const handleSend = () => {
             const text = newInput.value.trim();
-            if (!text) return; // Pas de message vide
-            
-            this.addMessage('user', text); // Affiche message user
-            newInput.value = ''; // Vide l'input
-            this.callAPI(text); // Appelle l'IA
+            if (!text) return;
+            this.addMessage('user', text);
+            newInput.value = '';
+            this.callAPI(text);
         };
 
-        // Clic sur bouton
         newBtn.addEventListener('click', handleSend);
-        // Touche Entrée dans l'input
         newInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleSend();
         });
     },
 
-    // Ajoute un message (User, Bot ou System) dans la fenêtre de chat
     addMessage: function(role, text) {
         const chatWindow = document.getElementById('chat-window');
         if (!chatWindow) return;
 
         const div = document.createElement('div');
         div.className = `message ${role}-msg`;
-        
-        // Formatage simple : **Gras** et sauts de ligne
         let formattedText = text
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\n/g, '<br>');
-            
         div.innerHTML = formattedText;
         chatWindow.appendChild(div);
-        
-        // Scroll automatique vers le bas pour voir le dernier message
         chatWindow.scrollTop = chatWindow.scrollHeight;
     },
 
     /* ==========================================
-       APPEL API (Backend Vercel)
+       NOUVEAU : BARRE DE CHARGEMENT DYNAMIQUE
        ========================================== */
-    callAPI: async function(userMessage) {
+    createLoadingBar: function() {
         const chatWindow = document.getElementById('chat-window');
+        
+        // Conteneur principal
+        const container = document.createElement('div');
+        container.className = 'loading-container';
+        container.id = 'current-loader';
 
-        // 1. Afficher l'animation "En train d'écrire..."
-        const typing = document.createElement('div');
-        typing.className = 'message bot-msg typing';
-        typing.innerHTML = '<span>.</span><span>.</span><span>.</span>';
-        chatWindow.appendChild(typing);
+        // Texte (Phrase changeante)
+        const textEl = document.createElement('div');
+        textEl.className = 'loading-text';
+        textEl.textContent = this.loadingPhrases[0];
+
+        // Fond de la barre
+        const barBg = document.createElement('div');
+        barBg.className = 'loading-bar-bg';
+
+        // Remplissage de la barre
+        const barFill = document.createElement('div');
+        barFill.className = 'loading-bar-fill';
+
+        // Assemblage
+        barBg.appendChild(barFill);
+        container.appendChild(textEl);
+        container.appendChild(barBg);
+        chatWindow.appendChild(container);
+        
+        // Scroll en bas
         chatWindow.scrollTop = chatWindow.scrollHeight;
 
+        return { container, textEl, barFill };
+    },
+
+    /* ==========================================
+       APPEL API (Avec Loading Animation)
+       ========================================== */
+    callAPI: async function(userMessage) {
+        // 1. Création et affichage de la barre de chargement
+        const loader = this.createLoadingBar();
+        
+        // 2. Animation (Simulation de progression)
+        let progress = 0;
+        let phraseIndex = 0;
+        
+        const interval = setInterval(() => {
+            // On avance la barre un peu au hasard
+            progress += Math.random() * 12; 
+            if (progress > 95) progress = 95; // On bloque à 95% tant que l'API n'a pas répondu
+            
+            loader.barFill.style.width = `${progress}%`;
+
+            // On change la phrase de manière aléatoire ou séquentielle
+            if (Math.random() > 0.6) {
+                phraseIndex = (phraseIndex + 1) % this.loadingPhrases.length;
+                loader.textEl.textContent = this.loadingPhrases[phraseIndex];
+            }
+        }, 600); // Mise à jour toutes les 600ms
+
         try {
-            // 2. Construire le prompt système (Qui suis-je ?)
+            // 3. Préparation du Prompt
             const systemPrompt = this.buildContext();
 
-            // 3. Préparer le tableau de messages pour l'IA
             let contents = [
-                // Injection du rôle système via un message utilisateur (Hack pour certains modèles)
-                { 
-                    role: "user", 
-                    parts: [{ text: systemPrompt }] 
-                },
-                // Confirmation forcée du modèle
-                { 
-                    role: "model", 
-                    parts: [{ text: "Bien reçu. Je suis Florian Bobo. Je suis prêt." }] 
-                }
+                { role: "user", parts: [{ text: systemPrompt }] },
+                { role: "model", parts: [{ text: "Bien reçu. Je suis Florian Bobo. Je suis prêt." }] }
             ];
 
-            // 4. Ajouter l'historique de conversation (les 10 derniers échanges max)
             this.history.slice(-10).forEach(msg => {
                 contents.push({
                     role: msg.role === 'user' ? 'user' : 'model',
@@ -222,21 +242,16 @@ const DigitalTwin = {
                 });
             });
 
-            // 5. Ajouter le message actuel de l'utilisateur
-            contents.push({
-                role: "user",
-                parts: [{ text: userMessage }]
-            });
+            contents.push({ role: "user", parts: [{ text: userMessage }] });
 
-            // 6. Envoi vers NOTRE serveur Vercel (/api/chat)
-            // Note : Pas de clé API ici, c'est le serveur qui gère ça.
+            // 4. Appel API Réel
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     contents: contents,
                     generationConfig: {
-                        temperature: 0.8, // Créativité équilibrée
+                        temperature: 0.8,
                         maxOutputTokens: 1000
                     }
                 })
@@ -244,39 +259,40 @@ const DigitalTwin = {
 
             const data = await response.json();
             
-            // On supprime l'animation de chargement
-            typing.remove();
+            // 5. Fin de l'animation
+            clearInterval(interval);
+            loader.barFill.style.width = '100%'; // On remplit la barre à fond
+            
+            // On attend une demi-seconde pour voir la barre pleine, puis on affiche le message
+            setTimeout(() => {
+                loader.container.remove(); // Suppression de la barre
 
-            // Gestion des erreurs
-            if (!response.ok || data.error) {
-                console.error("Erreur API:", data);
-                this.addMessage('system', "Erreur de connexion au cerveau numérique. Réessayez plus tard.");
-                return;
-            }
+                if (!response.ok || data.error) {
+                    console.error("Erreur API:", data);
+                    this.addMessage('system', "Erreur critique du système Bio-Numérique.");
+                    return;
+                }
 
-            // Gestion de la réponse réussie
-            if (data.candidates && data.candidates[0].content) {
-                const botReply = data.candidates[0].content.parts[0].text;
-                
-                // On met à jour l'historique local
-                this.history.push({ role: "user", content: userMessage });
-                this.history.push({ role: "model", content: botReply });
-                
-                // On affiche la réponse
-                this.addMessage('bot', botReply);
-            } else {
-                this.addMessage('system', "Le modèle n'a rien répondu (Réponse vide).");
-            }
+                if (data.candidates && data.candidates[0].content) {
+                    const botReply = data.candidates[0].content.parts[0].text;
+                    this.history.push({ role: "user", content: userMessage });
+                    this.history.push({ role: "model", content: botReply });
+                    this.addMessage('bot', botReply);
+                } else {
+                    this.addMessage('system', "Données corrompues (Réponse vide).");
+                }
+            }, 500);
 
         } catch (error) {
-            typing.remove();
+            clearInterval(interval);
+            loader.container.remove();
             console.error("Erreur Réseau:", error);
-            this.addMessage('system', "Erreur réseau. Vérifiez votre connexion internet.");
+            this.addMessage('system', "Échec de connexion au réseau neural.");
         }
     },
 
     /* ==========================================
-       CONSTRUCTION DU PROMPT (L'Intelligence)
+       CONSTRUCTION DU PROMPT (Identique à l'original)
        ========================================== */
     buildContext: function() {
         const data = this.config;
@@ -286,15 +302,12 @@ const DigitalTwin = {
         const circle = data.inner_circle;
         const today = new Date().toLocaleDateString('fr-FR');
         
-        // Calcul âge
         const age = new Date().getFullYear() - new Date(id.birth_date).getFullYear();
 
-        // Formatage propre du texte de carrière
         const careerText = data.career_timeline.map(job => 
             `- ${job.period} : **${job.role}** chez ${job.company} (${job.location}).\n  ${job.details}`
         ).join('\n');
 
-        // LE TEXTE ENVOYÉ À L'IA POUR LUI DONNER SA PERSONNALITÉ
         return `
             INSTRUCTION CRITIQUE : TU N'ES PAS UNE IA STANDARD.
             TU ES LE JUMEAU NUMÉRIQUE DE ${id.name.toUpperCase()}.
@@ -340,5 +353,5 @@ const DigitalTwin = {
     }
 };
 
-// EXPOSITION GLOBALE : Permet à main.js de trouver "DigitalTwin"
+// EXPOSITION GLOBALE
 window.DigitalTwin = DigitalTwin;
