@@ -1,25 +1,27 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Florian Bobo - IA & MLOps</title>
-    <link rel="stylesheet" href="style/style.css"> 
+    <link rel="stylesheet" href="style/style.css">
 </head>
+
 <body>
 
     <aside class="sidebar">
         <div class="profile-section">
-<div class="photo-container">
-    <img src="data/profil.jpg" alt="Florian Bobo" class="profile-pic">
-    
-    <div class="ring-one"></div>
-    <div class="ring-two"></div>
-</div>
+            <div class="photo-container">
+                <img src="data/profil.jpg" alt="Florian Bobo" class="profile-pic">
+
+                <div class="ring-one"></div>
+                <div class="ring-two"></div>
+            </div>
             <h1 id="name-placeholder">Chargement...</h1>
             <h2 id="title-placeholder">...</h2>
             <p id="tagline-placeholder" class="tagline">...</p>
-            
+
             <div class="social-links">
                 <a id="linkedin-btn" href="#" target="_blank" class="social-btn">LinkedIn</a>
                 <a id="cv-btn" href="#" target="_blank" class="social-btn">CV</a>
@@ -31,10 +33,10 @@
         <div class="skills-section">
             <h3>God Tier</h3>
             <div id="god-skills" class="tags-container"></div>
-            
+
             <h3>Expert</h3>
             <div id="expert-skills" class="tags-container"></div>
-            
+
             <h3>Notions</h3>
             <div id="notion-skills" class="tags-container"></div>
         </div>
@@ -46,7 +48,7 @@
     </aside>
 
     <main class="main-container">
-        
+
         <nav class="top-nav">
             <a href="#home" class="nav-link" data-module="Home">Accueil</a>
             <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
@@ -58,16 +60,18 @@
         </nav>
 
         <div class="content-wrapper">
-            
+
             <section id="home" class="tab-content active">
                 <div class="glass-panel center-content">
                     <h1 style="font-size: 3rem; margin-bottom: 10px;">FLORIAN BOBO</h1>
-                    <h2 style="color: var(--neon-cyan); letter-spacing: 2px; margin-bottom: 30px; margin-top: 5px">Expert IA & MLOps</h2>
-                    
-                    <div style="max-width: 650px; line-height: 1.6; font-size: 1.1rem; color: #ddd; margin-bottom: 40px;">
+                    <h2 style="color: var(--neon-cyan); letter-spacing: 2px; margin-bottom: 30px; margin-top: 5px">
+                        Expert IA & MLOps</h2>
+
+                    <div
+                        style="max-width: 650px; line-height: 1.6; font-size: 1.1rem; color: #ddd; margin-bottom: 40px;">
                         <p>
-                            Passionné par la convergence entre l'ingénierie logicielle et les mathématiques, 
-                            je bidouille des systèmes intelligents robustes et scalables. 
+                            Passionné par la convergence entre l'ingénierie logicielle et les mathématiques,
+                            je bidouille des systèmes intelligents robustes et scalables.
                             J'ai un humour particulier aussi, on s'y fait rarement.
                         </p>
                     </div>
@@ -95,46 +99,49 @@
             <section id="projects" class="tab-content">
                 <div class="glass-panel">
                     <h2>🚀 Mes Projets</h2>
-                    <div id="projects-list">Chargement des projets...</div>
+                    <div id="projects-list">Coming soon</div>
                 </div>
-            </section>
-
-            <section id="challenges" class="tab-content">
-                <div class="glass-panel"><h2>🏆 Challenges</h2><p>WIP...</p></div>
             </section>
 
             <section id="educational" class="tab-content">
                 <div class="glass-panel pedagogy-panel">
-                    
+
                     <nav class="pedagogy-menu">
                         <h3>Modules</h3>
                         <ul id="pedagogy-list">
-                            </ul>
+                        </ul>
                     </nav>
 
                     <div class="pedagogy-viewer">
                         <div id="pedagogy-content">
-                            </div>
+                        </div>
                     </div>
-                    
+
                 </div>
             </section>
 
             <section id="music" class="tab-content">
-                <div class="glass-panel"><h2>🎸 Musique</h2><p>WIP...</p></div>
+                <div class="glass-panel">
+                    <h2>🎸 Musique</h2>
+                    <p>WIP...</p>
+                </div>
             </section>
             <section id="rpg" class="tab-content">
-                <div class="glass-panel"><h2>🎲 JDR</h2><p>WIP...</p></div>
+                <div class="glass-panel">
+                    <h2>🎲 JDR</h2>
+                    <p>WIP...</p>
+                </div>
             </section>
 
         </div>
     </main>
-    
+
     <canvas id="neural-canvas"></canvas>
 
     <script src="script/digital-twin.js"></script>
     <script src="script/projects.js"></script>
-    <script src="script/main.js"></script> 
+    <script src="script/main.js"></script>
     <script src="script/educational.js"></script>
 </body>
+
 </html>

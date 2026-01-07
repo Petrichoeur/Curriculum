@@ -744,3 +744,82 @@ body {
     .colab-card::before { width: 100%; height: 4px; top: 0; left: 0; }
     .colab-btn { width: 100%; }
 }
+
+/* =========================================
+   SLIDESHOW CYBERPUNK
+   ========================================= */
+
+.slideshow-container {
+    position: relative;
+    margin: 30px 0;
+    border: 2px solid var(--neon-purple);
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px;
+    box-shadow: 0 0 20px rgba(189, 0, 255, 0.2);
+    /* Un petit effet d'écran scanné */
+    background-image: linear-gradient(rgba(189, 0, 255, 0.1) 1px, transparent 1px);
+    background-size: 100% 5px;
+}
+
+/* Zone d'affichage de l'image */
+.slides-wrapper {
+    position: relative;
+    /* Hauteur fixe pour éviter que la page saute. Ajuste selon tes images (ex: 500px) */
+    height: 450px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: #000;
+}
+
+/* Les images */
+.slide-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* L'image entière est visible sans être coupée */
+    display: none; /* Cachées par défaut */
+    border: 1px solid #333;
+}
+
+/* L'image active */
+.slide-img.active {
+    display: block;
+    animation: scanIn 0.5s ease-out;
+}
+@keyframes scanIn { from { opacity: 0; filter: brightness(2); } to { opacity: 1; filter: brightness(1); } }
+
+/* Boutons de navigation (Flèches) */
+.slide-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--neon-cyan);
+    border: 1px solid var(--neon-cyan);
+    font-size: 1.8rem;
+    padding: 10px 15px;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s;
+    font-family: monospace;
+}
+.slide-nav:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+.prev-btn { left: 10px; }
+.next-btn { right: 10px; }
+
+/* Compteur en bas */
+.slide-counter {
+    text-align: center;
+    margin-top: 10px;
+    font-family: var(--font-tech);
+    color: var(--neon-purple);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+}
+
+/* Adaptation Mobile */
+@media (max-width: 600px) {
+    .slides-wrapper { height: 250px; } /* Moins haut sur mobile */
+    .slide-nav { padding: 5px 10px; font-size: 1.2rem; }
+}

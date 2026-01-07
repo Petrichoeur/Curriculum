@@ -1,11 +1,12 @@
 /* ==========================================
-   MODULE: EDUCATIONAL (Pédagogie IA)
+   MODULE: EDUCATIONAL (Pédagogie IA & Slideshow)
    ========================================== */
 
 const Educational = {
     isInitialized: false,
+    currentSlideIndex: 0, // Pour suivre la slide active
 
-    courses: [
+   courses: [
         {
             id: 'intro',
             title: '1. Introduction',
@@ -38,19 +39,34 @@ const Educational = {
             title: '3. Multi-Layer Perceptron (DeepLearning)',
             content: `
                 <h2>Multi-Layer Perceptron (MLP)</h2>
-                <p>Le MLP résout le problème du Perceptron simple (XOR) en ajoutant des <strong>couches cachées</strong>.</p>
+                <p>Le MLP résout le problème du Perceptron simple en ajoutant des <strong>couches cachées</strong>.</p>
                 <p>C'est ici que la magie de la "Backpropagation" opère pour ajuster les poids à travers plusieurs couches.</p>
             `,
             colabLink: 'https://colab.research.google.com/github/Petrichoeur/Neural_Net_from_scratch/blob/master/Neural_net_class/Simple_to_use_Neural_net.ipynb'
+        },
+        {
+            id: 'DataShift',
+            title: '4. Data Shift ',
+            content: `
+                <h2>Data Shift </h2>
+                <p> Mathématiquement, c'est simple : la distribution de vos données de production <strong>X<sub>prod</sub></strong> n'est plus la même que celle de vos données d'entraînement <strong> X<sub>train</sub> </strong>.</p>
+                <p>Le monde bouge, les comportements clients évoluent, et votre modèle, lui, reste figé dans le passé.</p>
+            `, 
+            colabLink: null
+            slides: ["data/datashift/dsslide1.jpeg",
+                "data/datashift/dsslide2.jpeg",
+                "data/datashift/dsslide3.jpeg", 
+                "data/datashift/dsslide4.jpeg",
+                "data/datashift/dsslide5.jpeg",
+                "data/datashift/dsslide6.jpeg",
+                "data/datashift/dsslide7.jpeg"
+            ]
         }
     ],
 
     init: function(globalConfig) {
-        console.log("🎓 Module Pédagogie initialisé");
-        
         const listContainer = document.getElementById('pedagogy-list');
         if(!listContainer) return;
-
         listContainer.innerHTML = ''; 
         this.courses.forEach((course, index) => {
             const li = document.createElement('li');
@@ -62,7 +78,6 @@ const Educational = {
             li.appendChild(btn);
             listContainer.appendChild(li);
         });
-
         this.loadCourse(0);
         this.isInitialized = true;
     },
@@ -71,37 +86,65 @@ const Educational = {
         const course = this.courses[index];
         const display = document.getElementById('pedagogy-content');
         
-        // Mise à jour menu actif
-        this.courses.forEach(c => {
-            if(c.btnElement) c.btnElement.classList.remove('active');
-        });
+        // Reset navigation et index
+        this.courses.forEach(c => { if(c.btnElement) c.btnElement.classList.remove('active'); });
         if(course.btnElement) course.btnElement.classList.add('active');
+        this.currentSlideIndex = 0; 
 
-        // Construction du contenu
         let htmlContent = course.content;
 
-        // AJOUT DU BLOC COLAB SI LE LIEN EXISTE
-        if (course.colabLink) {
+        // --- GÉNÉRATION DU SLIDESHOW SI PRÉSENT ---
+        if (course.slides && course.slides.length > 0) {
             htmlContent += `
-                <div class="colab-card">
-                    <div class="colab-icon"></div>
-                    <div class="colab-info">
-                        <h4>ENVIRONNEMENT PYTHON DÉTECTÉ</h4>
-                        <p>Exécuter la simulation neurale via Google Colab.</p>
+                <div class="slideshow-container">
+                    <div class="slides-wrapper">
+                        ${course.slides.map((src, i) => `
+                            <img src="${src}" class="slide-img ${i === 0 ? 'active' : ''}" alt="Slide ${i+1}">
+                        `).join('')}
                     </div>
-                    <a href="${course.colabLink}" target="_blank" class="colab-btn">
-                        INITIALISER LE NOTEBOOK_
-                    </a>
+                    
+                    ${course.slides.length > 1 ? `
+                        <button class="slide-nav prev-btn" onclick="Educational.changeSlide(-1)">❮</button>
+                        <button class="slide-nav next-btn" onclick="Educational.changeSlide(1)">❯</button>
+                        <div class="slide-counter">SCAN: 1 / ${course.slides.length}</div>
+                    ` : ''}
                 </div>
             `;
         }
 
-        // Animation Fade-in
+        // Génération Colab ( inchangé )
+        if (course.colabLink) {
+            htmlContent += `
+                <div class="colab-card">
+                    <div class="colab-icon"></div>
+                    <div class="colab-info"><h4>ENVIRONNEMENT PYTHON DÉTECTÉ</h4><p>Exécuter la simulation.</p></div>
+                    <a href="${course.colabLink}" target="_blank" class="colab-btn">INITIALISER NOTEBOOK_</a>
+                </div>
+            `;
+        }
+
         display.style.opacity = 0;
-        setTimeout(() => {
-            display.innerHTML = htmlContent;
-            display.style.opacity = 1;
-        }, 200);
+        setTimeout(() => { display.innerHTML = htmlContent; display.style.opacity = 1; }, 200);
+    },
+
+    // --- NOUVELLE FONCTION : CHANGEMENT DE SLIDE ---
+    changeSlide: function(direction) {
+        const slides = document.querySelectorAll('.slide-img');
+        const total = slides.length;
+        if(total === 0) return;
+
+        // Calcul du nouvel index (avec boucle au début/fin)
+        this.currentSlideIndex += direction;
+        if (this.currentSlideIndex >= total) this.currentSlideIndex = 0;
+        if (this.currentSlideIndex < 0) this.currentSlideIndex = total - 1;
+
+        // Mise à jour DOM
+        slides.forEach(s => s.classList.remove('active'));
+        slides[this.currentSlideIndex].classList.add('active');
+        
+        // Mise à jour compteur
+        const counter = document.querySelector('.slide-counter');
+        if(counter) counter.textContent = `SCAN: ${this.currentSlideIndex + 1} / ${total}`;
     }
 };
 
