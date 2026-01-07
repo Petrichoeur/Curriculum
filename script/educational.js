@@ -59,7 +59,8 @@ const Educational = {
                 "data/datashift/dsslide4.jpeg",
                 "data/datashift/dsslide5.jpeg",
                 "data/datashift/dsslide6.jpeg",
-                "data/datashift/dsslide7.jpeg"
+                "data/datashift/dsslide7.jpeg", 
+                "data/datashift/dsslide8.jpeg"
             ]
         }
     ],
