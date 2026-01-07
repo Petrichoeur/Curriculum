@@ -52,7 +52,7 @@ const Educational = {
                 <p> Mathématiquement, c'est simple : la distribution de vos données de production <strong>X<sub>prod</sub></strong> n'est plus la même que celle de vos données d'entraînement <strong> X<sub>train</sub> </strong>.</p>
                 <p>Le monde bouge, les comportements clients évoluent, et votre modèle, lui, reste figé dans le passé.</p>
             `, 
-            colabLink: null
+            colabLink: null,
             slides: ["data/datashift/dsslide1.jpeg",
                 "data/datashift/dsslide2.jpeg",
                 "data/datashift/dsslide3.jpeg", 
