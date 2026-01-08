@@ -577,7 +577,7 @@ body {
     padding: 0; 
     display: flex;
     overflow: hidden; /* Important pour que le contenu ne dépasse pas */
-    height: 70vh; /* Hauteur fixe pour permettre le scroll interne */
+    height: 85vh; /* Hauteur fixe pour permettre le scroll interne */
 }
 
 /* --- 1. MENU LATÉRAL (Gauche) --- */
