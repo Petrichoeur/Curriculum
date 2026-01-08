@@ -64,7 +64,7 @@
     {
     "id": "GreenAI",
     "title": "6. IA & éco-conception",
-    "content": "<h2>Green AI : L'Intelligence Écologique</h2><p>Le <strong>Green AI</strong> est une approche qui vise à réduire l'empreinte carbone de l'intelligence artificielle. Contrairement au \"Red AI\" qui cherche la performance pure (précision maximale) au prix d'une consommation d'énergie massive, le Green AI intègre l'efficience énergétique comme critère de réussite prioritaire.  <h3>Pourquoi est-ce crucial ?</h3><p>L'entraînement d'un seul grand modèle de langage (LLM) peut émettre autant de carbone que plusieurs voitures sur toute leur durée de vie. Le Green AI permet de concilier innovation technologique et urgence climatique, tout en réduisant drastiquement les coûts de calcul (Cloud).</p>",
+    "content": "<h2>Green AI : L'Intelligence Écologique</h2><p>Le <strong>Green AI</strong> est une approche qui vise à réduire l'empreinte carbone de l'intelligence artificielle. Contrairement au \"Red AI\" qui cherche la performance pure (précision maximale) au prix d'une consommation d'énergie massive, le Green AI intègre l'efficience énergétique comme critère de réussite prioritaire.  <h3>Pourquoi est-ce crucial ?</h3><p>L'entraînement d'un seul grand modèle de langage (LLM) peut émettre des quantités astronomique de C02 (Un seul entraînement de ChatGPT équivaut à 3 jours de consommation d'une ville entière). Le Green AI permet de concilier innovation technologique et urgence climatique, tout en réduisant drastiquement les coûts opérationnels.</p>",
     "colabLink": null,
     "slides": [
       "data/frugal/fork0.jpg",
