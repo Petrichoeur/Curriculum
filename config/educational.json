@@ -39,18 +39,18 @@
     {
     "id": "GreenAI",
     "title": "5. IA & éco-conception",
-    "content": "<h2>Green AI : L'Intelligence Écologique</h2><p>Le <strong>Green AI</strong> est une approche qui vise à réduire l'empreinte carbone de l'intelligence artificielle. Contrairement au \"Red AI\" qui cherche la performance pure (précision maximale) au prix d'une consommation d'énergie massive, le Green AI intègre l'efficience énergétique comme critère de réussite prioritaire.</p><h3>Les 3 Piliers :</h3><ul><li><strong>Sobriété (Frugalité)</strong> : Privilégier des modèles plus petits, optimisés et suffisants pour la tâche, plutôt que des réseaux de neurones gigantesques.</li><li><strong>Réutilisation (Transfer Learning)</strong> : Adapter des modèles existants pré-entraînés au lieu de tout réapprendre \"from scratch\" (depuis zéro), ce qui économise des semaines de calcul.</li><li><strong>Mesure</strong> : Calculer systématiquement l'impact CO2 de ses entraînements (via des outils comme CodeCarbon) pour pouvoir l'optimiser.</li></ul><h3>Pourquoi est-ce crucial ?</h3><p>L'entraînement d'un seul grand modèle de langage (LLM) peut émettre autant de carbone que plusieurs voitures sur toute leur durée de vie. Le Green AI permet de concilier innovation technologique et urgence climatique, tout en réduisant drastiquement les coûts de calcul (Cloud).</p>",
+    "content": "<h2>Green AI : L'Intelligence Écologique</h2><p>Le <strong>Green AI</strong> est une approche qui vise à réduire l'empreinte carbone de l'intelligence artificielle. Contrairement au \"Red AI\" qui cherche la performance pure (précision maximale) au prix d'une consommation d'énergie massive, le Green AI intègre l'efficience énergétique comme critère de réussite prioritaire.  <h3>Pourquoi est-ce crucial ?</h3><p>L'entraînement d'un seul grand modèle de langage (LLM) peut émettre autant de carbone que plusieurs voitures sur toute leur durée de vie. Le Green AI permet de concilier innovation technologique et urgence climatique, tout en réduisant drastiquement les coûts de calcul (Cloud).</p>",
     "colabLink": null,
     "slides": [
-      "data/frugal/fork0.png",
-        "data/frugal/fork1.png",
-  "data/frugal/fork2.png",
-    "data/frugal/fork3.png",
-      "data/frugal/fork4.png",
-        "data/frugal/fork5.png",
-          "data/frugal/fork6.png",
-            "data/frugal/fork7.png",
-              "data/frugal/fork8.png"
+      "data/frugal/fork0.jpg",
+        "data/frugal/fork1.jpg",
+  "data/frugal/fork2.jpg",
+    "data/frugal/fork3.jpg",
+      "data/frugal/fork4.jpg",
+        "data/frugal/fork5.jpg",
+          "data/frugal/fork6.jpg",
+            "data/frugal/fork7.jpg",
+              "data/frugal/fork8.jpg"
     ]
   }
 ]
