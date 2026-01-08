@@ -766,7 +766,7 @@ body {
 .slides-wrapper {
     position: relative;
     /* Hauteur fixe pour éviter que la page saute. Ajuste selon tes images (ex: 500px) */
-    height: 450px; 
+    height: fit-content; 
     display: flex;
     justify-content: center;
     align-items: center;
