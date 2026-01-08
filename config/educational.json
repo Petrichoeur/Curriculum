@@ -11,7 +11,8 @@
     "title": "2. Le Perceptron",
     "content": "<h2>Le Perceptron (1957)</h2><p>Inventé par Frank Rosenblatt, c'est l'ancêtre du neurone artificiel. Il s'agit d'un <strong>classifieur binaire</strong> capable de séparer des données linéairement.</p><p>Formule mathématique de base : <br><code>f(x) = step(w * x + b)</code></p><ul><li><strong>w (Weights)</strong> : Les poids synaptiques.</li><li><strong>b (Bias)</strong> : Le seuil d'activation.</li></ul><p>Cliquez ci-dessous pour expérimenter avec le code Python (Numpy) :</p>",
     "colabLink": "https://colab.research.google.com/github/Petrichoeur/Neural_Net_from_scratch/blob/master/Perceptron_from_scratch.ipynb",
-    "slides": []
+    "slides": ["data/perceptron/scan0.jpeg", "data/perceptron/scan2.jpeg",
+               "data/perceptron/scan3.jpeg", "data/perceptron/scan4.jpeg"]
   },
   {
     "id": "mlp",
@@ -35,22 +36,46 @@
       "data/datashift/dsslide7.jpeg",
       "data/datashift/dsslide8.jpeg"
     ]
-  }, 
+  },  
+
+  {
+  "id": "vc_dimension",
+  "title": "5. Théorie VC (Complexité)",
+  "content": "<h2>Théorie de Vapnik-Chervonenkis</h2><p>La théorie VC mesure la <strong>capacité</strong> et la complexité d'un modèle d'apprentissage. Imaginez la \"Dimension VC\" comme un indice de flexibilité : plus elle est élevée, plus votre modèle est capable de se contorsionner pour tracer des frontières complexes et séparer parfaitement n'importe quel arrangement de points (ce qu'on appelle \"pulvériser\" les données).</p><p>Cependant, une grande flexibilité est une arme à double tranchant. Si la Dimension VC est trop haute par rapport à la quantité de données disponibles, le modèle va apprendre le bruit par cœur au lieu de comprendre la logique générale (<strong>Overfitting</strong>). Cette théorie permet de définir mathématiquement la frontière critique entre apprendre intelligemment et réciter bêtement.</p>",
+  "colabLink": null,
+  "slides": [ 
+            "data/vapnik/v0.jpeg",
+            "data/vapnik/v1.jpeg",
+            "data/vapnik/v2.jpeg",
+            "data/vapnik/v3.jpeg",
+            "data/vapnik/v4.jpeg",
+            "data/vapnik/v5.jpeg",
+            "data/vapnik/v6.jpeg",
+            "data/vapnik/v7.jpeg",
+            "data/vapnik/v8.jpeg",
+            "data/vapnik/v9.jpeg",
+            "data/vapnik/v10.jpeg",
+            "data/vapnik/v11.jpeg",
+            "data/vapnik/v12.jpeg",
+            "data/vapnik/v13.jpeg",
+            "data/vapnik/v14.jpeg"
+            ]
+  } ,
     {
     "id": "GreenAI",
-    "title": "5. IA & éco-conception",
+    "title": "6. IA & éco-conception",
     "content": "<h2>Green AI : L'Intelligence Écologique</h2><p>Le <strong>Green AI</strong> est une approche qui vise à réduire l'empreinte carbone de l'intelligence artificielle. Contrairement au \"Red AI\" qui cherche la performance pure (précision maximale) au prix d'une consommation d'énergie massive, le Green AI intègre l'efficience énergétique comme critère de réussite prioritaire.  <h3>Pourquoi est-ce crucial ?</h3><p>L'entraînement d'un seul grand modèle de langage (LLM) peut émettre autant de carbone que plusieurs voitures sur toute leur durée de vie. Le Green AI permet de concilier innovation technologique et urgence climatique, tout en réduisant drastiquement les coûts de calcul (Cloud).</p>",
     "colabLink": null,
     "slides": [
       "data/frugal/fork0.jpg",
-        "data/frugal/fork1.jpg",
-  "data/frugal/fork2.jpg",
-    "data/frugal/fork3.jpg",
+      "data/frugal/fork1.jpg",
+      "data/frugal/fork2.jpg",
+      "data/frugal/fork3.jpg",
       "data/frugal/fork4.jpg",
-        "data/frugal/fork5.jpg",
-          "data/frugal/fork6.jpg",
-            "data/frugal/fork7.jpg",
-              "data/frugal/fork8.jpg"
+      "data/frugal/fork5.jpg",
+      "data/frugal/fork6.jpg",
+      "data/frugal/fork7.jpg",
+      "data/frugal/fork8.jpg"
     ]
   }
 ]
