@@ -122,6 +122,16 @@
     </main>
 
     <canvas id="neural-canvas"></canvas>
+        <div id="slide-modal" class="modal">
+            <span class="close-modal" onclick="Educational.closeModal()">&times;</span>
+            
+            <img class="modal-content" id="modal-img">
+            
+            <a class="modal-prev" onclick="Educational.changeModalSlide(-1)">❮</a>
+            <a class="modal-next" onclick="Educational.changeModalSlide(1)">❯</a>
+        
+        <div id="modal-caption"></div>
+    </div>
 
     <script src="script/digital-twin.js"></script>
     <script src="script/projects.js"></script>

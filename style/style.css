@@ -823,3 +823,77 @@ body {
     .slides-wrapper { height: 250px; } /* Moins haut sur mobile */
     .slide-nav { padding: 5px 10px; font-size: 1.2rem; }
 }
+/* =========================================
+   MODAL LIGHTBOX (ZOOM SLIDES)
+   ========================================= */
+
+/* Le fond (Backdrop) */
+.modal {
+    display: none; /* Caché par défaut */
+    position: fixed; 
+    z-index: 2000; /* Au-dessus de TOUT */
+    padding-top: 50px; 
+    left: 0; top: 0; width: 100%; height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0, 0, 0, 0.95); /* Fond très sombre */
+    backdrop-filter: blur(5px);
+}
+
+/* L'image elle-même */
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 85vh; /* Garde de la place pour les boutons */
+    border: 2px solid var(--neon-cyan);
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+    animation: zoomIn 0.3s;
+}
+
+@keyframes zoomIn {
+    from {transform:scale(0.8); opacity: 0} 
+    to {transform:scale(1); opacity: 1}
+}
+
+/* Bouton Fermer (X) */
+.close-modal {
+    position: absolute;
+    top: 20px; right: 35px;
+    color: #f1f1f1;
+    font-size: 40px; font-weight: bold;
+    cursor: pointer; transition: 0.3s;
+    z-index: 2001;
+}
+.close-modal:hover { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
+
+/* Légende */
+#modal-caption {
+    margin: auto; display: block; width: 80%; text-align: center;
+    color: var(--neon-purple); padding: 10px 0; font-family: var(--font-tech);
+    letter-spacing: 2px;
+}
+
+/* Navigation (Flèches) */
+.modal-prev, .modal-next {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto; padding: 16px;
+    margin-top: -50px;
+    color: white; font-weight: bold; font-size: 30px;
+    transition: 0.6s ease;
+    border-radius: 0 3px 3px 0;
+    user-select: none;
+}
+.modal-next { right: 0; border-radius: 3px 0 0 3px; }
+.modal-prev { left: 0; border-radius: 3px 0 0 3px; }
+
+.modal-prev:hover, .modal-next:hover {
+    background-color: rgba(0, 243, 255, 0.2);
+    color: var(--neon-cyan);
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+    .modal-content { width: 100%; }
+}

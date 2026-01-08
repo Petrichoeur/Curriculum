@@ -1,0 +1,56 @@
+[
+  {
+    "id": "intro",
+    "title": "1. Introduction",
+    "content": "<h2>Introduction à l'IA</h2><p>L'Intelligence Artificielle n'est pas de la magie, c'est des mathématiques. À la base de tout, il y a l'idée de reproduire le fonctionnement cognitif humain par des algorithmes.</p><p>Nous allons explorer ici les briques fondamentales, du simple neurone artificiel aux réseaux profonds complexes.</p>",
+    "colabLink": null,
+    "slides": []
+  },
+  {
+    "id": "perceptron",
+    "title": "2. Le Perceptron",
+    "content": "<h2>Le Perceptron (1957)</h2><p>Inventé par Frank Rosenblatt, c'est l'ancêtre du neurone artificiel. Il s'agit d'un <strong>classifieur binaire</strong> capable de séparer des données linéairement.</p><p>Formule mathématique de base : <br><code>f(x) = step(w * x + b)</code></p><ul><li><strong>w (Weights)</strong> : Les poids synaptiques.</li><li><strong>b (Bias)</strong> : Le seuil d'activation.</li></ul><p>Cliquez ci-dessous pour expérimenter avec le code Python (Numpy) :</p>",
+    "colabLink": "https://colab.research.google.com/github/Petrichoeur/Neural_Net_from_scratch/blob/master/Perceptron_from_scratch.ipynb",
+    "slides": []
+  },
+  {
+    "id": "mlp",
+    "title": "3. Multi-Layer Perceptron (DeepLearning)",
+    "content": "<h2>Multi-Layer Perceptron (MLP)</h2><p>Le MLP résout le problème du Perceptron simple en ajoutant des <strong>couches cachées</strong>.</p><p>C'est ici que la magie de la \"Backpropagation\" opère pour ajuster les poids à travers plusieurs couches.</p>",
+    "colabLink": "https://colab.research.google.com/github/Petrichoeur/Neural_Net_from_scratch/blob/master/Neural_net_class/Simple_to_use_Neural_net.ipynb",
+    "slides": []
+  },
+  {
+    "id": "DataShift",
+    "title": "4. Data Shift",
+    "content": "<h2>Data Shift</h2><p>Mathématiquement, c'est simple : la distribution de vos données de production <strong>X<sub>prod</sub></strong> n'est plus la même que celle de vos données d'entraînement <strong>X<sub>train</sub></strong>.</p><p>Le monde bouge, les comportements clients évoluent, et votre modèle, lui, reste figé dans le passé.</p>",
+    "colabLink": null,
+    "slides": [
+      "data/datashift/dsslide1.jpeg",
+      "data/datashift/dsslide2.jpeg",
+      "data/datashift/dsslide3.jpeg",
+      "data/datashift/dsslide4.jpeg",
+      "data/datashift/dsslide5.jpeg",
+      "data/datashift/dsslide6.jpeg",
+      "data/datashift/dsslide7.jpeg",
+      "data/datashift/dsslide8.jpeg"
+    ]
+  }, 
+    {
+    "id": "GreenAI",
+    "title": "5. IA & éco-conception",
+    "content": "<h2>Green AI : L'Intelligence Écologique</h2><p>Le <strong>Green AI</strong> est une approche qui vise à réduire l'empreinte carbone de l'intelligence artificielle. Contrairement au \"Red AI\" qui cherche la performance pure (précision maximale) au prix d'une consommation d'énergie massive, le Green AI intègre l'efficience énergétique comme critère de réussite prioritaire.</p><h3>Les 3 Piliers :</h3><ul><li><strong>Sobriété (Frugalité)</strong> : Privilégier des modèles plus petits, optimisés et suffisants pour la tâche, plutôt que des réseaux de neurones gigantesques.</li><li><strong>Réutilisation (Transfer Learning)</strong> : Adapter des modèles existants pré-entraînés au lieu de tout réapprendre \"from scratch\" (depuis zéro), ce qui économise des semaines de calcul.</li><li><strong>Mesure</strong> : Calculer systématiquement l'impact CO2 de ses entraînements (via des outils comme CodeCarbon) pour pouvoir l'optimiser.</li></ul><h3>Pourquoi est-ce crucial ?</h3><p>L'entraînement d'un seul grand modèle de langage (LLM) peut émettre autant de carbone que plusieurs voitures sur toute leur durée de vie. Le Green AI permet de concilier innovation technologique et urgence climatique, tout en réduisant drastiquement les coûts de calcul (Cloud).</p>",
+    "colabLink": null,
+    "slides": [
+      "data/frugal/fork0.png",
+        "data/frugal/fork1.png",
+  "data/frugal/fork2.png",
+    "data/frugal/fork3.png",
+      "data/frugal/fork4.png",
+        "data/frugal/fork5.png",
+          "data/frugal/fork6.png",
+            "data/frugal/fork7.png",
+              "data/frugal/fork8.png"
+    ]
+  }
+]
