@@ -84,7 +84,7 @@
       "company": "Crédit Agricole Group Infrastructure Platform (CA-GIP)",
       "role": "Tech Lead IA & MLOps",
       "location": "Montpellier/Remote",
-      "details": "Industrialisation de l'IA à l'échelle bancaire. Stack: K8s, Openshift, Nvidia , Minio, Run:AI, Ansible. Projet phare : Design et déploiement d'une plateforme GPU-as-a-Service multi-tenant (2025) utilisant NVIDIA MIG pour le partage de ressources. Support expert sur l'IA Générative (RAG, Fine-tuning LLM). Obsession : OS Hardening et optimisation des coûts (FinOps/GreenIT)."
+      "details": "Industrialisation de l'IA à l'échelle bancaire. Stack: K8s, Openshift, Nvidia , Minio, Run:AI, Ansible. Projet phare : Design et déploiement d'une plateforme GPU-as-a-Service multi-tenant (2025). Support expert sur l'IA Générative (RAG, Fine-tuning LLM). Obsession : Infra-as-Code, accompagnement métier, métrologie et optimisation des coûts (FinOps/GreenIT)."
     },
     {
       "period": "Sept 2020 - Jan 2023",
