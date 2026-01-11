@@ -113,7 +113,15 @@
                             <label>CLÉ API GEMINI (Non stockée)</label>
                             <input type="password" id="gemini-api-key" placeholder="Collez votre clé API Google ici...">
                         </div>
-                        
+                        <div class="input-group">
+                            <label>UNITÉ DE TRAITEMENT (MODÈLE)</label>
+                            <select id="gemini-model-select">
+                                <option value="gemini-3-flash-preview">Gemini 3.0 Flash Preview (Expérimental)</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Haute Raisonnement)</option>
+                                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Standard - Rapide)</option>
+                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Éco)</option>
+                            </select>
+                        </div>
                         <div class="input-group">
                             <label>SUJET DU LIVRE</label>
                             <input type="text" id="book-topic" placeholder="Ex: L'avenir du MLOps, La cuisine moléculaire...">
@@ -167,8 +175,15 @@
         
         <div id="modal-caption"></div>
     </div>
-   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- import core js  --> 
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
+
+    <!-- Import engineered js --> 
+
     <script src="script/digital-twin.js"></script>
     <script src="script/projects.js"></script>
     <script src="script/main.js"></script>

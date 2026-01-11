@@ -1,13 +1,14 @@
 /* ==========================================
-   MODULE: MEGA BOOK GENERATOR (Catchy Edition)
+   MODULE: CYBER BOOK (Multi-Model Selector)
    ========================================== */
 
 const BookGenerator = {
     isInitialized: false,
-    fullBookMarkdown: "", 
+    fullBookMarkdown: "",
+    pageFlip: null,
 
     init: function() {
-        console.log("📚 Module Mega-Book : Prêt.");
+        console.log("📚 Module CyberBook : Prêt.");
         const btn = document.getElementById('generate-book-btn');
         if (btn) {
             const newBtn = btn.cloneNode(true);
@@ -17,20 +18,16 @@ const BookGenerator = {
         this.isInitialized = true;
     },
 
-    sleep: function(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    },
+    sleep: function(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
 
     startAgenticGeneration: async function() {
         const apiKey = document.getElementById('gemini-api-key').value.trim();
         const topic = document.getElementById('book-topic').value.trim();
+        // 1. RÉCUPÉRATION DU MODÈLE CHOISI
+        const selectedModel = document.getElementById('gemini-model-select').value;
         
-        if (!apiKey || !topic) {
-            alert("ERREUR : Veuillez entrer une Clé API et un Sujet.");
-            return;
-        }
+        if (!apiKey || !topic) { alert("ERREUR : Clé API et Sujet requis."); return; }
 
-        // UI Setup
         document.querySelector('.book-config-panel').style.display = 'none';
         const loader = document.getElementById('book-loading');
         const display = document.getElementById('book-display');
@@ -40,138 +37,185 @@ const BookGenerator = {
         loader.style.display = 'block';
         display.style.display = 'none';
         display.innerHTML = '';
-        this.fullBookMarkdown = ""; 
+        this.fullBookMarkdown = "";
 
         try {
-            // --- ÉTAPE 1 : ARCHITECTE (PLAN PUNCHY) ---
-            statusLog.textContent = "PHASE 1 : Conception d'un plan captivant...";
+            // Log du modèle utilisé
+            console.log(`🚀 Initialisation avec le modèle : ${selectedModel}`);
+
+            // PHASE 1 : PLAN
+            statusLog.textContent = `PHASE 1 : Architecture du plan (${selectedModel})...`;
             progressBar.style.width = "5%";
-
-            const planPrompt = `
-                Sujet : "${topic}".
-                Tâche : Génère une liste de 10 chapitres pour un livre best-seller.
-                Style : Les titres doivent être ACCROCHEURS, provocateurs ou mystérieux (Style TedX / Malcolm Gladwell). Pas de titres scolaires comme "Introduction" ou "Chapitre 1".
-                Format de réponse attendu : UNIQUEMENT un tableau JSON de chaînes de caractères.
-                Exemple : ["Le mythe de la perfection", "Pourquoi tout va s'effondrer", "L'équation secrète"]
-            `;
-
-            const planResponse = await this.callGemini(apiKey, planPrompt, 2000);
             
-            let cleanJson = planResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            let chapters = JSON.parse(cleanJson);
+            const planPrompt = `Sujet: "${topic}". Tâche: Liste JSON de 8 titres de chapitres HYPER ACCROCHEURS et MYSTÉRIEUX pour un livre technique mais fascinant.`;
+            
+            // On passe le modèle sélectionné
+            const planRes = await this.callGemini(apiKey, planPrompt, 1000, selectedModel);
+            let chapters = JSON.parse(planRes.replace(/```json/g, '').replace(/```/g, '').trim());
 
-            if (!Array.isArray(chapters) || chapters.length === 0) throw new Error("Échec du plan.");
-
-            // Entête du livre
-            this.fullBookMarkdown += `# ${topic.toUpperCase()}\n\n`;
-            this.fullBookMarkdown += `> *"Un voyage au cœur du système."*\n\n`; // Petite citation stylée
-            this.fullBookMarkdown += `## SOMMAIRE\n\n`;
-            chapters.forEach((chap, index) => this.fullBookMarkdown += `**${index + 1}.** ${chap}\n\n`);
+            // Entête Markdown
+            this.fullBookMarkdown += `# ${topic.toUpperCase()}\n\n> *Généré par ${selectedModel}*\n\n## SOMMAIRE\n\n`;
+            chapters.forEach((c, i) => this.fullBookMarkdown += `**${i+1}.** ${c}\n\n`);
             this.fullBookMarkdown += `\n---\n\n`;
 
-            // --- ÉTAPE 2 : RÉDACTEUR (TON CATCHY) ---
+            // PHASE 2 : RÉDACTION
             for (let i = 0; i < chapters.length; i++) {
-                const chapterTitle = chapters[i];
+                const title = chapters[i];
                 const progress = Math.round(((i + 1) / chapters.length) * 100);
                 progressBar.style.width = `${progress}%`;
-                statusLog.textContent = `PHASE 2 : Rédaction de "${chapterTitle}" (${i+1}/${chapters.length})...`;
-
-                const chapterPrompt = `
-                    Tu écris un livre best-seller sur : "${topic}".
-                    CHAPITRE ACTUEL : "${chapterTitle}".
-                    
-                    CONSIGNES DE STYLE (CRUCIAL) :
-                    1. Ton : "Catchy", provocateur, passionnant. Fuis le style académique ou wikipédia.
-                    2. Utilise du Storytelling : commence par une anecdote, une histoire vraie ou un scénario futuriste.
-                    3. Interpelle le lecteur ("Vous pensez peut-être que...", "Imaginez un monde où...").
-                    4. Sois dense mais fluide (1500 mots minimum).
-                    5. Utilise des métaphores puissantes pour expliquer la technique.
-                    
-                    FORMAT : Markdown (Titres, gras, italique). Ne remets pas le titre du livre, juste le contenu du chapitre.
-                `;
-
-                const chapterContent = await this.callGemini(apiKey, chapterPrompt, 8192);
+                statusLog.textContent = `PHASE 2 : Écriture "${title}" (${i+1}/${chapters.length})...`;
                 
-                this.fullBookMarkdown += `\n\n## ${chapterTitle}\n\n${chapterContent}`;
-                await this.sleep(2500); // Pause légèrement augmentée pour la sécurité
+                const chapPrompt = `Écris le chapitre "${title}" du livre "${topic}". Style: Cyberpunk, Tech-Noir, Expert mais Fascinant. Markdown. Min 1000 mots.`;
+                
+                // On passe le modèle sélectionné
+                const content = await this.callGemini(apiKey, chapPrompt, 8192, selectedModel);
+                
+                this.fullBookMarkdown += `## ${title}\n\n${content}\n\n`;
+                await this.sleep(2000);
             }
 
-            // --- ÉTAPE 3 : SIGNATURE & RENDU ---
-            statusLog.textContent = "Finalisation et signature...";
-            
-            // AJOUT DE LA SIGNATURE
-            this.fullBookMarkdown += `\n\n<br><br>\n\n---\n\n`;
-            this.fullBookMarkdown += `### *Fin de transmission.*\n\n`;
-            this.fullBookMarkdown += `**Florian Bobo & Son Jumeau Numérique (Gemini-3-flash)**`;
-
-            this.renderBook(topic);
+            // PHASE 3 : RENDU
+            statusLog.textContent = "Finalisation du rendu...";
+            this.renderExperience(topic, selectedModel);
             loader.style.display = 'none';
 
         } catch (error) {
             console.error(error);
             loader.style.display = 'none';
             document.querySelector('.book-config-panel').style.display = 'flex';
-            alert("Erreur : " + error.message);
+            alert("Erreur (" + selectedModel + ") : " + error.message);
         }
     },
 
-    callGemini: async function(apiKey, prompt, maxTokens) {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+    // --- MISE À JOUR : Fonction callGemini dynamique ---
+    callGemini: async function(apiKey, prompt, maxTokens, modelName) {
+        // Construction de l'URL avec le modèle variable
+        // Attention : Si le modèle n'existe pas encore chez Google, ça renverra une erreur 404
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.8, maxOutputTokens: maxTokens } // Température augmentée pour plus de créativité
+                generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens }
             })
         });
 
         const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
+        
+        // Gestion d'erreur spécifique si le modèle est introuvable
+        if (data.error) {
+            if(data.error.code === 404) {
+                throw new Error(`Le modèle '${modelName}' n'est pas accessible ou n'existe pas sur cette API Key.`);
+            }
+            throw new Error(data.error.message);
+        }
         return data.candidates[0].content.parts[0].text;
     },
 
-    renderBook: function(topicTitle) {
+    renderExperience: function(topic, modelName) {
         const display = document.getElementById('book-display');
-        
-        const bookContentDiv = document.createElement('div');
-        bookContentDiv.id = 'printable-area';
-        bookContentDiv.innerHTML = marked.parse(this.fullBookMarkdown);
-        display.appendChild(bookContentDiv);
+        display.innerHTML = ''; 
+        display.style.display = 'block';
 
-        const actionsDiv = document.createElement('div');
-        actionsDiv.style.marginTop = "30px";
-        actionsDiv.style.display = "flex";
-        actionsDiv.style.gap = "15px";
+        const canvas = document.getElementById('neural-canvas');
+        const neuronImage = canvas ? canvas.toDataURL('image/png') : '';
 
-        const pdfBtn = document.createElement('button');
-        pdfBtn.className = 'cyber-btn';
-        pdfBtn.innerHTML = "📥 TÉLÉCHARGER LE LIVRE (PDF)";
-        pdfBtn.style.backgroundColor = "var(--neon-cyan)";
-        pdfBtn.style.color = "#000";
+        const controls = document.createElement('div');
+        controls.className = 'book-controls-top';
+        controls.innerHTML = `
+            <div style="font-family:var(--font-tech); color:var(--neon-cyan)">LIVRE TERMINÉ</div>
+            <div style="display:flex; gap:10px">
+                <button id="btn-dl-pdf" class="cyber-btn" style="padding:10px; font-size:0.8rem">📥 PDF HD</button>
+                <button id="btn-new-book" class="cyber-btn" style="padding:10px; font-size:0.8rem">↻ NOUVEAU</button>
+            </div>
+        `;
+        display.appendChild(controls);
+
+        const flipContainer = document.createElement('div');
+        flipContainer.className = 'flip-book-viewport';
         
-        pdfBtn.onclick = () => {
-            const element = document.getElementById('printable-area');
-            const opt = {
-                margin:       15,
-                filename:     `Livre_${topicTitle.replace(/\s+/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f0f13' },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-            html2pdf().set(opt).from(element).save();
+        const splitContent = this.fullBookMarkdown.split('## ');
+        
+        let flipHTML = `<div class="flip-book" id="my-flipbook">`;
+        flipHTML += `
+            <div class="page page-cover">
+                <div class="cover-title">${topic}</div>
+                <div class="cover-author">Florian Bobo<br>& ${modelName}</div>
+            </div>
+        `;
+
+        splitContent.forEach(part => {
+            if(!part.trim()) return;
+            // On ignore le sommaire s'il est au début pour le rendu flipbook simple
+            if(part.includes("SOMMAIRE")) return; 
+
+            const fullText = "## " + part;
+            const html = marked.parse(fullText);
+            flipHTML += `<div class="page"><div class="page-content">${html}</div></div>`;
+        });
+        
+        flipHTML += `</div>`;
+        flipContainer.innerHTML = flipHTML;
+        display.appendChild(flipContainer);
+
+        const element = document.getElementById('my-flipbook');
+        this.pageFlip = new St.PageFlip(element, {
+            width: 400, height: 600, size: "fixed",
+            minWidth: 315, maxWidth: 1000, minHeight: 400, maxHeight: 1000,
+            maxShadowOpacity: 0.5, showCover: true, mobileScrollSupport: false 
+        });
+        this.pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+
+        document.getElementById('btn-new-book').onclick = () => location.reload();
+        // On passe aussi le nom du modèle pour la signature PDF
+        document.getElementById('btn-dl-pdf').onclick = () => this.generateHighQualityPDF(topic, neuronImage, modelName);
+    },
+
+    generateHighQualityPDF: function(topic, bgImage, modelName) {
+        let container = document.getElementById('pdf-hidden-container');
+        if(!container) {
+            container = document.createElement('div');
+            container.id = 'pdf-hidden-container';
+            document.body.appendChild(container);
+        }
+        container.innerHTML = ''; 
+
+        const coverDiv = document.createElement('div');
+        coverDiv.className = 'pdf-page pdf-cover';
+        coverDiv.innerHTML = `
+            <img src="${bgImage}" class="pdf-neuron-bg">
+            <div class="pdf-cover-content">
+                <h1 style="font-size:3rem; color:#00f3ff; margin-bottom:20px; text-transform:uppercase">${topic}</h1>
+                <h3 style="color:#fff; font-weight:lighter">GÉNÉRÉ PAR L'INTELLIGENCE ARTIFICIELLE</h3>
+                <p style="color:#bd00ff; margin-top:50px">FLORIAN BOBO // ${modelName.toUpperCase()}</p>
+            </div>
+        `;
+        container.appendChild(coverDiv);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'pdf-page';
+        const signedMarkdown = this.fullBookMarkdown + 
+            `\n\n---\n\n*Document généré via le modèle ${modelName}.*\n**Hash:** ${Math.random().toString(36).substr(2, 9)}`;
+        
+        contentDiv.innerHTML = marked.parse(signedMarkdown);
+        container.appendChild(contentDiv);
+
+        const opt = {
+            margin: 0, filename: `Livre_${topic.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        const reloadBtn = document.createElement('button');
-        reloadBtn.className = 'cyber-btn';
-        reloadBtn.textContent = "↻ NOUVEAU LIVRE";
-        reloadBtn.onclick = () => location.reload();
+        const btn = document.getElementById('btn-dl-pdf');
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ CRÉATION...";
 
-        actionsDiv.appendChild(pdfBtn);
-        actionsDiv.appendChild(reloadBtn);
-        display.appendChild(actionsDiv);
-
-        display.style.display = 'block';
+        html2pdf().set(opt).from(container).save().then(() => {
+            btn.innerText = originalText;
+        });
     }
 };
 
