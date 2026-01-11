@@ -116,7 +116,7 @@ const BookGenerator = {
                 }
 
                 let specificInstruction = "";
-                if (i === 0) specificInstruction = "C'est l'INTRODUCTION. Pose le décor, captive le lecteur.";
+                if (i === 0) specificInstruction = "C'est l'INTRODUCTION. Pose le décor, captive le lecteur. répond directement par le contenu";
                 else if (i === allChapters.length - 1) specificInstruction = "C'est la CONCLUSION. Résume et ouvre sur le futur.";
                 else specificInstruction = `
                 C'est un CHAPITRE CENTRAL.  Sois technique et détaillé.
