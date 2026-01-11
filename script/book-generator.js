@@ -108,9 +108,10 @@ const BookGenerator = {
                     contextInstruction = `
                     CONTEXTE PRÉCÉDENT (Ce que tu viens d'écrire juste avant) :
                     """
-                    ${this.lastChapterContent.substring(0, 4000)} ... (fin du chapitre précédent)
+                    ${this.lastChapterContent.slice(-4000)} ... (fin du chapitre précédent)
                     """
-                    CONSIGNE DE CONTINUITÉ : Assure une transition fluide avec ce texte. Ne répète pas ce qui a déjà été dit. Continue le fil de la pensée.
+                    CONSIGNE DE CONTINUITÉ : Assure une transition fluide avec ce contenu. Ne répète pas ce qui a déjà été dit. Ne continue pas 
+                    directement le texte. Continue le fil de la pensée. 
                     `;
                 }
 
@@ -120,8 +121,8 @@ const BookGenerator = {
                 else specificInstruction = `
                 C'est un CHAPITRE CENTRAL.  Sois technique et détaillé.
                 STRUCTURE OBLIGATOIRE DU CHAPITRE :
-                    Tu dois développer ce chapitre en **6 SOUS-SECTIONS (Titre ###)** distinctes.
-                OBJECTIF DE LONGUEUR : Ce chapitre doit être MASSIF et EXHAUSTIF (Viser 3000 mots).
+                    Tu dois développer ce chapitre en **3 SOUS-SECTIONS (Titre ###)** distinctes.
+                OBJECTIF DE LONGUEUR : Ce chapitre doit être MASSIF et EXHAUSTIF (Viser 1500 mots).
                     Il ne s'agit pas d'un résumé, mais d'un cours magistral complet.
                     
                     
