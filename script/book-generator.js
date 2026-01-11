@@ -148,7 +148,7 @@ const BookGenerator = {
                     Instructions pour ce chapitre :
                     ${specificInstruction}
                     Format: Markdown
-                    Style : Expert, Pédagogue, Humour dosé, Story-telling.
+                    Style : Expert, Pédagogue, Humour Cynique, Story-telling.
                 `;
                 
                 // Appel API
