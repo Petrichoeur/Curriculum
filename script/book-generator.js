@@ -1,5 +1,5 @@
 /* ==========================================
-   MODULE: CYBER BOOK (Structure Rigide & PDF HD)
+   MODULE: CYBER BOOK (Robust Edition)
    ========================================== */
 
 const BookGenerator = {
@@ -20,15 +20,48 @@ const BookGenerator = {
 
     sleep: function(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
 
+    // --- PARSEUR BLINDÉ CONTRE LES ERREURS ---
     parseJsonSafely: function(text) {
-        const firstBracket = text.indexOf('[');
-        const lastBracket = text.lastIndexOf(']');
-        if (firstBracket === -1 || lastBracket === -1) throw new Error("Format de liste invalide.");
+        console.log("Texte brut reçu du plan :", text); // Pour débugger
+
+        // TENTATIVE 1 : Extraction JSON Standard
         try {
-            return JSON.parse(text.substring(firstBracket, lastBracket + 1));
+            const firstBracket = text.indexOf('[');
+            const lastBracket = text.lastIndexOf(']');
+            
+            if (firstBracket !== -1 && lastBracket !== -1) {
+                const jsonString = text.substring(firstBracket, lastBracket + 1);
+                return JSON.parse(jsonString);
+            }
         } catch (e) {
-            throw new Error("Erreur de lecture du plan généré.");
+            console.warn("Échec parsing JSON, passage en mode manuel...");
         }
+
+        // TENTATIVE 2 : Mode Sauvetage (Extraction manuelle ligne par ligne)
+        // Si l'IA a renvoyé :
+        // 1. Titre A
+        // 2. Titre B
+        const lines = text.split('\n');
+        const chapters = [];
+        
+        lines.forEach(line => {
+            // Nettoyage : on enlève les chiffres, points, tirets au début
+            // Ex: "1. Introduction" devient "Introduction"
+            let cleanLine = line.replace(/^[\d\.\-\*\s"']+|[\"']+$/g, '').trim();
+            
+            // Si la ligne contient du texte et n'est pas un crochet json
+            if (cleanLine.length > 3 && !cleanLine.includes('[') && !cleanLine.includes(']')) {
+                chapters.push(cleanLine);
+            }
+        });
+
+        // Si on a récupéré au moins 3 chapitres, on valide
+        if (chapters.length >= 3) {
+            // On limite à 5 chapitres pour ne pas casser la structure
+            return chapters.slice(0, 8); 
+        }
+
+        throw new Error("L'IA a généré un format illisible. Réessayez.");
     },
 
     startAgenticGeneration: async function() {
@@ -50,85 +83,58 @@ const BookGenerator = {
         this.fullBookMarkdown = "";
 
         try {
-            // PHASE 1 : GÉNÉRATION DES 5 CHAPITRES CENTRAUX
-            statusLog.textContent = `PHASE 1 : Architecture stricte (1 Intro + 5 Chapitres + Ouverture)...`;
+            // PHASE 1 : PLAN
+            statusLog.textContent = `PHASE 1 : Architecture du plan (${selectedModel})...`;
             progressBar.style.width = "5%";
             
-            // On demande juste les 5 chapitres du milieu
             const planPrompt = `
                 Sujet: "${topic}". 
-                Tâche: Génère une liste de 5 titres de chapitres techniques et accrocheurs pour le corps du livre.
+                Tâche: Donne-moi une liste de 5 titres de chapitres pour le corps du livre.
                 IMPORTANT : Ne mets PAS d'introduction, ni de conclusion. Juste les 5 parties centrales.
-                FORMAT STRICT : Tableau JSON de strings. Exemple: ["Titre A", "Titre B", "Titre C", "Titre D", "Titre E"]
+                FORMAT : Renvoie UNIQUEMENT un tableau JSON simple. Pas de Markdown. Pas de texte avant ou après.
+                Exemple valide : ["Le début de l'ère", "La complexité cachée", "L'impact humain", "La rupture", "Vers l'infini"]
             `;
             
             const planRes = await this.callGemini(apiKey, planPrompt, 1000, selectedModel);
-            const coreChapters = this.parseJsonSafely(planRes);
+            const coreChapters = this.parseJsonSafely(planRes); // Utilisation du nouveau parseur
 
-            // ON CONSTRUIT LA STRUCTURE FORCÉE
+            // Structure forcée
             const allChapters = [
                 "1. Introduction", 
                 ...coreChapters, 
                 "Ouverture (Pour aller plus loin)"
             ];
 
-            // Entête Markdown
+            // Entête
             this.fullBookMarkdown += `# ${topic.toUpperCase()}\n\n> *Généré par ${selectedModel}*\n\n## SOMMAIRE\n\n`;
             allChapters.forEach((c, i) => this.fullBookMarkdown += `**${i === 0 || i === allChapters.length - 1 ? '' : (i) + '.'}** ${c}\n\n`);
             this.fullBookMarkdown += `\n---\n\n`;
 
-            // PHASE 2 : RÉDACTION STRUCTURÉE
+            // PHASE 2 : RÉDACTION
             for (let i = 0; i < allChapters.length; i++) {
                 const title = allChapters[i];
                 const progress = Math.round(((i + 1) / allChapters.length) * 100);
                 progressBar.style.width = `${progress}%`;
                 statusLog.textContent = `PHASE 2 : Écriture "${title}" (${i+1}/${allChapters.length})...`;
                 
-                // --- LOGIQUE DE PROMPT VARIABLE SELON LA POSITION ---
-                let instructionsSpecifiques = "";
-                
-                if (i === 0) {
-                    // INTRODUCTION
-                    instructionsSpecifiques = `
-                        Ceci est l'INTRODUCTION.
-                        Objectifs : Définir le sujet, accrocher le lecteur, présenter la problématique.
-                        Ne fais pas de sous-parties complexes. Reste fluide et engageant avec une touche de cynisme et d'humour.
-                    `;
-                } else if (i === allChapters.length - 1) {
-                    // OUVERTURE / CONCLUSION
-                    instructionsSpecifiques = `
-                        Ceci est l'OUVERTURE (Conclusion).
-                        Objectifs : Résumer les points clés et surtout ouvrir sur le futur, les tendances à venir, l'impact long terme.
-                        Donne une vision inspirante.
-                    `;
-                } else {
-                    // LES 5 CHAPITRES CŒUR
-                    instructionsSpecifiques = `
-                        Ceci est un CHAPITRE TECHNIQUE MAJEUR.
-                        STRUCTURE OBLIGATOIRE : Tu dois impérativement diviser ce chapitre en 3 SOUS-PARTIES distinctes (utilise des titres niveau ###).
-                        Contenu : Sois dense, expert, donne des exemples, simplifie et vulgarise les concepts, soit le plus engageant possible.
-                    `;
-                }
+                let instructions = "";
+                if (i === 0) instructions = "C'est l'INTRODUCTION. Pose le décor, captive le lecteur.";
+                else if (i === allChapters.length - 1) instructions = "C'est la CONCLUSION/OUVERTURE. Ouvre sur le futur.";
+                else instructions = "C'est un CHAPITRE CENTRAL. Divise-le OBLIGATOIREMENT en 3 sous-parties (###). Sois technique et détaillé avec un ton engageant et chaleureux. Avec une touche de cynisme si c'est adéquate, tu es un grand écrivain.";
 
                 const chapPrompt = `
-                    Livre : "${topic}".
-                    Chapitre actuel : "${title}".
-                    
-                    CONSIGNES :
-                    ${instructionsSpecifiques}
-                    
-                    Style Global : Cyberpunk, Tech-Noir, Expert mais Fascinant.
-                    Format : Markdown.
+                    Livre : "${topic}". Chapitre : "${title}".
+                    Consigne : ${instructions}
+                    Style : Cyberpunk, Expert, Fascinant. Markdown.
                 `;
                 
                 const content = await this.callGemini(apiKey, chapPrompt, 8192, selectedModel);
-                
                 this.fullBookMarkdown += `## ${title}\n\n${content}\n\n`;
                 await this.sleep(2000);
             }
 
             // PHASE 3 : RENDU
-            statusLog.textContent = "Finalisation du rendu...";
+            statusLog.textContent = "Finalisation...";
             this.renderExperience(topic, selectedModel);
             loader.style.display = 'none';
 
@@ -141,6 +147,8 @@ const BookGenerator = {
     },
 
     callGemini: async function(apiKey, prompt, maxTokens, modelName) {
+        // Mapping des noms utilisateurs vers les vrais noms d'API Google si besoin
+        // Ici on garde l'input direct, mais attention aux noms inventés
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
@@ -155,7 +163,10 @@ const BookGenerator = {
         const data = await response.json();
         
         if (data.error) {
-            if(data.error.code === 404) throw new Error(`Modèle '${modelName}' introuvable ou indisponible.`);
+            // Si erreur 404 (Modèle introuvable), on peut proposer un fallback
+            if(data.error.code === 404 || data.error.status === 'NOT_FOUND') {
+                 throw new Error(`Le modèle '${modelName}' n'existe pas ou n'est pas accessible avec cette clé.`);
+            }
             throw new Error(data.error.message);
         }
         return data.candidates[0].content.parts[0].text;
@@ -194,9 +205,7 @@ const BookGenerator = {
         `;
 
         splitContent.forEach(part => {
-            if(!part.trim()) return;
-            if(part.includes("SOMMAIRE")) return; 
-
+            if(!part.trim() || part.includes("SOMMAIRE")) return;
             const fullText = "## " + part;
             const html = marked.parse(fullText);
             flipHTML += `<div class="page"><div class="page-content">${html}</div></div>`;
@@ -218,76 +227,57 @@ const BookGenerator = {
         document.getElementById('btn-dl-pdf').onclick = () => this.generateHighQualityPDF(topic, neuronImage, modelName);
     },
 
-// ... Le début du fichier reste le même ...
-
     generateHighQualityPDF: function(topic, bgImage, modelName) {
         const btn = document.getElementById('btn-dl-pdf');
         const originalText = btn.innerText;
-        btn.innerText = "⏳ GÉNÉRATION DU MASTER...";
+        btn.innerText = "⏳ GÉNÉRATION...";
         btn.disabled = true;
 
-        // 1. CRÉATION DU CONTENEUR TEMPORAIRE (VISIBLE)
-        // S'il n'est pas dans le flux visible, html2canvas échoue souvent.
         let container = document.createElement('div');
         container.id = 'pdf-staging-container';
         document.body.appendChild(container);
 
-        // 2. CRÉATION DE LA COUVERTURE
         const coverDiv = document.createElement('div');
         coverDiv.className = 'pdf-page pdf-cover';
         coverDiv.innerHTML = `
             <img src="${bgImage}" class="pdf-neuron-bg">
             <div class="pdf-cover-content">
                 <h1 style="font-size:36pt; color:#00f3ff; margin-bottom:20px; text-transform:uppercase; line-height:1.2">${topic}</h1>
-                <h3 style="color:#ffffff; font-weight:lighter; font-size:18pt; letter-spacing:2px">MANUSCRIT GÉNÉRÉ PAR IA</h3>
+                <h3 style="color:#ffffff; font-weight:lighter; font-size:18pt; letter-spacing:2px">MANUSCRIT IA</h3>
                 <p style="color:#bd00ff; margin-top:50px; font-size:12pt; font-family:monospace">ARCHITECTE : FLORIAN BOBO<br>MOTEUR : ${modelName.toUpperCase()}</p>
             </div>
         `;
         container.appendChild(coverDiv);
 
-        // 3. CRÉATION DU CONTENU
         const contentDiv = document.createElement('div');
         contentDiv.className = 'pdf-page pdf-content-text';
-        
         const signedMarkdown = this.fullBookMarkdown + 
-            `\n\n---\n\n*Ce document a été généré le ${new Date().toLocaleDateString()} par l'Architecture Neurale de Florian Bobo.*\n**Hash Signature:** ${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-        
+            `\n\n---\n\n*Généré le ${new Date().toLocaleDateString()}.*\n**Hash:** ${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
         contentDiv.innerHTML = marked.parse(signedMarkdown);
         container.appendChild(contentDiv);
 
-        // 4. CONFIGURATION ROBUSTE DE HTML2PDF
         const opt = {
-            margin:       0, // On gère les marges en CSS (padding)
-            filename:     `Livre_${topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { 
-                scale: 2, // Haute résolution
-                useCORS: true, // Important pour l'image de fond
-                scrollY: 0,
-                backgroundColor: '#080808', // Force le fond noir dans le canvas
-                windowWidth: 1200 // Force une largeur virtuelle pour le rendu
-            },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: 0,
+            filename: `Livre_${topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#080808', windowWidth: 1200 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        // 5. GÉNÉRATION AVEC DÉLAI DE SÉCURITÉ
-        // Le setTimeout permet au navigateur de "peindre" le DOM avant la capture
         setTimeout(() => {
             html2pdf().set(opt).from(container).save().then(() => {
-                // NETTOYAGE
                 document.body.removeChild(container);
                 btn.innerText = originalText;
                 btn.disabled = false;
             }).catch(err => {
                 console.error(err);
-                alert("Erreur PDF. Vérifiez la console.");
+                alert("Erreur PDF.");
                 document.body.removeChild(container);
                 btn.innerText = originalText;
                 btn.disabled = false;
             });
-        }, 1000); // 1 seconde de pause pour assurer le chargement des images
+        }, 1000);
     }
-
 };
 
 window.BookGenerator = BookGenerator;
