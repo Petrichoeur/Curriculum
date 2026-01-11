@@ -53,7 +53,7 @@
             <a href="#home" class="nav-link" data-module="Home">Accueil</a>
             <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
             <a href="#projects" class="nav-link" data-module="Projects">Projets</a>
-            <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a> 
+            <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a>
             <a href="#book-generator" class="nav-link" data-module="BookGenerator">Book Gen</a>
         </nav>
 
@@ -106,8 +106,9 @@
             </section>
 
             <section id="book-generator" class="tab-content">
-                <div class="glass-panel" style="max-width: 1000px;"> <h1>Générateur de Manuscrit <span style="font-size:0.5em; color:var(--neon-cyan)">v1.0</span></h1>
-                    
+                <div class="glass-panel" style="max-width: 1000px;">
+                    <h1>Générateur de Manuscrit <span style="font-size:0.5em; color:var(--neon-cyan)">v1.0</span></h1>
+
                     <div class="book-config-panel">
                         <div class="input-group">
                             <label>CLÉ API GEMINI (Non stockée)</label>
@@ -120,12 +121,14 @@
                                 <option value="gemini-2.5-pro">Gemini 2.5 Pro (Haute Raisonnement)</option>
                                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Standard - Rapide)</option>
                                 <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Éco)</option>
-                                <option value="gemma-3-27b-it">Gemini 3 27b (Éco, un peu vieux mais assez performant)</option>
+                                <option value="gemma-3-27b-it">Gemini 3 27b (Éco, un peu vieux mais assez performant)
+                                </option>
                             </select>
                         </div>
                         <div class="input-group">
                             <label>SUJET DU LIVRE</label>
-                            <input type="text" id="book-topic" placeholder="Ex: L'avenir du MLOps, La cuisine moléculaire...">
+                            <input type="text" id="book-topic"
+                                placeholder="Ex: L'avenir du MLOps, La cuisine moléculaire...">
                         </div>
 
                         <button id="generate-book-btn" class="cyber-btn">
@@ -135,12 +138,14 @@
 
                     <div id="book-loading" class="book-loader" style="display:none;">
                         <div class="loader-text">INITIALISATION DES AGENTS ÉCRIVAINS...</div>
-                        <div class="loader-bar"><div class="loader-progress"></div></div>
+                        <div class="loader-bar">
+                            <div class="loader-progress"></div>
+                        </div>
                         <div id="book-status-log" class="console-log"></div>
                     </div>
 
                     <div id="book-display" class="book-content" style="display:none;">
-                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -165,25 +170,31 @@
         </div>
     </main>
 
-    <canvas id="neural-canvas"></canvas>
-        <div id="slide-modal" class="modal">
-            <span class="close-modal" onclick="Educational.closeModal()">&times;</span>
-            
-            <img class="modal-content" id="modal-img">
-            
-            <a class="modal-prev" onclick="Educational.changeModalSlide(-1)">❮</a>
-            <a class="modal-next" onclick="Educational.changeModalSlide(1)">❯</a>
-        
+    <!-- Awesome background animation -->
+    <canvas id="neural-canvas"></canvas> 
+    
+    <!-- Modal affichage slide -->
+    <div id="slide-modal" class="modal">
+        <span class="close-modal" onclick="Educational.closeModal()">&times;</span>
+
+        <img class="modal-content" id="modal-img">
+
+        <a class="modal-prev" onclick="Educational.changeModalSlide(-1)">❮</a>
+        <a class="modal-next" onclick="Educational.changeModalSlide(1)">❯</a>
+
         <div id="modal-caption"></div>
     </div>
 
-    <!-- import core js  --> 
+    <!-- Book generated placeholder --> 
+    <div id="clean-book-container"></div>
+
+    <!-- import core js  -->
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
 
-    <!-- Import engineered js --> 
+    <!-- Import engineered js -->
 
     <script src="script/digital-twin.js"></script>
     <script src="script/projects.js"></script>
