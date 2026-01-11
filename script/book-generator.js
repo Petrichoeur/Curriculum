@@ -1,5 +1,5 @@
 /* ==========================================
-   MODULE: CYBER BOOK (Robust JSON Parsing)
+   MODULE: CYBER BOOK (Structure Rigide & PDF HD)
    ========================================== */
 
 const BookGenerator = {
@@ -20,24 +20,14 @@ const BookGenerator = {
 
     sleep: function(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
 
-    // --- NOUVELLE FONCTION : NETTOYAGE JSON ROBUSTE ---
     parseJsonSafely: function(text) {
-        // 1. On cherche la première occurence de '[' et la dernière de ']'
         const firstBracket = text.indexOf('[');
         const lastBracket = text.lastIndexOf(']');
-
-        if (firstBracket === -1 || lastBracket === -1) {
-            throw new Error("L'IA n'a pas renvoyé de liste valide.");
-        }
-
-        // 2. On extrait juste ce qu'il y a entre les deux
-        const jsonString = text.substring(firstBracket, lastBracket + 1);
-
+        if (firstBracket === -1 || lastBracket === -1) throw new Error("Format de liste invalide.");
         try {
-            return JSON.parse(jsonString);
+            return JSON.parse(text.substring(firstBracket, lastBracket + 1));
         } catch (e) {
-            console.error("JSON Brut fautif :", jsonString);
-            throw new Error("Erreur de syntaxe dans le plan généré par l'IA. Réessayez.");
+            throw new Error("Erreur de lecture du plan généré.");
         }
     },
 
@@ -60,36 +50,76 @@ const BookGenerator = {
         this.fullBookMarkdown = "";
 
         try {
-            // PHASE 1 : PLAN
-            statusLog.textContent = `PHASE 1 : Architecture du plan (${selectedModel})...`;
+            // PHASE 1 : GÉNÉRATION DES 5 CHAPITRES CENTRAUX
+            statusLog.textContent = `PHASE 1 : Architecture stricte (1 Intro + 5 Chapitres + Ouverture)...`;
             progressBar.style.width = "5%";
             
-            // Prompt renforcé pour éviter le bavardage
+            // On demande juste les 5 chapitres du milieu
             const planPrompt = `
                 Sujet: "${topic}". 
-                Tâche: Donne-moi une liste de 8 titres de chapitres pour un livre.
-                FORMAT STRICT : Renvoie UNIQUEMENT un tableau JSON Array de strings. RIEN D'AUTRE avant ou après.
-                Exemple: ["Titre 1", "Titre 2"]
+                Tâche: Génère une liste de 5 titres de chapitres techniques et accrocheurs pour le corps du livre.
+                IMPORTANT : Ne mets PAS d'introduction, ni de conclusion. Juste les 5 parties centrales.
+                FORMAT STRICT : Tableau JSON de strings. Exemple: ["Titre A", "Titre B", "Titre C", "Titre D", "Titre E"]
             `;
             
             const planRes = await this.callGemini(apiKey, planPrompt, 1000, selectedModel);
-            
-            // UTILISATION DU NOUVEAU PARSEUR
-            let chapters = this.parseJsonSafely(planRes);
+            const coreChapters = this.parseJsonSafely(planRes);
+
+            // ON CONSTRUIT LA STRUCTURE FORCÉE
+            const allChapters = [
+                "1. Introduction", 
+                ...coreChapters, 
+                "Ouverture (Pour aller plus loin)"
+            ];
 
             // Entête Markdown
             this.fullBookMarkdown += `# ${topic.toUpperCase()}\n\n> *Généré par ${selectedModel}*\n\n## SOMMAIRE\n\n`;
-            chapters.forEach((c, i) => this.fullBookMarkdown += `**${i+1}.** ${c}\n\n`);
+            allChapters.forEach((c, i) => this.fullBookMarkdown += `**${i === 0 || i === allChapters.length - 1 ? '' : (i) + '.'}** ${c}\n\n`);
             this.fullBookMarkdown += `\n---\n\n`;
 
-            // PHASE 2 : RÉDACTION
-            for (let i = 0; i < chapters.length; i++) {
-                const title = chapters[i];
-                const progress = Math.round(((i + 1) / chapters.length) * 100);
+            // PHASE 2 : RÉDACTION STRUCTURÉE
+            for (let i = 0; i < allChapters.length; i++) {
+                const title = allChapters[i];
+                const progress = Math.round(((i + 1) / allChapters.length) * 100);
                 progressBar.style.width = `${progress}%`;
-                statusLog.textContent = `PHASE 2 : Écriture "${title}" (${i+1}/${chapters.length})...`;
+                statusLog.textContent = `PHASE 2 : Écriture "${title}" (${i+1}/${allChapters.length})...`;
                 
-                const chapPrompt = `Écris le chapitre "${title}" du livre "${topic}". Style: Cyberpunk, Tech-Noir, Expert mais Fascinant. Markdown. Min 1000 mots.`;
+                // --- LOGIQUE DE PROMPT VARIABLE SELON LA POSITION ---
+                let instructionsSpecifiques = "";
+                
+                if (i === 0) {
+                    // INTRODUCTION
+                    instructionsSpecifiques = `
+                        Ceci est l'INTRODUCTION.
+                        Objectifs : Définir le sujet, accrocher le lecteur, présenter la problématique.
+                        Ne fais pas de sous-parties complexes. Reste fluide et engageant avec une touche de cynisme et d'humour.
+                    `;
+                } else if (i === allChapters.length - 1) {
+                    // OUVERTURE / CONCLUSION
+                    instructionsSpecifiques = `
+                        Ceci est l'OUVERTURE (Conclusion).
+                        Objectifs : Résumer les points clés et surtout ouvrir sur le futur, les tendances à venir, l'impact long terme.
+                        Donne une vision inspirante.
+                    `;
+                } else {
+                    // LES 5 CHAPITRES CŒUR
+                    instructionsSpecifiques = `
+                        Ceci est un CHAPITRE TECHNIQUE MAJEUR.
+                        STRUCTURE OBLIGATOIRE : Tu dois impérativement diviser ce chapitre en 3 SOUS-PARTIES distinctes (utilise des titres niveau ###).
+                        Contenu : Sois dense, expert, donne des exemples, simplifie et vulgarise les concepts, soit le plus engageant possible.
+                    `;
+                }
+
+                const chapPrompt = `
+                    Livre : "${topic}".
+                    Chapitre actuel : "${title}".
+                    
+                    CONSIGNES :
+                    ${instructionsSpecifiques}
+                    
+                    Style Global : Cyberpunk, Tech-Noir, Expert mais Fascinant.
+                    Format : Markdown.
+                `;
                 
                 const content = await this.callGemini(apiKey, chapPrompt, 8192, selectedModel);
                 
@@ -111,8 +141,6 @@ const BookGenerator = {
     },
 
     callGemini: async function(apiKey, prompt, maxTokens, modelName) {
-        // Fallback si le modèle n'existe pas encore vraiment, on pointe vers flash par défaut en cas d'erreur 404
-        // Mais ici on garde la logique stricte demandée
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
@@ -127,10 +155,7 @@ const BookGenerator = {
         const data = await response.json();
         
         if (data.error) {
-            // Gestion spécifique des erreurs Google
-            if(data.error.code === 404) {
-                throw new Error(`Le modèle '${modelName}' n'est pas encore disponible sur l'API publique.`);
-            }
+            if(data.error.code === 404) throw new Error(`Modèle '${modelName}' introuvable ou indisponible.`);
             throw new Error(data.error.message);
         }
         return data.candidates[0].content.parts[0].text;
@@ -158,7 +183,6 @@ const BookGenerator = {
         const flipContainer = document.createElement('div');
         flipContainer.className = 'flip-book-viewport';
         
-        // Séparation propre des chapitres
         const splitContent = this.fullBookMarkdown.split('## ');
         
         let flipHTML = `<div class="flip-book" id="my-flipbook">`;
@@ -202,6 +226,9 @@ const BookGenerator = {
             document.body.appendChild(container);
         }
         container.innerHTML = ''; 
+        
+        // FIX PAGE BLANCHE : On rend visible le conteneur juste avant la capture
+        container.style.opacity = '1';
 
         const coverDiv = document.createElement('div');
         coverDiv.className = 'pdf-page pdf-cover';
@@ -217,6 +244,8 @@ const BookGenerator = {
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'pdf-page';
+        contentDiv.style.color = "#ffffff"; // Force le texte en blanc
+        
         const signedMarkdown = this.fullBookMarkdown + 
             `\n\n---\n\n*Document généré via le modèle ${modelName}.*\n**Hash:** ${Math.random().toString(36).substr(2, 9)}`;
         
@@ -226,17 +255,26 @@ const BookGenerator = {
         const opt = {
             margin: 0, filename: `Livre_${topic.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true, 
+                scrollY: 0,
+                backgroundColor: '#080808' // Fond noir forcé
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         const btn = document.getElementById('btn-dl-pdf');
         const originalText = btn.innerText;
-        btn.innerText = "⏳ CRÉATION...";
+        btn.innerText = "⏳ RENDU...";
 
-        html2pdf().set(opt).from(container).save().then(() => {
-            btn.innerText = originalText;
-        });
+        // Petit délai pour laisser le navigateur afficher le conteneur caché
+        setTimeout(() => {
+            html2pdf().set(opt).from(container).save().then(() => {
+                btn.innerText = originalText;
+                container.style.opacity = '0'; // On recache proprement
+            });
+        }, 500);
     }
 };
 

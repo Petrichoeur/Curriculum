@@ -1058,12 +1058,17 @@ body {
 .cover-title { font-size: 2rem; color: var(--neon-cyan); margin-bottom: 20px; text-transform: uppercase; }
 .cover-author { font-size: 1rem; color: #fff; font-family: var(--font-tech); }
 
-/* --- STYLE POUR LE PDF (Invisible à l'écran) --- */
+
+/* --- STYLE POUR LE PDF (Invisible mais rendu) --- */
 #pdf-hidden-container {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-    width: 210mm; /* Largeur A4 */
+    position: fixed; /* Reste fixe à l'écran */
+    top: 0; 
+    left: 0;
+    z-index: -9999; /* Caché tout au fond derrière le site */
+    width: 210mm; /* Largeur A4 stricte */
+    min-height: 297mm;
+    opacity: 0; /* Invisible à l'œil nu, mais présent pour le DOM */
+    pointer-events: none; /* On ne peut pas cliquer dessus par erreur */
 }
 
 /* Design de la page PDF */
