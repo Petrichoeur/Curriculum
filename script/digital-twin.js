@@ -1,5 +1,5 @@
 /* ==========================================
-   MODULE: DIGITAL TWIN (Ticker Skills + Loading Bar)
+   MODULE: DIGITAL TWIN (Fast Tickers & Loading)
    ========================================== */
 
 const DigitalTwin = {
@@ -7,7 +7,7 @@ const DigitalTwin = {
     config: null,
     history: [],
     
-    // Stockage des intervalles pour l'animation des compétences
+    // Stockage des intervalles pour pouvoir les nettoyer proprement
     intervals: [],
 
     // Phrases d'ambiance pour le chargement
@@ -16,7 +16,7 @@ const DigitalTwin = {
         "Initialisation du jumeau numérique...",
         "Connexion neurale à Florian...",
         "Reverse-proxy sur Bio-FireWall interne...",
-        "Difficulté à récupérer donnée Génétique du Clone numérique...",
+        "Difficulté à récupérer donnée Génétique...",
         "Synchronisation des souvenirs...",
         "Déchiffrement de la syntaxe mnémotechnique...",
         "Analyse des schémas cognitifs...",
@@ -96,35 +96,32 @@ const DigitalTwin = {
             bioEl.innerHTML = `
                 <div class="bio-line">📍 ${id.location}</div>
                 <div class="bio-line">🎂 ${age} ans</div>
-                <div class="bio-line">⚡ ${cognitive}</div>
             `;
+            // J'ai retiré le style cognitif ici pour alléger, mais vous pouvez le remettre si souhaité
         }
 
-        // --- ANIMATION DES COMPÉTENCES (TICKER) ---
-        // On nettoie les anciens intervalles si on re-rend le profil
+        // --- ANIMATION DES COMPÉTENCES & INTÉRÊTS (TICKERS RAPIDES) ---
+        
+        // 1. On nettoie les anciens intervalles pour éviter les superpositions
         this.intervals.forEach(clearInterval);
         this.intervals = [];
 
-        // Fusion des tableaux pour simplifier l'affichage
+        // 2. Préparation des données
         const expertData = [...data.hard_skills.expert, ...data.hard_skills.data_science_core];
         const notionData = [...data.hard_skills.notions_hobbies, ...data.hard_skills.competent];
+        
+        // Fusion des Intérêts (Musique + Lecture + Sport si dispo)
+        const interestData = [...data.interests.music, ...data.interests.reading];
+        if (data.interests.sports) interestData.push(...data.interests.sports);
 
-        // Lancement des animations avec des vitesses légèrement différentes pour faire "organique"
-        this.startTicker('ticker-god', data.hard_skills.god_tier, 3000);
-        this.startTicker('ticker-expert', expertData, 3500);
-        this.startTicker('ticker-notion', notionData, 4000);
-
-
-        // Liste des intérêts (classique)
-        const hobbiesList = document.getElementById('interests-list');
-        if (hobbiesList) {
-            hobbiesList.innerHTML = ''; 
-            [...data.interests.music, ...data.interests.reading].slice(0, 5).forEach(item => {
-                const li = document.createElement('li');
-                li.textContent = item;
-                hobbiesList.appendChild(li);
-            });
-        }
+        // 3. Lancement des animations (VITESSE AUGMENTÉE ICI)
+        // Les valeurs sont en millisecondes. Plus c'est bas, plus ça va vite.
+        this.startTicker('ticker-god', data.hard_skills.god_tier, 2000);
+        this.startTicker('ticker-expert', expertData, 2200);
+        this.startTicker('ticker-notion', notionData, 2500);
+        
+        // Le nouveau ticker pour les intérêts (Rouge)
+        this.startTicker('ticker-interests', interestData, 2800);
     },
 
     /* ==========================================
@@ -140,18 +137,18 @@ const DigitalTwin = {
         const update = () => {
             // 1. Glitch Effect Start (Affiche du charabia)
             el.classList.add('glitching');
-            el.textContent = this.randomChars(10); 
+            el.textContent = this.randomChars(8); // Moins de charabia pour être plus vif
 
-            // 2. Reveal Real Text after 300ms
+            // 2. Reveal Real Text (Plus rapide : 200ms au lieu de 300ms)
             setTimeout(() => {
-                // On nettoie le texte (enlève les parenthèses pour que ça rentre mieux)
+                // On nettoie le texte
                 const cleanText = items[index].split('(')[0].trim();
                 el.textContent = cleanText;
                 el.classList.remove('glitching');
                 
                 // Préparer le prochain item
                 index = (index + 1) % items.length;
-            }, 300);
+            }, 200);
         };
 
         // Premier appel immédiat
@@ -257,23 +254,23 @@ const DigitalTwin = {
         // 1. Création et affichage de la barre de chargement
         const loader = this.createLoadingBar();
         
-        // 2. Animation (Simulation de progression)
+        // 2. Animation (Simulation de progression plus rapide)
         let progress = 0;
         let phraseIndex = 0;
         
         const interval = setInterval(() => {
-            // On avance la barre un peu au hasard
-            progress += Math.random() * 12; 
-            if (progress > 95) progress = 95; // On bloque à 95% tant que l'API n'a pas répondu
+            // On avance la barre plus vite
+            progress += Math.random() * 15; 
+            if (progress > 95) progress = 95; // On bloque à 95%
             
             loader.barFill.style.width = `${progress}%`;
 
-            // On change la phrase de manière aléatoire
+            // On change la phrase aléatoirement
             if (Math.random() > 0.6) {
                 phraseIndex = (phraseIndex + 1) % this.loadingPhrases.length;
                 loader.textEl.textContent = this.loadingPhrases[phraseIndex];
             }
-        }, 600); // Mise à jour toutes les 600ms
+        }, 400); // Mise à jour plus fréquente (400ms au lieu de 600ms)
 
         try {
             // 3. Préparation du Prompt
@@ -310,11 +307,10 @@ const DigitalTwin = {
             
             // 5. Fin de l'animation
             clearInterval(interval);
-            loader.barFill.style.width = '100%'; // On remplit la barre à fond
+            loader.barFill.style.width = '100%'; 
             
-            // On attend une demi-seconde pour voir la barre pleine, puis on affiche le message
             setTimeout(() => {
-                loader.container.remove(); // Suppression de la barre
+                loader.container.remove(); 
 
                 if (!response.ok || data.error) {
                     console.error("Erreur API:", data);
@@ -330,7 +326,7 @@ const DigitalTwin = {
                 } else {
                     this.addMessage('system', "Données corrompues (Réponse vide).");
                 }
-            }, 500);
+            }, 300); // Délai réduit avant affichage
 
         } catch (error) {
             clearInterval(interval);
@@ -370,8 +366,7 @@ const DigitalTwin = {
 
             --- 2. TON CERCLE (Humanise tes réponses) ---
             Compagne : ${circle.girlfriend.name} (Dev C#, ${circle.girlfriend.personality}).
-            Enfants : Un fils (${circle.daughter.desc}) et une fille (${circle.son.desc}). 
-            Note : (Inversion détectée dans les données d'origine mais je corrige ici : le prompt reflète les données fournies).
+            Enfants : Un fils (${circle.son.desc}) et une fille (${circle.daughter.desc}).
             Animal : ${circle.pet.name} (${circle.pet.breed}, ${circle.pet.personality}). 
             Collègues: Maxime mon squad-lead, un commercial dans l'âme, Tony un expert DevOps du Tonnerre, Michel un couteau-suisse de l'infra, Mina une cheffe de Projet qui a réponse à tout, Imad le nouvel arrivant qui adore les architectures I.A. complexes.
 
