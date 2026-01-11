@@ -1,5 +1,5 @@
 /* ==========================================
-   MODULE: CYBER BOOK (Multi-Model Selector)
+   MODULE: CYBER BOOK (Robust JSON Parsing)
    ========================================== */
 
 const BookGenerator = {
@@ -20,10 +20,30 @@ const BookGenerator = {
 
     sleep: function(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
 
+    // --- NOUVELLE FONCTION : NETTOYAGE JSON ROBUSTE ---
+    parseJsonSafely: function(text) {
+        // 1. On cherche la première occurence de '[' et la dernière de ']'
+        const firstBracket = text.indexOf('[');
+        const lastBracket = text.lastIndexOf(']');
+
+        if (firstBracket === -1 || lastBracket === -1) {
+            throw new Error("L'IA n'a pas renvoyé de liste valide.");
+        }
+
+        // 2. On extrait juste ce qu'il y a entre les deux
+        const jsonString = text.substring(firstBracket, lastBracket + 1);
+
+        try {
+            return JSON.parse(jsonString);
+        } catch (e) {
+            console.error("JSON Brut fautif :", jsonString);
+            throw new Error("Erreur de syntaxe dans le plan généré par l'IA. Réessayez.");
+        }
+    },
+
     startAgenticGeneration: async function() {
         const apiKey = document.getElementById('gemini-api-key').value.trim();
         const topic = document.getElementById('book-topic').value.trim();
-        // 1. RÉCUPÉRATION DU MODÈLE CHOISI
         const selectedModel = document.getElementById('gemini-model-select').value;
         
         if (!apiKey || !topic) { alert("ERREUR : Clé API et Sujet requis."); return; }
@@ -40,18 +60,22 @@ const BookGenerator = {
         this.fullBookMarkdown = "";
 
         try {
-            // Log du modèle utilisé
-            console.log(`🚀 Initialisation avec le modèle : ${selectedModel}`);
-
             // PHASE 1 : PLAN
             statusLog.textContent = `PHASE 1 : Architecture du plan (${selectedModel})...`;
             progressBar.style.width = "5%";
             
-            const planPrompt = `Sujet: "${topic}". Tâche: Liste JSON de 8 titres de chapitres HYPER ACCROCHEURS et MYSTÉRIEUX pour un livre technique mais fascinant.`;
+            // Prompt renforcé pour éviter le bavardage
+            const planPrompt = `
+                Sujet: "${topic}". 
+                Tâche: Donne-moi une liste de 8 titres de chapitres pour un livre.
+                FORMAT STRICT : Renvoie UNIQUEMENT un tableau JSON Array de strings. RIEN D'AUTRE avant ou après.
+                Exemple: ["Titre 1", "Titre 2"]
+            `;
             
-            // On passe le modèle sélectionné
             const planRes = await this.callGemini(apiKey, planPrompt, 1000, selectedModel);
-            let chapters = JSON.parse(planRes.replace(/```json/g, '').replace(/```/g, '').trim());
+            
+            // UTILISATION DU NOUVEAU PARSEUR
+            let chapters = this.parseJsonSafely(planRes);
 
             // Entête Markdown
             this.fullBookMarkdown += `# ${topic.toUpperCase()}\n\n> *Généré par ${selectedModel}*\n\n## SOMMAIRE\n\n`;
@@ -67,7 +91,6 @@ const BookGenerator = {
                 
                 const chapPrompt = `Écris le chapitre "${title}" du livre "${topic}". Style: Cyberpunk, Tech-Noir, Expert mais Fascinant. Markdown. Min 1000 mots.`;
                 
-                // On passe le modèle sélectionné
                 const content = await this.callGemini(apiKey, chapPrompt, 8192, selectedModel);
                 
                 this.fullBookMarkdown += `## ${title}\n\n${content}\n\n`;
@@ -87,10 +110,9 @@ const BookGenerator = {
         }
     },
 
-    // --- MISE À JOUR : Fonction callGemini dynamique ---
     callGemini: async function(apiKey, prompt, maxTokens, modelName) {
-        // Construction de l'URL avec le modèle variable
-        // Attention : Si le modèle n'existe pas encore chez Google, ça renverra une erreur 404
+        // Fallback si le modèle n'existe pas encore vraiment, on pointe vers flash par défaut en cas d'erreur 404
+        // Mais ici on garde la logique stricte demandée
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
@@ -104,10 +126,10 @@ const BookGenerator = {
 
         const data = await response.json();
         
-        // Gestion d'erreur spécifique si le modèle est introuvable
         if (data.error) {
+            // Gestion spécifique des erreurs Google
             if(data.error.code === 404) {
-                throw new Error(`Le modèle '${modelName}' n'est pas accessible ou n'existe pas sur cette API Key.`);
+                throw new Error(`Le modèle '${modelName}' n'est pas encore disponible sur l'API publique.`);
             }
             throw new Error(data.error.message);
         }
@@ -136,6 +158,7 @@ const BookGenerator = {
         const flipContainer = document.createElement('div');
         flipContainer.className = 'flip-book-viewport';
         
+        // Séparation propre des chapitres
         const splitContent = this.fullBookMarkdown.split('## ');
         
         let flipHTML = `<div class="flip-book" id="my-flipbook">`;
@@ -148,7 +171,6 @@ const BookGenerator = {
 
         splitContent.forEach(part => {
             if(!part.trim()) return;
-            // On ignore le sommaire s'il est au début pour le rendu flipbook simple
             if(part.includes("SOMMAIRE")) return; 
 
             const fullText = "## " + part;
@@ -169,7 +191,6 @@ const BookGenerator = {
         this.pageFlip.loadFromHTML(document.querySelectorAll('.page'));
 
         document.getElementById('btn-new-book').onclick = () => location.reload();
-        // On passe aussi le nom du modèle pour la signature PDF
         document.getElementById('btn-dl-pdf').onclick = () => this.generateHighQualityPDF(topic, neuronImage, modelName);
     },
 
