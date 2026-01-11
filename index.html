@@ -13,18 +13,17 @@
     <aside class="sidebar">
         <div class="profile-section">
             <div class="photo-container">
-                <img src="data/profil.jpg" alt="Florian Bobo" class="profile-pic">
-
+                <img src="data/profil.jpg" alt="Florian Bobo" class="profile-pic" loading="lazy">
                 <div class="ring-one"></div>
                 <div class="ring-two"></div>
             </div>
-            <h1 id="name-placeholder">Chargement...</h1>
+            <h1 id="name-placeholder" data-text="...">Chargement...</h1>
             <h2 id="title-placeholder">...</h2>
             <p id="tagline-placeholder" class="tagline">...</p>
 
             <div class="social-links">
-                <a id="linkedin-btn" href="#" target="_blank" class="social-btn">LinkedIn</a>
-                <a id="cv-btn" href="#" target="_blank" class="social-btn">CV</a>
+                <a id="linkedin-btn" href="#" target="_blank" class="social-btn" rel="noopener">LinkedIn</a>
+                <a id="cv-btn" href="#" target="_blank" class="social-btn" rel="noopener">CV</a>
             </div>
         </div>
 
@@ -33,10 +32,8 @@
         <div class="skills-section">
             <h3>God Tier</h3>
             <div id="god-skills" class="tags-container"></div>
-
             <h3>Expert</h3>
             <div id="expert-skills" class="tags-container"></div>
-
             <h3>Notions</h3>
             <div id="notion-skills" class="tags-container"></div>
         </div>
@@ -48,9 +45,8 @@
     </aside>
 
     <main class="main-container">
-
         <nav class="top-nav">
-            <a href="#home" class="nav-link" data-module="Home">Accueil</a>
+            <a href="#home" class="nav-link active" data-module="Home">Accueil</a>
             <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
             <a href="#projects" class="nav-link" data-module="Projects">Projets</a>
             <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a>
@@ -58,33 +54,19 @@
         </nav>
 
         <div class="content-wrapper">
-
             <section id="home" class="tab-content active">
                 <div class="glass-panel center-content">
-                    <h1 style="font-size: 3rem; margin-bottom: 10px;">FLORIAN BOBO</h1>
-                    <h2 style="color: var(--neon-cyan); letter-spacing: 2px; margin-bottom: 30px; margin-top: 5px">
-                        Expert IA & MLOps</h2>
-
-                    <div
-                        style="max-width: 650px; line-height: 1.6; font-size: 1.1rem; color: #ddd; margin-bottom: 40px;">
-                        <p>
-                            Passionné par la convergence entre l'ingénierie logicielle et les mathématiques,
-                            je bidouille des systèmes intelligents robustes et scalables.
-                            J'ai un humour particulier aussi, on s'y fait rarement.
-                        </p>
+                    <h1 class="glitch-title">FLORIAN BOBO</h1>
+                    <h2 class="neon-subtitle">Expert IA & MLOps</h2>
+                    <div class="intro-text">
+                        <p>Passionné par la convergence entre l'ingénierie logicielle et les mathématiques, je bidouille
+                            des systèmes intelligents robustes et scalables.</p>
                     </div>
-
-                    <p style="font-family: var(--font-tech); font-size: 0.9rem; color: #888; margin-bottom: 15px;">
-                        // Pour en savoir plus, initiez le protocole :
-                    </p>
-
-                    <a href="#digital-twin" class="intro-btn">
-                        ACCEDER AU JUMEAU NUMÉRIQUE_
-                    </a>
-
-                    <a href="#educational" class="intro-btn">
-                        ACCEDER AUX ENSEIGNEMENTS_
-                    </a>
+                    <p class="cmd-text">// Pour en savoir plus, initiez le protocole :</p>
+                    <div class="cta-container">
+                        <a href="#digital-twin" class="intro-btn">ACCEDER AU JUMEAU NUMÉRIQUE_</a>
+                        <a href="#educational" class="intro-btn">ACCEDER AUX ENSEIGNEMENTS_</a>
+                    </div>
                 </div>
             </section>
 
@@ -101,106 +83,76 @@
             <section id="projects" class="tab-content">
                 <div class="glass-panel">
                     <h2>🚀 Mes Projets</h2>
-                    <div id="projects-list">Coming soon</div>
+                    <div id="projects-list">Coming soon...</div>
                 </div>
             </section>
 
             <section id="book-generator" class="tab-content">
-                <div class="glass-panel" style="max-width: 1000px;">
-                    <h1>Générateur de Manuscrit <span style="font-size:0.5em; color:var(--neon-cyan)">v1.0</span></h1>
-
+                <div class="glass-panel book-panel">
+                    <h1>Générateur de Manuscrit <span class="version-tag">v1.0</span></h1>
                     <div class="book-config-panel">
                         <div class="input-group">
-                            <label>CLÉ API GEMINI (Non stockée)</label>
+                            <label for="gemini-api-key">CLÉ API GEMINI</label>
                             <input type="password" id="gemini-api-key" placeholder="Collez votre clé API Google ici...">
                         </div>
                         <div class="input-group">
-                            <label>UNITÉ DE TRAITEMENT (MODÈLE)</label>
+                            <label for="gemini-model-select">UNITÉ DE TRAITEMENT</label>
                             <select id="gemini-model-select">
-                                <option value="gemini-3-flash-preview">Gemini 3.0 Flash Preview (Expérimental)</option>
-                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Haute Raisonnement)</option>
-                                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Standard - Rapide)</option>
-                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Éco)</option>
-                                <option value="gemma-3-27b-it">Gemini 3 27b (Éco, un peu vieux mais assez performant)
-                                </option>
+                                <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (Recommandé)</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>SUJET DU LIVRE</label>
-                            <input type="text" id="book-topic"
-                                placeholder="Ex: L'avenir du MLOps, La cuisine moléculaire...">
+                            <label for="book-topic">SUJET DU LIVRE</label>
+                            <input type="text" id="book-topic" placeholder="Ex: L'avenir du MLOps...">
                         </div>
-
-                        <button id="generate-book-btn" class="cyber-btn">
-                            LANCER L'ÉCRITURE NEURALE_
-                        </button>
+                        <button id="generate-book-btn" class="cyber-btn">LANCER L'ÉCRITURE NEURALE_</button>
                     </div>
 
                     <div id="book-loading" class="book-loader" style="display:none;">
-                        <div class="loader-text">INITIALISATION DES AGENTS ÉCRIVAINS...</div>
+                        <div class="loader-text">INITIALISATION...</div>
                         <div class="loader-bar">
                             <div class="loader-progress"></div>
                         </div>
                         <div id="book-status-log" class="console-log"></div>
                     </div>
-
-                    <div id="book-display" class="book-content" style="display:none;">
-                    </div>
+                    <div id="book-display" class="book-content" style="display:none;"></div>
                 </div>
             </section>
 
             <section id="educational" class="tab-content">
                 <div class="glass-panel pedagogy-panel">
-
                     <nav class="pedagogy-menu">
                         <h3>Modules</h3>
-                        <ul id="pedagogy-list">
-                        </ul>
+                        <ul id="pedagogy-list"></ul>
                     </nav>
-
                     <div class="pedagogy-viewer">
-                        <div id="pedagogy-content">
-                        </div>
+                        <div id="pedagogy-content"></div>
                     </div>
-
                 </div>
             </section>
-
-
         </div>
     </main>
 
-    <!-- Awesome background animation -->
-    <canvas id="neural-canvas"></canvas> 
-    
-    <!-- Modal affichage slide -->
+    <canvas id="neural-canvas"></canvas>
+
     <div id="slide-modal" class="modal">
         <span class="close-modal" onclick="Educational.closeModal()">&times;</span>
-
-        <img class="modal-content" id="modal-img">
-
+        <img class="modal-content" id="modal-img" alt="Slide Fullscreen">
         <a class="modal-prev" onclick="Educational.changeModalSlide(-1)">❮</a>
         <a class="modal-next" onclick="Educational.changeModalSlide(1)">❯</a>
-
         <div id="modal-caption"></div>
     </div>
 
-    <!-- Book generated placeholder --> 
     <div id="clean-book-container"></div>
 
-    <!-- import core js  -->
-
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
 
-    <!-- Import engineered js -->
-
     <script src="script/digital-twin.js"></script>
-    <script src="script/projects.js"></script>
-    <script src="script/main.js"></script>
     <script src="script/educational.js"></script>
     <script src="script/book-generator.js"></script>
+    <script src="script/main.js"></script>
 </body>
 
 </html>
