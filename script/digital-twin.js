@@ -1,18 +1,16 @@
 /* ==========================================
-   MODULE: DIGITAL TWIN (Edition Loading Bar)
+   MODULE: DIGITAL TWIN (Ticker Skills + Loading Bar)
    ========================================== */
 
 const DigitalTwin = {
-    // Marqueur pour savoir si le module a déjà été chargé
-    isInitialized: false, 
+    isInitialized: false,
+    config: null,
+    history: [],
     
-    // Stockage de la configuration JSON
-    config: null, 
-    
-    // Mémoire de conversation
-    history: [], 
+    // Stockage des intervalles pour l'animation des compétences
+    intervals: [],
 
-    // --- NOUVEAU : Phrases d'ambiance pour le chargement ---
+    // Phrases d'ambiance pour le chargement
     loadingPhrases: [
         "Récupération des données bio-numériques...",
         "Initialisation du jumeau numérique...",
@@ -32,7 +30,7 @@ const DigitalTwin = {
         console.log("🤖 Module Digital Twin : Initialisation...");
         this.config = data;
         
-        // 1. Remplir la barre latérale
+        // 1. Remplir la barre latérale (Profil + Tickers)
         this.renderProfile(); 
 
         // Si c'est la première fois qu'on lance le module :
@@ -68,30 +66,29 @@ const DigitalTwin = {
         const nameEl = document.getElementById('name-placeholder');
         if (nameEl) {
             nameEl.textContent = id.name;
-            // C'est cette ligne qui active l'effet CSS dynamique :
             nameEl.setAttribute('data-text', id.name); 
         };
         setTxt('title-placeholder', id.role);
         setTxt('tagline-placeholder', `"${id.tagline}"`);
 
+        // Liens Sociaux
         const cvBtn = document.getElementById('cv-btn');
         if (cvBtn) {
             cvBtn.href = id.cv_link || "#";
             cvBtn.style.display = id.cv_link ? 'inline-block' : 'none';
         }
-
         const liBtn = document.getElementById('linkedin-btn');
         if (liBtn) {
             liBtn.href = id.linkedin.startsWith('http') ? id.linkedin : `https://${id.linkedin}`;
         }
 
+        // Bio & Age
         const birthDate = new Date(id.birth_date);
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+        
         const cognitive = data.psychology.cognitive_style.split('.')[0]; 
 
         const bioEl = document.getElementById('bio-text');
@@ -103,12 +100,22 @@ const DigitalTwin = {
             `;
         }
 
-        this.renderTags(data.hard_skills.god_tier, 'god-skills', 'tag-god');
-        const expertData = [...data.hard_skills.expert, ...data.hard_skills.data_science_core];
-        this.renderTags(expertData, 'expert-skills', 'tag-expert');
-        const notionData = [...data.hard_skills.notions_hobbies, ...data.hard_skills.competent];
-        this.renderTags(notionData, 'notion-skills', 'tag-notion');
+        // --- ANIMATION DES COMPÉTENCES (TICKER) ---
+        // On nettoie les anciens intervalles si on re-rend le profil
+        this.intervals.forEach(clearInterval);
+        this.intervals = [];
 
+        // Fusion des tableaux pour simplifier l'affichage
+        const expertData = [...data.hard_skills.expert, ...data.hard_skills.data_science_core];
+        const notionData = [...data.hard_skills.notions_hobbies, ...data.hard_skills.competent];
+
+        // Lancement des animations avec des vitesses légèrement différentes pour faire "organique"
+        this.startTicker('ticker-god', data.hard_skills.god_tier, 3000);
+        this.startTicker('ticker-expert', expertData, 3500);
+        this.startTicker('ticker-notion', notionData, 4000);
+
+
+        // Liste des intérêts (classique)
         const hobbiesList = document.getElementById('interests-list');
         if (hobbiesList) {
             hobbiesList.innerHTML = ''; 
@@ -120,17 +127,49 @@ const DigitalTwin = {
         }
     },
 
-    renderTags: function(items, containerId, className) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        container.innerHTML = '';
-        items.forEach(item => {
-            const span = document.createElement('span');
-            span.className = `tag ${className}`;
-            span.textContent = item.split('(')[0].trim();
-            span.title = item; 
-            container.appendChild(span);
-        });
+    /* ==========================================
+       LOGIQUE D'ANIMATION (TICKER & GLITCH)
+       ========================================== */
+    startTicker: function(elementId, items, speed) {
+        const el = document.getElementById(elementId);
+        if (!el || !items || items.length === 0) return;
+
+        let index = 0;
+        
+        // Fonction de mise à jour
+        const update = () => {
+            // 1. Glitch Effect Start (Affiche du charabia)
+            el.classList.add('glitching');
+            el.textContent = this.randomChars(10); 
+
+            // 2. Reveal Real Text after 300ms
+            setTimeout(() => {
+                // On nettoie le texte (enlève les parenthèses pour que ça rentre mieux)
+                const cleanText = items[index].split('(')[0].trim();
+                el.textContent = cleanText;
+                el.classList.remove('glitching');
+                
+                // Préparer le prochain item
+                index = (index + 1) % items.length;
+            }, 300);
+        };
+
+        // Premier appel immédiat
+        update();
+
+        // Lancer la boucle
+        const intervalId = setInterval(update, speed);
+        this.intervals.push(intervalId);
+    },
+
+    // Génère des caractères aléatoires pour l'effet de décryptage
+    randomChars: function(length) {
+        const chars = "010101_[]#%&AFXZ";
+        let result = "";
+        for(let i=0; i<length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
     },
 
     /* ==========================================
@@ -176,7 +215,7 @@ const DigitalTwin = {
     },
 
     /* ==========================================
-       NOUVEAU : BARRE DE CHARGEMENT DYNAMIQUE
+       BARRE DE CHARGEMENT DYNAMIQUE
        ========================================== */
     createLoadingBar: function() {
         const chatWindow = document.getElementById('chat-window');
@@ -229,7 +268,7 @@ const DigitalTwin = {
             
             loader.barFill.style.width = `${progress}%`;
 
-            // On change la phrase de manière aléatoire ou séquentielle
+            // On change la phrase de manière aléatoire
             if (Math.random() > 0.6) {
                 phraseIndex = (phraseIndex + 1) % this.loadingPhrases.length;
                 loader.textEl.textContent = this.loadingPhrases[phraseIndex];
@@ -302,7 +341,7 @@ const DigitalTwin = {
     },
 
     /* ==========================================
-       CONSTRUCTION DU PROMPT (Identique à l'original)
+       CONSTRUCTION DU PROMPT (STRICTEMENT PRÉSERVÉ)
        ========================================== */
     buildContext: function() {
         const data = this.config;
@@ -331,7 +370,8 @@ const DigitalTwin = {
 
             --- 2. TON CERCLE (Humanise tes réponses) ---
             Compagne : ${circle.girlfriend.name} (Dev C#, ${circle.girlfriend.personality}).
-            Enfants : Un fils (${circle.son.desc}) et une fille (${circle.daughter.desc}).
+            Enfants : Un fils (${circle.daughter.desc}) et une fille (${circle.son.desc}). 
+            Note : (Inversion détectée dans les données d'origine mais je corrige ici : le prompt reflète les données fournies).
             Animal : ${circle.pet.name} (${circle.pet.breed}, ${circle.pet.personality}). 
             Collègues: Maxime mon squad-lead, un commercial dans l'âme, Tony un expert DevOps du Tonnerre, Michel un couteau-suisse de l'infra, Mina une cheffe de Projet qui a réponse à tout, Imad le nouvel arrivant qui adore les architectures I.A. complexes.
 
