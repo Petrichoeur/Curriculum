@@ -218,64 +218,76 @@ const BookGenerator = {
         document.getElementById('btn-dl-pdf').onclick = () => this.generateHighQualityPDF(topic, neuronImage, modelName);
     },
 
-    generateHighQualityPDF: function(topic, bgImage, modelName) {
-        let container = document.getElementById('pdf-hidden-container');
-        if(!container) {
-            container = document.createElement('div');
-            container.id = 'pdf-hidden-container';
-            document.body.appendChild(container);
-        }
-        container.innerHTML = ''; 
-        
-        // FIX PAGE BLANCHE : On rend visible le conteneur juste avant la capture
-        container.style.opacity = '1';
+// ... Le début du fichier reste le même ...
 
+    generateHighQualityPDF: function(topic, bgImage, modelName) {
+        const btn = document.getElementById('btn-dl-pdf');
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ GÉNÉRATION DU MASTER...";
+        btn.disabled = true;
+
+        // 1. CRÉATION DU CONTENEUR TEMPORAIRE (VISIBLE)
+        // S'il n'est pas dans le flux visible, html2canvas échoue souvent.
+        let container = document.createElement('div');
+        container.id = 'pdf-staging-container';
+        document.body.appendChild(container);
+
+        // 2. CRÉATION DE LA COUVERTURE
         const coverDiv = document.createElement('div');
         coverDiv.className = 'pdf-page pdf-cover';
         coverDiv.innerHTML = `
             <img src="${bgImage}" class="pdf-neuron-bg">
             <div class="pdf-cover-content">
-                <h1 style="font-size:3rem; color:#00f3ff; margin-bottom:20px; text-transform:uppercase">${topic}</h1>
-                <h3 style="color:#fff; font-weight:lighter">GÉNÉRÉ PAR L'INTELLIGENCE ARTIFICIELLE</h3>
-                <p style="color:#bd00ff; margin-top:50px">FLORIAN BOBO // ${modelName.toUpperCase()}</p>
+                <h1 style="font-size:36pt; color:#00f3ff; margin-bottom:20px; text-transform:uppercase; line-height:1.2">${topic}</h1>
+                <h3 style="color:#ffffff; font-weight:lighter; font-size:18pt; letter-spacing:2px">MANUSCRIT GÉNÉRÉ PAR IA</h3>
+                <p style="color:#bd00ff; margin-top:50px; font-size:12pt; font-family:monospace">ARCHITECTE : FLORIAN BOBO<br>MOTEUR : ${modelName.toUpperCase()}</p>
             </div>
         `;
         container.appendChild(coverDiv);
 
+        // 3. CRÉATION DU CONTENU
         const contentDiv = document.createElement('div');
-        contentDiv.className = 'pdf-page';
-        contentDiv.style.color = "#ffffff"; // Force le texte en blanc
+        contentDiv.className = 'pdf-page pdf-content-text';
         
         const signedMarkdown = this.fullBookMarkdown + 
-            `\n\n---\n\n*Document généré via le modèle ${modelName}.*\n**Hash:** ${Math.random().toString(36).substr(2, 9)}`;
+            `\n\n---\n\n*Ce document a été généré le ${new Date().toLocaleDateString()} par l'Architecture Neurale de Florian Bobo.*\n**Hash Signature:** ${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
         
         contentDiv.innerHTML = marked.parse(signedMarkdown);
         container.appendChild(contentDiv);
 
+        // 4. CONFIGURATION ROBUSTE DE HTML2PDF
         const opt = {
-            margin: 0, filename: `Livre_${topic.replace(/\s+/g, '_')}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
+            margin:       0, // On gère les marges en CSS (padding)
+            filename:     `Livre_${topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { 
+                scale: 2, // Haute résolution
+                useCORS: true, // Important pour l'image de fond
                 scrollY: 0,
-                backgroundColor: '#080808' // Fond noir forcé
+                backgroundColor: '#080808', // Force le fond noir dans le canvas
+                windowWidth: 1200 // Force une largeur virtuelle pour le rendu
             },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        const btn = document.getElementById('btn-dl-pdf');
-        const originalText = btn.innerText;
-        btn.innerText = "⏳ RENDU...";
-
-        // Petit délai pour laisser le navigateur afficher le conteneur caché
+        // 5. GÉNÉRATION AVEC DÉLAI DE SÉCURITÉ
+        // Le setTimeout permet au navigateur de "peindre" le DOM avant la capture
         setTimeout(() => {
             html2pdf().set(opt).from(container).save().then(() => {
+                // NETTOYAGE
+                document.body.removeChild(container);
                 btn.innerText = originalText;
-                container.style.opacity = '0'; // On recache proprement
+                btn.disabled = false;
+            }).catch(err => {
+                console.error(err);
+                alert("Erreur PDF. Vérifiez la console.");
+                document.body.removeChild(container);
+                btn.innerText = originalText;
+                btn.disabled = false;
             });
-        }, 500);
+        }, 1000); // 1 seconde de pause pour assurer le chargement des images
     }
+
 };
 
 window.BookGenerator = BookGenerator;

@@ -1060,57 +1060,80 @@ body {
 
 
 /* --- STYLE POUR LE PDF (Invisible mais rendu) --- */
-#pdf-hidden-container {
-    position: fixed; /* Reste fixe à l'écran */
-    top: 0; 
+/* =========================================
+   PDF EXPORT STYLES (CRUCIAL)
+   ========================================= */
+
+/* Le conteneur temporaire qui s'affichera par dessus le site le temps de la photo */
+#pdf-staging-container {
+    position: absolute;
+    top: 0;
     left: 0;
-    z-index: -9999; /* Caché tout au fond derrière le site */
-    width: 210mm; /* Largeur A4 stricte */
+    width: 210mm; /* A4 */
     min-height: 297mm;
-    opacity: 0; /* Invisible à l'œil nu, mais présent pour le DOM */
-    pointer-events: none; /* On ne peut pas cliquer dessus par erreur */
+    z-index: 10000; /* Au dessus de TOUT */
+    background-color: #080808 !important; /* Force le noir */
+    color: #ffffff !important; /* Force le blanc */
+    font-family: 'Arial', sans-serif; /* Police sûre pour PDF */
+    pointer-events: none; /* Pas d'interaction */
 }
 
-/* Design de la page PDF */
+/* Page individuelle du PDF */
 .pdf-page {
-    width: 210mm;
-    min-height: 297mm;
-    background: #080808; /* Fond Noir Profond */
-    color: #ffffff;      /* Texte Blanc éclatant pour contraste */
+    position: relative;
+    width: 100%;
+    min-height: 297mm; /* Hauteur A4 */
     padding: 20mm;
-    font-family: 'Helvetica', sans-serif; /* Plus propre en PDF */
+    box-sizing: border-box;
+    background-color: #080808;
+    border-bottom: 1px solid #333; /* Juste pour debug visuel si besoin */
     page-break-after: always;
-    border: 1px solid #000; /* Hack pour éviter glitch html2canvas */
 }
 
-/* Couverture PDF */
+/* La couverture */
 .pdf-cover {
-    height: 297mm;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
+    height: 297mm;
+    overflow: hidden;
     position: relative;
-    background: #000;
 }
 
 .pdf-neuron-bg {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     object-fit: cover;
-    opacity: 0.4; /* Effet de fond */
+    opacity: 0.3;
     z-index: 0;
 }
 
 .pdf-cover-content {
-    z-index: 1;
-    background: rgba(0,0,0,0.7);
-    padding: 40px;
-    border: 2px solid var(--neon-cyan);
-    backdrop-filter: blur(5px);
+    z-index: 2;
+    background: rgba(0,0,0,0.8);
+    padding: 50px;
+    border: 2px solid #00f3ff;
+    backdrop-filter: blur(10px);
+    width: 80%;
 }
 
+/* Texte standard dans le PDF */
+.pdf-content-text {
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #eeeeee;
+}
+.pdf-content-text h1, .pdf-content-text h2, .pdf-content-text h3 {
+    color: #00f3ff;
+    margin-top: 20px;
+    margin-bottom: 15px;
+}
+.pdf-content-text strong {
+    color: #bd00ff;
+}
 .pdf-footer {
     position: fixed;
     bottom: 10px; right: 10px;
