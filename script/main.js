@@ -66,7 +66,7 @@ function initNeuralNetwork() {
 
     // Configuration
     const config = {
-        count: window.innerWidth < 800 ? 60 : 130, // Adaptatif mobile/desktop
+        count: window.innerWidth < 1200 ? 80 : 130, // Adaptatif mobile/desktop
         connectionDist: 140,
         mouseRadius: 300,    // Rayon d'interaction souris
         baseAlpha: 0.15,     // Opacité au repos
@@ -78,7 +78,7 @@ function initNeuralNetwork() {
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
-        config.count = width < 800 ? 60 : 130;
+        config.count = width < 1200 ? 80 : 130;
         initParticles();
     }
 
