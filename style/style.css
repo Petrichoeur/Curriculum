@@ -900,4 +900,96 @@ body {
 /* Mobile */
 @media (max-width: 700px) {
     .modal-content { width: 100%; }
+} 
+/* =========================================
+   BOOK GENERATOR
+   ========================================= */
+
+.book-config-panel {
+    background: rgba(0,0,0,0.3);
+    padding: 25px;
+    border: 1px solid var(--neon-purple);
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
+
+.input-group label {
+    display: block;
+    font-family: var(--font-tech);
+    color: var(--neon-cyan);
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 4px;
+    font-family: var(--font-main);
+}
+
+.input-group input:focus {
+    border-color: var(--neon-purple);
+    outline: none;
+    box-shadow: 0 0 10px rgba(189, 0, 255, 0.2);
+}
+
+.cyber-btn {
+    background: var(--neon-purple);
+    color: #fff;
+    border: none;
+    padding: 15px;
+    font-family: var(--font-tech);
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: 0.3s;
+    margin-top: 10px;
+}
+.cyber-btn:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 20px var(--neon-cyan);
+}
+
+/* Rendu du Livre */
+.book-content {
+    background: #0f0f13; /* Fond papier sombre */
+    padding: 40px;
+    border-left: 5px solid var(--neon-cyan);
+    font-family: 'Georgia', serif; /* Police Livre */
+    line-height: 1.8;
+    color: #e0e0e0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: fadeIn 1s;
+}
+
+.book-content h1, .book-content h2, .book-content h3 {
+    font-family: var(--font-main);
+    color: var(--neon-purple);
+    margin-top: 30px;
+}
+
+.book-content blockquote {
+    border-left: 3px solid var(--neon-cyan);
+    padding-left: 15px;
+    font-style: italic;
+    color: #aaa;
+}
+
+/* Loader Spécifique */
+.book-loader { text-align: center; padding: 20px; }
+.loader-text { font-family: var(--font-tech); color: var(--neon-cyan); margin-bottom: 10px; animation: blink 1s infinite; }
+.loader-bar { width: 100%; height: 4px; background: #333; overflow: hidden; }
+.loader-progress { height: 100%; background: var(--neon-purple); width: 0%; animation: loadBook 10s infinite; }
+.console-log { font-family: monospace; font-size: 0.8rem; color: #666; margin-top: 10px; height: 20px; }
+
+@keyframes loadBook { 0% {width:0%} 50% {width: 70%} 100% {width: 95%} }

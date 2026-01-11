@@ -53,7 +53,8 @@
             <a href="#home" class="nav-link" data-module="Home">Accueil</a>
             <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
             <a href="#projects" class="nav-link" data-module="Projects">Projets</a>
-            <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a>
+            <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a> 
+            <a href="#book-generator" class="nav-link" data-module="BookGenerator">Book Gen</a>
         </nav>
 
         <div class="content-wrapper">
@@ -104,6 +105,36 @@
                 </div>
             </section>
 
+            <section id="book-generator" class="tab-content">
+                <div class="glass-panel" style="max-width: 1000px;"> <h1>Générateur de Manuscrit <span style="font-size:0.5em; color:var(--neon-cyan)">v1.0</span></h1>
+                    
+                    <div class="book-config-panel">
+                        <div class="input-group">
+                            <label>CLÉ API GEMINI (Non stockée)</label>
+                            <input type="password" id="gemini-api-key" placeholder="Collez votre clé API Google ici...">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>SUJET DU LIVRE</label>
+                            <input type="text" id="book-topic" placeholder="Ex: L'avenir du MLOps, La cuisine moléculaire...">
+                        </div>
+
+                        <button id="generate-book-btn" class="cyber-btn">
+                            LANCER L'ÉCRITURE NEURALE_
+                        </button>
+                    </div>
+
+                    <div id="book-loading" class="book-loader" style="display:none;">
+                        <div class="loader-text">INITIALISATION DES AGENTS ÉCRIVAINS...</div>
+                        <div class="loader-bar"><div class="loader-progress"></div></div>
+                        <div id="book-status-log" class="console-log"></div>
+                    </div>
+
+                    <div id="book-display" class="book-content" style="display:none;">
+                        </div>
+                </div>
+            </section>
+
             <section id="educational" class="tab-content">
                 <div class="glass-panel pedagogy-panel">
 
@@ -141,6 +172,8 @@
     <script src="script/projects.js"></script>
     <script src="script/main.js"></script>
     <script src="script/educational.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="script/book-generator.js"></script>
 </body>
 
 </html>
