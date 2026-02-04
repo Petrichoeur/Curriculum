@@ -6,11 +6,11 @@ const Projects = {
     isInitialized: false,
     projects: [],
 
-    init: async function(globalConfig) {
+    init: async function (globalConfig) {
         console.log("🚀 Module Projects : Chargement...");
-        
+
         const container = document.getElementById('projects-list');
-        if(!container) return;
+        if (!container) return;
 
         try {
             const response = await fetch('config/projects.json');
@@ -27,9 +27,9 @@ const Projects = {
         this.isInitialized = true;
     },
 
-    render: function() {
+    render: function () {
         const container = document.getElementById('projects-list');
-        if(!container) return;
+        if (!container) return;
 
         if (this.projects.length === 0) {
             container.innerHTML = "<p>Coming soon...</p>";
@@ -45,11 +45,44 @@ const Projects = {
                         <div class="project-tags">
                             ${project.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                         </div>
-                        <a href="${project.url}" target="_blank" class="cyber-btn small">DÉCOUVRIR_</a>
+                        <div class="project-actions">
+                            <a href="${project.url}" target="_blank" class="cyber-btn small">DÉCOUVRIR_</a>
+                            ${project.demoVideo ? `<button onclick="Projects.openVideoModal('${project.demoVideo}')" class="cyber-btn small secondary">VOIR LA DÉMO_</button>` : ''}
+                        </div>
                     </div>
                 `).join('')}
             </div>
+
+            <!-- Modal Vidéo Unique -->
+            <div id="video-modal" class="modal" onclick="Projects.closeVideoModal()">
+                <div class="modal-content video-container" onclick="event.stopPropagation()">
+                    <span class="close-modal" onclick="Projects.closeVideoModal()">&times;</span>
+                    <video id="demo-video" controls preload="metadata">
+                        Votre navigateur ne supporte pas la lecture de vidéos.
+                    </video>
+                </div>
+            </div>
         `;
+    },
+
+    openVideoModal: function (videoSrc) {
+        const modal = document.getElementById('video-modal');
+        const video = document.getElementById('demo-video');
+        if (!modal || !video) return;
+
+        video.src = videoSrc;
+        modal.style.display = "flex";
+        video.play();
+    },
+
+    closeVideoModal: function () {
+        const modal = document.getElementById('video-modal');
+        const video = document.getElementById('demo-video');
+        if (!modal || !video) return;
+
+        modal.style.display = "none";
+        video.pause();
+        video.src = ""; // Stop loading
     }
 };
 
