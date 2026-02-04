@@ -3,6 +3,21 @@
     "title": "GreenGen Academy",
     "url": "https://greengen-academy.iaops.fr",
     "description": "Module éducatif à destination du grand public pour s'évaluer face aux challenges du Green IT dans l'I.A.",
-    "tags": ["Green IT", "IA", "Pédagogie"]
+    "tags": [
+      "Green IT",
+      "IA",
+      "Pédagogie"
+    ]
+  },
+  {
+    "title": "Hydra.sh",
+    "url": "https://github.com/orurmedon/hydra.sh",
+    "description": "Gestionnaire SSH Web nouvelle génération avec 'mémoire photographique'. Capture l'intégralité des sessions et utilise l'IA pour l'analyse et la recherche avancée dans l'historique des commandes.",
+    "tags": [
+      "Shell",
+      "SSH",
+      "IA",
+      "OpenSource"
+    ]
   }
 ]
