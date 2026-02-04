@@ -176,6 +176,69 @@ body {
 .loading-bar-fill { height: 100%; background: var(--neon-purple); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--neon-purple); }
 
 /* =========================================
+   PROJECTS GRID & CARDS
+   ========================================= */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(189, 0, 255, 0.2);
+    border-color: var(--neon-cyan);
+}
+
+.project-card h3 {
+    color: var(--neon-cyan);
+    font-family: var(--font-tech);
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.project-card p {
+    color: #ccc;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.project-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.tag {
+    font-family: var(--font-tech);
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    background: rgba(0, 243, 255, 0.1);
+    color: var(--neon-cyan);
+    border: 1px solid rgba(0, 243, 255, 0.3);
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+.cyber-btn.small {
+    padding: 10px 20px;
+    font-size: 0.8rem;
+    align-self: flex-start;
+}
+
+/* =========================================
    PEDAGOGIE (Full Styles Restored)
    ========================================= */
 .pedagogy-panel { display: flex; padding: 0; height: 80vh; overflow: hidden; }
