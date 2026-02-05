@@ -1255,13 +1255,42 @@ body {
         font-size: 0.7rem;
     }
 
+    .main-container {
+        overflow-x: hidden;
+    }
+
     .content-wrapper {
         padding: 15px;
+        min-height: calc(100vh - 150px);
     }
 
     .glass-panel {
         padding: 20px;
         width: 100%;
+        max-height: none;
+        height: auto;
+    }
+
+    /* Chat responsive sur mobile */
+    .chat-wrapper {
+        height: calc(100vh - 180px);
+        min-height: 400px;
+    }
+
+    .chat-window {
+        padding: 15px;
+        gap: 10px;
+    }
+
+    .message {
+        max-width: 90%;
+        font-size: 0.9rem;
+        padding: 10px 14px;
+    }
+
+    .bot-msg::before {
+        font-size: 0.65rem;
+        margin-bottom: 4px;
     }
 
     .input-area {
@@ -1271,11 +1300,37 @@ body {
 
     #user-input {
         width: 100%;
+        min-height: 44px;
+        font-size: 16px;
     }
 
     #send-btn {
         width: 100%;
         margin-top: 5px;
+        min-height: 44px;
+        padding: 0 20px;
+    }
+
+    /* Book Generator sur mobile */
+    .book-panel {
+        padding: 15px;
+    }
+
+    .input-group input,
+    .input-group select {
+        font-size: 16px;
+    }
+
+    /* Navigation Mobile */
+    .top-nav {
+        padding: 15px 10px;
+        gap: 10px;
+        white-space: nowrap;
+    }
+
+    .nav-link {
+        font-size: 0.75rem;
+        padding-bottom: 3px;
     }
 
     .pedagogy-panel {
