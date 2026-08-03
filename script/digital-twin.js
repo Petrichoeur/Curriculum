@@ -6,7 +6,7 @@ const DigitalTwin = {
     isInitialized: false,
     config: null,
     history: [],
-    
+
     // Stockage des intervalles pour pouvoir les nettoyer proprement
     intervals: [],
 
@@ -26,12 +26,12 @@ const DigitalTwin = {
     /**
      * Point d'entrée principal.
      */
-    init: function(data) {
+    init: function (data) {
         console.log("🤖 Module Digital Twin : Initialisation...");
         this.config = data;
-        
+
         // 1. Remplir la barre latérale (Profil + Tickers)
-        this.renderProfile(); 
+        this.renderProfile();
 
         // Si c'est la première fois qu'on lance le module :
         if (!this.isInitialized) {
@@ -45,7 +45,7 @@ const DigitalTwin = {
                 <strong>Statut :</strong> En ligne et prêt à discuter.<br>
                 <em>(Posez-moi une question sur mon parcours, mes compétences ou mes hobbies...)</em>
             `);
-            
+
             this.isInitialized = true;
         }
     },
@@ -53,7 +53,7 @@ const DigitalTwin = {
     /* ==========================================
        RENDU GRAPHIQUE (Sidebar Gauche)
        ========================================== */
-    renderProfile: function() {
+    renderProfile: function () {
         const data = this.config;
         const id = data.identity;
 
@@ -66,7 +66,7 @@ const DigitalTwin = {
         const nameEl = document.getElementById('name-placeholder');
         if (nameEl) {
             nameEl.textContent = id.name;
-            nameEl.setAttribute('data-text', id.name); 
+            nameEl.setAttribute('data-text', id.name);
         };
         setTxt('title-placeholder', id.role);
         setTxt('tagline-placeholder', `"${id.tagline}"`);
@@ -88,8 +88,8 @@ const DigitalTwin = {
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-        
-        const cognitive = data.psychology.cognitive_style.split('.')[0]; 
+
+        const cognitive = data.psychology.cognitive_style.split('.')[0];
 
         const bioEl = document.getElementById('bio-text');
         if (bioEl) {
@@ -101,7 +101,7 @@ const DigitalTwin = {
         }
 
         // --- ANIMATION DES COMPÉTENCES & INTÉRÊTS (TICKERS RAPIDES) ---
-        
+
         // 1. On nettoie les anciens intervalles pour éviter les superpositions
         this.intervals.forEach(clearInterval);
         this.intervals = [];
@@ -109,7 +109,7 @@ const DigitalTwin = {
         // 2. Préparation des données
         const expertData = [...data.hard_skills.expert, ...data.hard_skills.data_science_core];
         const notionData = [...data.hard_skills.notions_hobbies, ...data.hard_skills.competent];
-        
+
         // Fusion des Intérêts (Musique + Lecture + Sport si dispo)
         const interestData = [...data.interests.music, ...data.interests.reading];
         if (data.interests.sports) interestData.push(...data.interests.sports);
@@ -119,7 +119,7 @@ const DigitalTwin = {
         this.startTicker('ticker-god', data.hard_skills.god_tier, 2000);
         this.startTicker('ticker-expert', expertData, 2200);
         this.startTicker('ticker-notion', notionData, 2500);
-        
+
         // Le nouveau ticker pour les intérêts (Rouge)
         this.startTicker('ticker-interests', interestData, 2800);
     },
@@ -127,12 +127,12 @@ const DigitalTwin = {
     /* ==========================================
        LOGIQUE D'ANIMATION (TICKER & GLITCH)
        ========================================== */
-    startTicker: function(elementId, items, speed) {
+    startTicker: function (elementId, items, speed) {
         const el = document.getElementById(elementId);
         if (!el || !items || items.length === 0) return;
 
         let index = 0;
-        
+
         // Fonction de mise à jour
         const update = () => {
             // 1. Glitch Effect Start (Affiche du charabia)
@@ -145,7 +145,7 @@ const DigitalTwin = {
                 const cleanText = items[index].split('(')[0].trim();
                 el.textContent = cleanText;
                 el.classList.remove('glitching');
-                
+
                 // Préparer le prochain item
                 index = (index + 1) % items.length;
             }, 200);
@@ -160,10 +160,10 @@ const DigitalTwin = {
     },
 
     // Génère des caractères aléatoires pour l'effet de décryptage
-    randomChars: function(length) {
+    randomChars: function (length) {
         const chars = "010101_[]#%&AFXZ";
         let result = "";
-        for(let i=0; i<length; i++) {
+        for (let i = 0; i < length; i++) {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return result;
@@ -172,12 +172,12 @@ const DigitalTwin = {
     /* ==========================================
        GESTION DU CHAT & LISTENER
        ========================================== */
-    setupListeners: function() {
+    setupListeners: function () {
         const input = document.getElementById('user-input');
         const btn = document.getElementById('send-btn');
-        
+
         if (!input || !btn) return;
-        
+
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         const newInput = input.cloneNode(true);
@@ -197,7 +197,7 @@ const DigitalTwin = {
         });
     },
 
-    addMessage: function(role, text) {
+    addMessage: function (role, text) {
         const chatWindow = document.getElementById('chat-window');
         if (!chatWindow) return;
 
@@ -214,9 +214,9 @@ const DigitalTwin = {
     /* ==========================================
        BARRE DE CHARGEMENT DYNAMIQUE
        ========================================== */
-    createLoadingBar: function() {
+    createLoadingBar: function () {
         const chatWindow = document.getElementById('chat-window');
-        
+
         // Conteneur principal
         const container = document.createElement('div');
         container.className = 'loading-container';
@@ -240,7 +240,7 @@ const DigitalTwin = {
         container.appendChild(textEl);
         container.appendChild(barBg);
         chatWindow.appendChild(container);
-        
+
         // Scroll en bas
         chatWindow.scrollTop = chatWindow.scrollHeight;
 
@@ -250,19 +250,19 @@ const DigitalTwin = {
     /* ==========================================
        APPEL API (Avec Loading Animation)
        ========================================== */
-    callAPI: async function(userMessage) {
+    callAPI: async function (userMessage) {
         // 1. Création et affichage de la barre de chargement
         const loader = this.createLoadingBar();
-        
+
         // 2. Animation (Simulation de progression plus rapide)
         let progress = 0;
         let phraseIndex = 0;
-        
+
         const interval = setInterval(() => {
             // On avance la barre plus vite
-            progress += Math.random() * 15; 
+            progress += Math.random() * 15;
             if (progress > 95) progress = 95; // On bloque à 95%
-            
+
             loader.barFill.style.width = `${progress}%`;
 
             // On change la phrase aléatoirement
@@ -294,23 +294,26 @@ const DigitalTwin = {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     contents: contents,
                     generationConfig: {
                         temperature: 0.8,
-                        maxOutputTokens: 1000
+                        maxOutputTokens: 500,
+                        thinkingConfig: {
+                            thinkingBudget: 0 // Plus fluide et on évite trop de token  
+                        }
                     }
                 })
             });
 
             const data = await response.json();
-            
+
             // 5. Fin de l'animation
             clearInterval(interval);
-            loader.barFill.style.width = '100%'; 
-            
+            loader.barFill.style.width = '100%';
+
             setTimeout(() => {
-                loader.container.remove(); 
+                loader.container.remove();
 
                 if (!response.ok || data.error) {
                     console.error("Erreur API:", data);
@@ -339,17 +342,17 @@ const DigitalTwin = {
     /* ==========================================
        CONSTRUCTION DU PROMPT (STRICTEMENT PRÉSERVÉ)
        ========================================== */
-    buildContext: function() {
+    buildContext: function () {
         const data = this.config;
         const id = data.identity;
         const skills = data.hard_skills;
         const psych = data.psychology;
         const circle = data.inner_circle;
         const today = new Date().toLocaleDateString('fr-FR');
-        
+
         const age = new Date().getFullYear() - new Date(id.birth_date).getFullYear();
 
-        const careerText = data.career_timeline.map(job => 
+        const careerText = data.career_timeline.map(job =>
             `- ${job.period} : **${job.role}** chez ${job.company} (${job.location}).\n  ${job.details}`
         ).join('\n');
 
