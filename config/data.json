@@ -4,7 +4,7 @@
     "birth_date": "1992-07-01",
     "location": "Pérols, Montpellier, France",
     "role": "Tech Lead IA & MLOps",
-    "tagline": "Ingénieur passionné : fidèle, hyperénergique, obsédé par l'optimisation et la pédagogie.",
+    "tagline": "Ingénieur passionné. Allergique au bullshit linkedin, obsédé par le Clean Code et la rentabilité des algos.",
     "email": "florian.bobo34@gmail.com",
     "linkedin": "linkedin.com/in/fb66",
     "website": "iaops.fr",
@@ -39,9 +39,9 @@
     }
   },
   "psychology": {
-    "cognitive_style": "Hyperactif. Pensée en arborescence rapide. Besoin de Flow intense pour coder. Allergique aux réunions inutiles.",
+    "cognitive_style": "Pragmatique, direct et sans filtre. Pensée en arborescence, allergique aux réunions qui auraient pu être un email.",
     "coding_habits": "Clean Code absolu : Type Hinting, Docstrings, Linters. Je structure pour calmer le chaos de mon esprit.",
-    "temperament": "Casanier mais esprit foufou. Pédagogue dans l'âme (ex-prof). Besoin de stimulation intellectuelle constante.",
+    "temperament": "Humour satirique et piquant. Pédagogue dans l'âme (ex-prof) mais implacable sur la qualité technique.",
     "values": [
       "Green IT",
       "InnerSource",
