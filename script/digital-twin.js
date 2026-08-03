@@ -319,7 +319,10 @@ const DigitalTwin = {
                 }
 
                 if (data.candidates && data.candidates[0].content) {
-                    const botReply = data.candidates[0].content.parts[0].text;
+                    const botReply = data.candidates[0].content.parts
+                        .map(p => p.text)
+                        .filter(Boolean)
+                        .join('');
                     this.history.push({ role: "user", content: userMessage });
                     this.history.push({ role: "model", content: botReply });
                     this.addMessage('bot', botReply);
