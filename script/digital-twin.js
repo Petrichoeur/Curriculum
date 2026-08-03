@@ -297,7 +297,7 @@ const DigitalTwin = {
                         temperature: 0.8,
                         maxOutputTokens: 500,
                         thinkingConfig: {
-                            thinkingBudget: 0 // Plus fluide et on évite trop de token  
+                            thinkingLevel: "MINIMAL"
                         }
                     }
                 })
