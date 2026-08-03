@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Configuration serveur manquante (API KEY)' });
     }
 
-    const MODEL_NAME = "gemma-3-27b-it";
+    const MODEL_NAME = "gemma-4-31b-it";
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
 
     try {
