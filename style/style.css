@@ -1365,3 +1365,77 @@ body {
         width: 95%;
     }
 }
+
+/* ==========================================
+   MLP STUDIO CSS
+   ========================================== */
+
+.mlp-panel {
+    max-width: 1000px;
+}
+
+.mlp-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1.5fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.mlp-data-section, .mlp-controls-section, .mlp-viz-section {
+    background: rgba(10, 10, 15, 0.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.mlp-data-section h3, .mlp-controls-section h3, .mlp-viz-section h3 {
+    margin-top: 0;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 5px;
+}
+
+#mlp-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+#mlp-data-table th, #mlp-data-table td {
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 5px;
+    text-align: center;
+}
+
+#mlp-data-table input {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: none;
+    color: var(--text-color);
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    outline: none;
+}
+
+.mlp-status {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 5px;
+    border-left: 3px solid var(--neon-purple);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85em;
+}
+
+#mlp-loss-display {
+    color: var(--neon-red);
+}
+
+@media (max-width: 900px) {
+    .mlp-layout {
+        grid-template-columns: 1fr;
+    }
+}

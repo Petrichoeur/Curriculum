@@ -70,7 +70,7 @@
             <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
             <a href="#projects" class="nav-link" data-module="Projects">Projets</a>
             <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a>
-            <a href="#book-generator" class="nav-link" data-module="BookGenerator">Book Gen</a>
+            <a href="#mlp-studio" class="nav-link" data-module="MLPStudio">MLP Studio</a>
         </nav>
 
         <div class="content-wrapper">
@@ -107,40 +107,64 @@
                 </div>
             </section>
 
-            <section id="book-generator" class="tab-content">
-                <div class="glass-panel book-panel">
-                    <h1>Générateur de Manuscrit <span class="version-tag">v1.0</span></h1>
-                    <div class="book-config-panel">
-                        <div class="input-group">
-                            <label for="gemini-api-key">CLÉ API GEMINI</label>
-                            <input type="password" id="gemini-api-key" placeholder="Collez votre clé API Google ici...">
+            <section id="mlp-studio" class="tab-content">
+                <div class="glass-panel mlp-panel">
+                    <h1>MLP Studio <span class="version-tag">Vanilla JS</span></h1>
+                    <p class="cmd-text">Approximation de fonction (1 entrée, 1 sortie). Entraînement asynchrone et rendu des poids en temps réel.</p>
+                    
+                    <div class="mlp-layout">
+                        <!-- Data Table -->
+                        <div class="mlp-data-section">
+                            <h3>Données (x → y)</h3>
+                            <table id="mlp-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Entrée (x)</th>
+                                        <th>Sortie (y)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mlp-tbody">
+                                </tbody>
+                            </table>
+                            <button id="mlp-reset-data" class="cyber-btn-small">Reset (y=x²)</button>
                         </div>
-                        <div class="input-group">
-                            <label for="gemini-model-select">UNITÉ DE TRAITEMENT</label>
-                            <select id="gemini-model-select">
-                                <option value="gemini-3-flash-preview">Gemini 3.0 Flash Preview (Expérimental)</option>
-                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Haute Raisonnement)</option>
-                                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Standard - Rapide)</option>
-                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Éco)</option>
-                                <option value="gemma-3-27b-it">Gemini 3 27b (Éco, un peu vieux mais assez performant)
-                                </option>
-                            </select>
+                        
+                        <!-- Controls & Training -->
+                        <div class="mlp-controls-section">
+                            <h3>Hyperparamètres</h3>
+                            <div class="input-group">
+                                <label for="mlp-epochs">Epochs (Lot)</label>
+                                <input type="number" id="mlp-epochs" value="1000" step="500">
+                            </div>
+                            <div class="input-group">
+                                <label for="mlp-lr">Learning Rate</label>
+                                <input type="number" id="mlp-lr" value="0.1" step="0.01">
+                            </div>
+                            <button id="mlp-train-btn" class="cyber-btn">ENTRAÎNER LE RÉSEAU_</button>
+                            
+                            <div class="mlp-status">
+                                <p>Epochs totales: <span id="mlp-epoch-display">0</span></p>
+                                <p>Loss (MSE): <span id="mlp-loss-display">0.000000</span></p>
+                            </div>
+                            
+                            <!-- Test area -->
+                            <div class="mlp-test-section" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px;">
+                                <h3>Inférence</h3>
+                                <div class="input-group">
+                                    <label for="mlp-test-x">Test x =</label>
+                                    <input type="number" id="mlp-test-x" value="0.5" step="0.1">
+                                </div>
+                                <button id="mlp-predict-btn" class="cyber-btn-small">Prédire</button>
+                                <p style="font-weight:bold; color:var(--neon-blue); margin-top:10px;">y ≈ <span id="mlp-pred-display">?</span></p>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <label for="book-topic">SUJET DU LIVRE</label>
-                            <input type="text" id="book-topic" placeholder="Ex: L'avenir du MLOps...">
+                        
+                        <!-- Canvas View -->
+                        <div class="mlp-viz-section">
+                            <h3>Architecture & Poids</h3>
+                            <canvas id="mlp-canvas" width="400" height="350" style="background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.1);"></canvas>
                         </div>
-                        <button id="generate-book-btn" class="cyber-btn">LANCER L'ÉCRITURE NEURALE_</button>
                     </div>
-
-                    <div id="book-loading" class="book-loader" style="display:none;">
-                        <div class="loader-text">INITIALISATION...</div>
-                        <div class="loader-bar">
-                            <div class="loader-progress"></div>
-                        </div>
-                        <div id="book-status-log" class="console-log"></div>
-                    </div>
-                    <div id="book-display" class="book-content" style="display:none;"></div>
                 </div>
             </section>
 
@@ -176,7 +200,7 @@
     <script src="script/digital-twin.js"></script>
     <script src="script/projects.js"></script>
     <script src="script/educational.js"></script>
-    <script src="script/book-generator.js"></script>
+    <script src="script/mlp.js"></script>
     <script src="script/main.js"></script>
 </body>
 
