@@ -109,8 +109,8 @@
 
             <section id="mlp-studio" class="tab-content">
                 <div class="glass-panel mlp-panel">
-                    <h1>MLP Studio <span class="version-tag">Deep Learning V3</span></h1>
-                    <p class="cmd-text">Architecture 1→12→10→8→1 · Leaky ReLU · Xavier Init · Backpropagation from scratch.</p>
+                    <h1>MLP Studio <span class="version-tag">From Scratch</span></h1>
+                    <p class="cmd-text">Réseau de neurones profond (3 couches cachées · 30 neurones · Leaky ReLU) entraîné par descente de gradient, codé sans librairie.</p>
                     
                     <div class="mlp-layout">
                         <!-- Left Panel: Builder & Controls -->
@@ -118,7 +118,7 @@
                             <div class="mlp-panel-box">
                                 <h3>Générateur de Fonction (4 termes)</h3>
                                 <div id="mlp-terms-container"></div>
-                                <button id="mlp-generate-btn" class="cyber-btn-small">Générer (100 train + 50 val, x∈[0,10])</button>
+                                <button id="mlp-generate-btn" class="cyber-btn-small">Générer (50 train + 25 val)</button>
                                 <p class="mlp-status-text" id="mlp-func-display">f(x) = ...</p>
                             </div>
                             
@@ -141,7 +141,7 @@
                             </div>
 
                             <div class="mlp-panel-box mlp-metrics-box">
-                                <h3>Métriques de Validation (50 pts)</h3>
+                                <h3>Validation (25 pts)</h3>
                                 <div class="metric-row"><span>NMAE</span><span id="mlp-nmae">—</span></div>
                                 <div class="metric-row"><span>R²</span><span id="mlp-r2">—</span></div>
                                 <div class="metric-row"><span>Max Error</span><span id="mlp-maxerr">—</span></div>
@@ -151,16 +151,16 @@
                         <!-- Right Panel: Visualizations -->
                         <div class="mlp-right-panel">
                             <div class="mlp-panel-box viz-box">
-                                <h3>Réseau Organique (Bias par Neurone)</h3>
+                                <h3>Topologie du Réseau</h3>
                                 <canvas id="mlp-canvas" class="responsive-canvas"></canvas>
                             </div>
                             <div class="mlp-panel-box viz-box">
-                                <h3>Courbes — Train / Validation / Prédiction</h3>
+                                <h3>Approximation de Fonction</h3>
                                 <canvas id="mlp-chart-canvas" class="responsive-canvas"></canvas>
                                 <div class="chart-legend">
-                                    <span style="color:#00ffff;">● Train (100)</span>
-                                    <span style="color:#ffd700;">● Validation (50)</span>
-                                    <span style="color:#ff003c;">— Prédiction NN</span>
+                                    <span style="color:#00ffff;">● Train</span>
+                                    <span style="color:#ffd700;">● Val</span>
+                                    <span style="color:#ff003c;">— NN</span>
                                 </div>
                             </div>
                         </div>

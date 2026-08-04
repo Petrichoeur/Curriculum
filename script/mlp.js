@@ -150,20 +150,20 @@ const MLPStudio = {
         document.getElementById('mlp-func-display').textContent =
             parts.length > 0 ? "f(x) = " + parts.join(' + ') : "f(x) = 0";
 
-        // Generate 100 evenly-spaced TRAINING points on [0, 10]
+        // Generate 50 evenly-spaced TRAINING points on [0, 10]
         this.trainData = [];
         let minY = Infinity, maxY = -Infinity;
-        for (let i = 0; i < 100; i++) {
-            let x = (i / 99) * 10;
+        for (let i = 0; i < 50; i++) {
+            let x = (i / 49) * 10;
             let y = this.evalFunc(x);
             this.trainData.push({ x, y });
             if (y < minY) minY = y;
             if (y > maxY) maxY = y;
         }
 
-        // Generate 50 VALIDATION points (random x in [0, 10])
+        // Generate 25 VALIDATION points (random x in [0, 10])
         this.valData = [];
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 25; i++) {
             let x = Math.random() * 10;
             let y = this.evalFunc(x);
             this.valData.push({ x, y });
@@ -434,115 +434,108 @@ const MLPStudio = {
         const h = canvas.height;
         ctx.clearRect(0, 0, w, h);
 
-        let numLayers = this.L.length;
-        let mx = 50, my = 20;
+        let nL = this.L.length;
+        let mx = 55, my = 25;
+        let layerLabels = ['In', 'H1 (12)', 'H2 (10)', 'H3 (8)', 'Out'];
 
-        // X positions for each layer
-        let layerX = [];
-        for (let l = 0; l < numLayers; l++) {
-            layerX.push(mx + l * ((w - 2 * mx) / (numLayers - 1)));
-        }
+        // X positions
+        let lx = [];
+        for (let l = 0; l < nL; l++) lx.push(mx + l * ((w - 2 * mx) / (nL - 1)));
 
-        // Y positions for nodes in each layer
-        let nodePos = []; // nodePos[l][i] = {x, y}
-        for (let l = 0; l < numLayers; l++) {
-            let n = this.L[l];
-            let positions = [];
+        // Y positions
+        let nodes = [];
+        for (let l = 0; l < nL; l++) {
+            let n = this.L[l], pos = [];
             if (n === 1) {
-                positions.push({ x: layerX[l], y: h / 2 });
+                pos.push({ x: lx[l], y: h / 2 });
             } else {
-                let spacing = (h - 2 * my) / (n - 1);
-                for (let i = 0; i < n; i++) {
-                    positions.push({ x: layerX[l], y: my + i * spacing });
-                }
+                let sp = (h - 2 * my - 20) / (n - 1);
+                let startY = my + 10;
+                for (let i = 0; i < n; i++) pos.push({ x: lx[l], y: startY + i * sp });
             }
-            nodePos.push(positions);
+            nodes.push(pos);
         }
 
-        // Draw connections
-        for (let l = 0; l < numLayers - 1; l++) {
-            let fanIn = this.L[l];
-            let fanOut = this.L[l + 1];
-            for (let i = 0; i < fanOut; i++) {
-                for (let j = 0; j < fanIn; j++) {
-                    let wVal = this.W[l][i][j];
-                    this.drawBezier(ctx, nodePos[l][j], nodePos[l + 1][i], wVal);
+        // Layer labels at top
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        for (let l = 0; l < nL; l++) {
+            ctx.fillText(layerLabels[l] || '', lx[l], 12);
+        }
+
+        // Draw connections (thin, elegant)
+        for (let l = 0; l < nL - 1; l++) {
+            for (let i = 0; i < this.L[l + 1]; i++) {
+                for (let j = 0; j < this.L[l]; j++) {
+                    this.drawEdge(ctx, nodes[l][j], nodes[l + 1][i], this.W[l][i][j]);
                 }
             }
         }
 
-        // Draw nodes with bias values
-        // Input node
-        this.drawGlowNode(ctx, nodePos[0][0], 'X', null, true);
-
-        // Hidden layers
-        for (let l = 1; l < numLayers - 1; l++) {
+        // Draw nodes
+        // Input
+        this.drawNode(ctx, nodes[0][0], 'x', null, 16, true);
+        // Hidden
+        for (let l = 1; l < nL - 1; l++) {
             for (let i = 0; i < this.L[l]; i++) {
-                let bias = this.B[l - 1][i];
-                this.drawGlowNode(ctx, nodePos[l][i], bias.toFixed(2), bias, false);
+                let b = this.B[l - 1][i];
+                this.drawNode(ctx, nodes[l][i], b.toFixed(1), b, 8, false);
             }
         }
-
-        // Output node
-        let outBias = this.B[numLayers - 2][0];
-        this.drawGlowNode(ctx, nodePos[numLayers - 1][0], 'Y', outBias, true);
+        // Output
+        this.drawNode(ctx, nodes[nL - 1][0], 'ŷ', null, 16, true);
     },
 
-    drawBezier: function(ctx, start, end, weight) {
+    drawEdge: function(ctx, a, b, weight) {
         let absW = Math.abs(weight);
-        if (absW < 0.02) return;
+        if (absW < 0.03) return;
 
         ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        let cpx = (start.x + end.x) / 2;
-        ctx.bezierCurveTo(cpx, start.y, cpx, end.y, end.x, end.y);
+        ctx.moveTo(a.x, a.y);
+        let cpx = (a.x + b.x) / 2;
+        ctx.bezierCurveTo(cpx, a.y, cpx, b.y, b.x, b.y);
 
-        ctx.lineWidth = Math.min(absW * 1.2, 4);
-        let alpha = Math.min(absW * 0.5, 0.7);
+        ctx.lineWidth = Math.min(absW * 0.8, 3);
+        let alpha = Math.min(absW * 0.35, 0.55);
 
-        if (weight > 0) {
-            ctx.strokeStyle = `rgba(0,255,255,${alpha})`;
-            ctx.shadowColor = 'rgba(0,255,255,0.3)';
-        } else {
-            ctx.strokeStyle = `rgba(255,0,90,${alpha})`;
-            ctx.shadowColor = 'rgba(255,0,90,0.3)';
-        }
-        ctx.shadowBlur = absW > 0.5 ? 3 : 0;
+        ctx.strokeStyle = weight > 0
+            ? `rgba(0,220,255,${alpha})`
+            : `rgba(255,40,100,${alpha})`;
         ctx.stroke();
-        ctx.shadowBlur = 0;
     },
 
-    drawGlowNode: function(ctx, pos, label, bias, isIO) {
-        let r = isIO ? 14 : 7;
-
-        // Outer glow
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#0a0a0f';
-        ctx.fill();
-
+    drawNode: function(ctx, pos, label, bias, r, isIO) {
+        // Subtle outer glow ring
         let color;
         if (isIO) {
-            color = label === 'X' ? '#00f0ff' : '#00ffaa';
+            color = label === 'x' ? '#00d4ff' : '#00ffaa';
         } else {
-            color = (bias !== null && bias >= 0) ? '#00ffff' : '#ff005a';
+            // Gradient from cyan to magenta based on bias value
+            let t = bias !== null ? Math.min(Math.abs(bias), 2) / 2 : 0;
+            color = bias >= 0
+                ? `rgba(0,${Math.round(200 + 55*t)},255,1)`
+                : `rgba(255,${Math.round(40 + 60*(1-t))},${Math.round(100 + 50*(1-t))},1)`;
         }
 
+        // Dark fill
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(8,8,15,0.9)';
+        ctx.fill();
         ctx.strokeStyle = color;
-        ctx.lineWidth = isIO ? 2 : 1.2;
+        ctx.lineWidth = isIO ? 2 : 1;
         ctx.shadowColor = color;
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = isIO ? 12 : 5;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Label text
-        if (label !== null && label !== undefined) {
-            ctx.fillStyle = '#fff';
-            ctx.font = isIO ? 'bold 10px monospace' : '7px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(String(label), pos.x, pos.y);
-        }
+        // Label
+        ctx.fillStyle = isIO ? '#fff' : 'rgba(255,255,255,0.85)';
+        ctx.font = isIO ? 'bold 11px monospace' : '6px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(label), pos.x, pos.y);
     },
 
     /* ==========================================================
@@ -602,46 +595,40 @@ const MLPStudio = {
         ctx.fillText(yMax.toFixed(1), 2, py + 4);
         ctx.fillText(yMin.toFixed(1), 2, h - py + 10);
 
-        // NN Prediction: smooth curve (500 points)
+        // NN Prediction: thick semi-transparent curve (300 pts)
         ctx.beginPath();
         let first = true;
-        for (let i = 0; i <= 500; i++) {
-            let x = (i / 500) * 10;
+        for (let i = 0; i <= 300; i++) {
+            let x = (i / 300) * 10;
             let pred = this.predict(x);
             let pt = toC(x, pred);
             if (first) { ctx.moveTo(pt.cx, pt.cy); first = false; }
             else { ctx.lineTo(pt.cx, pt.cy); }
         }
-        ctx.strokeStyle = '#ff003c';
-        ctx.lineWidth = 2.5;
-        ctx.shadowColor = 'rgba(255,0,60,0.4)';
-        ctx.shadowBlur = 4;
+        ctx.strokeStyle = 'rgba(255,0,60,0.6)';
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = 'rgba(255,0,60,0.35)';
+        ctx.shadowBlur = 6;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Training dots (Cyan)
-        ctx.fillStyle = '#00ffff';
-        ctx.shadowColor = 'rgba(0,255,255,0.3)';
-        ctx.shadowBlur = 3;
+        // Training dots (Cyan, small)
+        ctx.fillStyle = 'rgba(0,255,255,0.85)';
         for (let i = 0; i < this.trainData.length; i++) {
             let pt = toC(this.trainData[i].x, this.trainData[i].y);
             ctx.beginPath();
-            ctx.arc(pt.cx, pt.cy, 2.5, 0, Math.PI * 2);
+            ctx.arc(pt.cx, pt.cy, 1.8, 0, Math.PI * 2);
             ctx.fill();
         }
-        ctx.shadowBlur = 0;
 
-        // Validation dots (Gold)
-        ctx.fillStyle = '#ffd700';
-        ctx.shadowColor = 'rgba(255,215,0,0.3)';
-        ctx.shadowBlur = 3;
+        // Validation dots (Gold, small)
+        ctx.fillStyle = 'rgba(255,215,0,0.85)';
         for (let i = 0; i < this.valData.length; i++) {
             let pt = toC(this.valData[i].x, this.valData[i].y);
             ctx.beginPath();
-            ctx.arc(pt.cx, pt.cy, 3.5, 0, Math.PI * 2);
+            ctx.arc(pt.cx, pt.cy, 2.2, 0, Math.PI * 2);
             ctx.fill();
         }
-        ctx.shadowBlur = 0;
     }
 };
 
