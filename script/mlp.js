@@ -34,6 +34,7 @@ const MLPStudio = {
 
     _terms: [],
     _particles: [], // Dynamic flow particles
+    _renderedEdges: [], // Stored for hit detection
 
     init: function(config) {
         if (this.isInitialized) return;
@@ -47,6 +48,7 @@ const MLPStudio = {
             this.initNetwork();
             this.drawChart();
             this.startAnimLoop();
+            this.setupTooltip();
         }, 120);
 
         let resizeTimeout;
@@ -58,6 +60,80 @@ const MLPStudio = {
         });
 
         this.isInitialized = true;
+    },
+
+    setupTooltip: function() {
+        const canvas = document.getElementById('mlp-canvas');
+        const tooltip = document.getElementById('mlp-tooltip');
+        if (!canvas || !tooltip) return;
+
+        // On active le hover et le clic
+        const handleInteraction = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Facteur de scale au cas où la taille CSS diffère de la résolution du canvas
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const cx = (e.clientX - rect.left) * scaleX;
+            const cy = (e.clientY - rect.top) * scaleY;
+
+            let closestEdge = null;
+            let minDist = 15; // hitbox de 15 pixels
+
+            // Raycasting très simple : distance point-courbe discrétisée
+            for (let edge of this._renderedEdges) {
+                // On vérifie le bounding box d'abord pour optimiser
+                let minX = Math.min(edge.a.x, edge.b.x) - 15;
+                let maxX = Math.max(edge.a.x, edge.b.x) + 15;
+                let minY = Math.min(edge.a.y, edge.b.y) - 15;
+                let maxY = Math.max(edge.a.y, edge.b.y) + 15;
+
+                if (cx < minX || cx > maxX || cy < minY || cy > maxY) continue;
+
+                // Évaluation de 10 points sur la courbe de Bézier
+                let cpx = (edge.a.x + edge.b.x) / 2;
+                for (let t = 0.1; t < 1; t += 0.1) {
+                    let mt = 1 - t;
+                    let px = mt*mt*mt*edge.a.x + 3*mt*mt*t*cpx + 3*mt*t*t*cpx + t*t*t*edge.b.x;
+                    let py = mt*mt*mt*edge.a.y + 3*mt*mt*t*edge.a.y + 3*mt*t*t*edge.b.y + t*t*t*edge.b.y;
+                    
+                    let d = Math.hypot(px - cx, py - cy);
+                    if (d < minDist) {
+                        minDist = d;
+                        closestEdge = edge;
+                    }
+                }
+            }
+
+            if (closestEdge) {
+                // Calcul de l'activation (forward passe avec une valeur de test : x=5 normalisé)
+                let testNormX = this.normX(5);
+                let A = this.forward(testNormX);
+                let activationResult = A[closestEdge.l + 1][closestEdge.i];
+
+                tooltip.innerHTML = `
+                    <h4>Synapse <span>${closestEdge.w > 0 ? '(Excitatrice)' : '(Inhibitrice)'}</span></h4>
+                    <p>Poids : <span class="val">${closestEdge.w.toFixed(4)}</span></p>
+                    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
+                    <p style="color:#00ffff">Neurone Cible H${closestEdge.l+1}-${closestEdge.i}</p>
+                    <p>Biais : <span class="val">${closestEdge.bias.toFixed(4)}</span></p>
+                    <p>Formule : <code>z > 0 ? z : 0.01*z</code></p>
+                    <p>Sortie (x=5) : <span class="val">${activationResult.toFixed(4)}</span></p>
+                `;
+                tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
+                tooltip.style.top = (e.clientY - rect.top + 15) + 'px';
+                tooltip.classList.add('visible');
+                
+                // Mettre en évidence la ligne survolée
+                canvas.style.cursor = 'pointer';
+            } else {
+                tooltip.classList.remove('visible');
+                canvas.style.cursor = 'default';
+            }
+        };
+
+        canvas.addEventListener('click', handleInteraction);
+        canvas.addEventListener('mousemove', handleInteraction);
+        canvas.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
     },
 
     startAnimLoop: function() {
@@ -308,7 +384,7 @@ const MLPStudio = {
 
         // Update weights (SGD) + L1 Pruning (Dropout equivalent)
         let scale = lr / m;
-        let l1 = 0.001; // Regularization factor to push weights to 0
+        let l1 = 0.002; // Regularization factor to push weights to 0
 
         for (let l = 0; l < numLayers - 1; l++) {
             let fanOut = this.L[l + 1];
@@ -324,8 +400,8 @@ const MLPStudio = {
                     // L1 Penalty (forces unused weights towards 0)
                     w -= scale * l1 * Math.sign(w);
                     
-                    // Pruning: if weight is extremely close to 0, "drop" it completely
-                    if (Math.abs(w) < 0.03) w = 0;
+                    // Hard Pruning: if weight is close to 0, "drop" it completely for elegance
+                    if (Math.abs(w) < 0.08) w = 0;
                     
                     this.W[l][i][j] = w;
                 }
@@ -485,11 +561,21 @@ const MLPStudio = {
         for (let l = 0; l < nL; l++) ctx.fillText(layerLabels[l] || '', lx[l], 12);
 
         // Draw connections
+        this._renderedEdges = []; // Reset for hit detection
         for (let l = 0; l < nL - 1; l++) {
             for (let i = 0; i < this.L[l + 1]; i++) {
+                let bias = this.B[l][i];
                 for (let j = 0; j < this.L[l]; j++) {
                     let wVal = this.W[l][i][j];
-                    if (wVal !== 0) this.drawEdge(ctx, nodes[l][j], nodes[l + 1][i], wVal);
+                    if (wVal !== 0) {
+                        this.drawEdge(ctx, nodes[l][j], nodes[l + 1][i], wVal);
+                        this._renderedEdges.push({
+                            a: nodes[l][j], 
+                            b: nodes[l + 1][i], 
+                            w: wVal, 
+                            l, i, j, bias
+                        });
+                    }
                 }
             }
         }
@@ -555,12 +641,13 @@ const MLPStudio = {
         let cpx = (a.x + b.x) / 2;
         ctx.bezierCurveTo(cpx, a.y, cpx, b.y, b.x, b.y);
 
-        ctx.lineWidth = Math.min(absW * 0.8, 3);
-        let alpha = Math.min(absW * 0.35, 0.55);
+        // Traits plus épais et plus opaques pour une meilleure lisibilité
+        ctx.lineWidth = Math.min(absW * 1.5 + 0.5, 5);
+        let alpha = Math.min(absW * 0.5 + 0.3, 0.95);
 
         ctx.strokeStyle = weight > 0
-            ? `rgba(0,220,255,${alpha})`
-            : `rgba(255,40,100,${alpha})`;
+            ? `rgba(0,255,255,${alpha})`
+            : `rgba(255,0,90,${alpha})`;
         ctx.stroke();
     },
 
