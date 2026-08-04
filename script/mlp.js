@@ -77,53 +77,76 @@ const MLPStudio = {
             const cy = (e.clientY - rect.top) * scaleY;
 
             let closestEdge = null;
-            let minDist = 15; // hitbox de 15 pixels
+            let closestNode = null;
+            let minDistEdge = 25; // hit box généreuse pour les lignes
+            let minDistNode = 18; // hit box pour les noeuds
 
-            // Raycasting très simple : distance point-courbe discrétisée
-            for (let edge of this._renderedEdges) {
-                // On vérifie le bounding box d'abord pour optimiser
-                let minX = Math.min(edge.a.x, edge.b.x) - 15;
-                let maxX = Math.max(edge.a.x, edge.b.x) + 15;
-                let minY = Math.min(edge.a.y, edge.b.y) - 15;
-                let maxY = Math.max(edge.a.y, edge.b.y) + 15;
-
-                if (cx < minX || cx > maxX || cy < minY || cy > maxY) continue;
-
-                // Évaluation de 10 points sur la courbe de Bézier
-                let cpx = (edge.a.x + edge.b.x) / 2;
-                for (let t = 0.1; t < 1; t += 0.1) {
-                    let mt = 1 - t;
-                    let px = mt*mt*mt*edge.a.x + 3*mt*mt*t*cpx + 3*mt*t*t*cpx + t*t*t*edge.b.x;
-                    let py = mt*mt*mt*edge.a.y + 3*mt*mt*t*edge.a.y + 3*mt*t*t*edge.b.y + t*t*t*edge.b.y;
-                    
-                    let d = Math.hypot(px - cx, py - cy);
-                    if (d < minDist) {
-                        minDist = d;
-                        closestEdge = edge;
+            // 1. Raycasting sur les Noeuds (Prioritaire)
+            if (this._renderedNodes) {
+                for (let node of this._renderedNodes) {
+                    let d = Math.hypot(node.x - cx, node.y - cy);
+                    if (d < minDistNode) {
+                        minDistNode = d;
+                        closestNode = node;
                     }
                 }
             }
 
-            if (closestEdge) {
-                // Calcul de l'activation (forward passe avec une valeur de test : x=5 normalisé)
-                let testNormX = this.normX(5);
-                let A = this.forward(testNormX).A;
-                let activationResult = A[closestEdge.l + 1][closestEdge.i];
+            // 2. Si pas de noeud, Raycasting sur les bords
+            if (!closestNode) {
+                for (let edge of this._renderedEdges) {
+                    let minX = Math.min(edge.a.x, edge.b.x) - 20;
+                    let maxX = Math.max(edge.a.x, edge.b.x) + 20;
+                    let minY = Math.min(edge.a.y, edge.b.y) - 20;
+                    let maxY = Math.max(edge.a.y, edge.b.y) + 20;
 
+                    if (cx < minX || cx > maxX || cy < minY || cy > maxY) continue;
+
+                    let cpx = (edge.a.x + edge.b.x) / 2;
+                    for (let t = 0.1; t < 1; t += 0.1) {
+                        let mt = 1 - t;
+                        let px = mt*mt*mt*edge.a.x + 3*mt*mt*t*cpx + 3*mt*t*t*cpx + t*t*t*edge.b.x;
+                        let py = mt*mt*mt*edge.a.y + 3*mt*mt*t*edge.a.y + 3*mt*t*t*edge.b.y + t*t*t*edge.b.y;
+                        
+                        let d = Math.hypot(px - cx, py - cy);
+                        if (d < minDistEdge) {
+                            minDistEdge = d;
+                            closestEdge = edge;
+                        }
+                    }
+                }
+            }
+
+            // Calcul de l'activation (forward passe avec une valeur de test)
+            let testNormX = this.normX(5);
+            let A = this.forward(testNormX).A;
+
+            if (closestNode) {
+                let activationResult = A[closestNode.l][closestNode.i];
+                tooltip.innerHTML = `
+                    <h4>Neurone <span>H${closestNode.l}-${closestNode.i}</span></h4>
+                    <p>Biais : <span class="val">${closestNode.bias.toFixed(4)}</span></p>
+                    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
+                    <p>Activation : <code>Swish (SiLU)</code></p>
+                    <p>Sortie actuelle (x=5) : <span class="val">${activationResult.toFixed(4)}</span></p>
+                `;
+                tooltip.style.left = (e.clientX - rect.left + 20) + 'px';
+                tooltip.style.top = (e.clientY - rect.top + 20) + 'px';
+                tooltip.classList.add('visible');
+                canvas.style.cursor = 'pointer';
+
+            } else if (closestEdge) {
+                let activationResult = A[closestEdge.l + 1][closestEdge.i];
                 tooltip.innerHTML = `
                     <h4>Synapse <span>${closestEdge.w > 0 ? '(Excitatrice)' : '(Inhibitrice)'}</span></h4>
                     <p>Poids : <span class="val">${closestEdge.w.toFixed(4)}</span></p>
                     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
-                    <p style="color:#00ffff">Neurone Cible H${closestEdge.l+1}-${closestEdge.i}</p>
-                    <p>Biais : <span class="val">${closestEdge.bias.toFixed(4)}</span></p>
-                    <p>Formule : <code>z / (1 + exp(-z))</code></p>
-                    <p>Sortie (x=5) : <span class="val">${activationResult.toFixed(4)}</span></p>
+                    <p style="color:#00ffff">Cible : H${closestEdge.l+1}-${closestEdge.i}</p>
+                    <p>Sortie cible (x=5) : <span class="val">${activationResult.toFixed(4)}</span></p>
                 `;
-                tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
-                tooltip.style.top = (e.clientY - rect.top + 15) + 'px';
+                tooltip.style.left = (e.clientX - rect.left + 20) + 'px';
+                tooltip.style.top = (e.clientY - rect.top + 20) + 'px';
                 tooltip.classList.add('visible');
-                
-                // Mettre en évidence la ligne survolée
                 canvas.style.cursor = 'pointer';
             } else {
                 tooltip.classList.remove('visible');
@@ -291,7 +314,15 @@ const MLPStudio = {
             let fanOut = this.L[l + 1];
             // W[l] is fanOut x fanIn
             this.W.push(Array.from({ length: fanOut }, () =>
-                Array.from({ length: fanIn }, () => this.xavier(fanIn))
+                Array.from({ length: fanIn }, () => {
+                    // ASYMÉTRIE STRUCTURELLE INITIALE (DropConnect)
+                    // On supprime 45% des connexions aléatoirement dès l'origine pour 
+                    // forcer un réseau asymétrique qui ne sera JAMAIS fully-connected !
+                    if (l > 0 && l < this.L.length - 2 && Math.random() < 0.45) {
+                        return 0; // Connexion morte-née
+                    }
+                    return this.xavier(fanIn);
+                })
             ));
             this.B.push(new Array(fanOut).fill(0));
         }
@@ -405,14 +436,16 @@ const MLPStudio = {
                 for (let j = 0; j < fanIn; j++) {
                     let w = this.W[l][i][j];
                     
+                    if (w === 0) continue; // Les liens morts le restent ! On fige l'asymétrie.
+
                     // Gradient descent step
                     w -= scale * gW[l][i][j];
                     
                     // L1 Penalty (forces unused weights towards 0)
                     w -= scale * l1 * Math.sign(w);
                     
-                    // Hard Pruning: Seuil ultra agressif pour générer de l'asymétrie
-                    if (Math.abs(w) < 0.15) w = 0;
+                    // Hard Pruning en direct
+                    if (Math.abs(w) < 0.1) w = 0;
                     
                     this.W[l][i][j] = w;
                 }
@@ -665,17 +698,23 @@ const MLPStudio = {
         // Revenir en mode normal pour dessiner les noeuds et labels
         ctx.globalCompositeOperation = 'source-over';
 
+        this._renderedNodes = []; // Pour le hit-detection
+
         // Draw active nodes only
         this.drawNode(ctx, nodes[0][0], 'x', null, 16, true);
+        this._renderedNodes.push({x: nodes[0][0].x, y: nodes[0][0].y, l: 0, i: 0, bias: 0});
+
         for (let l = 1; l < nL - 1; l++) {
             for (let i = 0; i < this.L[l]; i++) {
                 if (isNodeAlive[l][i]) {
                     let b = this.B[l - 1][i];
                     this.drawNode(ctx, nodes[l][i], b.toFixed(1), b, 10, false);
+                    this._renderedNodes.push({x: nodes[l][i].x, y: nodes[l][i].y, l, i, bias: b});
                 }
             }
         }
         this.drawNode(ctx, nodes[nL - 1][0], 'ŷ', null, 16, true);
+        this._renderedNodes.push({x: nodes[nL - 1][0].x, y: nodes[nL - 1][0].y, l: nL - 1, i: 0, bias: this.B[nL - 2][0]});
     },
 
     drawEdge: function(ctx, a, b, weight) {
