@@ -189,10 +189,10 @@ export class NeuralNetwork {
                     
                     if (!isProtected) {
                         for (let j = 0; j < this.L[l-1]; j++) {
-                            if (Math.abs(this.W[l-1][i][j]) < 0.1) this.W[l-1][i][j] = 0;
+                            if (Math.abs(this.W[l-1][i][j]) < 0.05) this.W[l-1][i][j] = 0;
                         }
                         for (let k = 0; k < this.L[l+1]; k++) {
-                            if (Math.abs(this.W[l][k][i]) < 0.1) this.W[l][k][i] = 0;
+                            if (Math.abs(this.W[l][k][i]) < 0.05) this.W[l][k][i] = 0;
                         }
                     }
                 }
