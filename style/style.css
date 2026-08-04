@@ -1510,6 +1510,49 @@ body {
     font-weight: bold;
 }
 
+.mlp-right-panel {
+    position: relative;
+}
+
+.mlp-tooltip {
+    position: absolute;
+    display: none;
+    background: rgba(10, 10, 15, 0.95);
+    border: 1px solid var(--neon-purple);
+    box-shadow: 0 0 15px rgba(255, 0, 90, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75em;
+    z-index: 100;
+    pointer-events: none;
+    backdrop-filter: blur(5px);
+    transition: opacity 0.1s ease;
+    min-width: 180px;
+}
+
+.mlp-tooltip.visible {
+    display: block;
+}
+
+.mlp-tooltip h4 {
+    margin: 0 0 8px 0;
+    color: var(--neon-blue);
+    font-size: 1.1em;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 4px;
+}
+
+.mlp-tooltip p {
+    margin: 4px 0;
+}
+
+.mlp-tooltip .val {
+    color: var(--neon-red);
+    font-weight: bold;
+}
+
 @media (max-width: 900px) {
     .mlp-layout {
         grid-template-columns: 1fr;
