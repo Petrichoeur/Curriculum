@@ -109,60 +109,56 @@
 
             <section id="mlp-studio" class="tab-content">
                 <div class="glass-panel mlp-panel">
-                    <h1>MLP Studio <span class="version-tag">Vanilla JS</span></h1>
-                    <p class="cmd-text">Approximation de fonction (1 entrée, 1 sortie). Entraînement asynchrone et rendu des poids en temps réel.</p>
+                    <h1>MLP Studio <span class="version-tag">Deep Learning V2</span></h1>
+                    <p class="cmd-text">Approximation complexe avec architecture 1→8→8→1. Générez une fonction, entraînez, et visualisez les limites de l'extrapolation (x de 0 à 20).</p>
                     
                     <div class="mlp-layout">
-                        <!-- Data Table -->
-                        <div class="mlp-data-section">
-                            <h3>Données (x → y)</h3>
-                            <table id="mlp-data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Entrée (x)</th>
-                                        <th>Sortie (y)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="mlp-tbody">
-                                </tbody>
-                            </table>
-                            <button id="mlp-reset-data" class="cyber-btn-small">Reset (y=x²)</button>
-                        </div>
-                        
-                        <!-- Controls & Training -->
-                        <div class="mlp-controls-section">
-                            <h3>Hyperparamètres</h3>
-                            <div class="input-group">
-                                <label for="mlp-epochs">Epochs (Lot)</label>
-                                <input type="number" id="mlp-epochs" value="1000" step="500">
-                            </div>
-                            <div class="input-group">
-                                <label for="mlp-lr">Learning Rate</label>
-                                <input type="number" id="mlp-lr" value="0.1" step="0.01">
-                            </div>
-                            <button id="mlp-train-btn" class="cyber-btn">ENTRAÎNER LE RÉSEAU_</button>
-                            
-                            <div class="mlp-status">
-                                <p>Epochs totales: <span id="mlp-epoch-display">0</span></p>
-                                <p>Loss (MSE): <span id="mlp-loss-display">0.000000</span></p>
-                            </div>
-                            
-                            <!-- Test area -->
-                            <div class="mlp-test-section" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px;">
-                                <h3>Inférence</h3>
-                                <div class="input-group">
-                                    <label for="mlp-test-x">Test x =</label>
-                                    <input type="number" id="mlp-test-x" value="0.5" step="0.1">
+                        <!-- Left Panel: Builder & Controls -->
+                        <div class="mlp-left-panel">
+                            <!-- Function Generator -->
+                            <div class="mlp-panel-box">
+                                <h3>Générateur de Fonction (4 termes)</h3>
+                                <div id="mlp-terms-container">
+                                    <!-- Populated by JS -->
                                 </div>
-                                <button id="mlp-predict-btn" class="cyber-btn-small">Prédire</button>
-                                <p style="font-weight:bold; color:var(--neon-blue); margin-top:10px;">y ≈ <span id="mlp-pred-display">?</span></p>
+                                <button id="mlp-generate-btn" class="cyber-btn-small">Générer Données (200 pts, x∈[0,10])</button>
+                                <p class="mlp-status-text" id="mlp-func-display">f(x) = ...</p>
+                            </div>
+                            
+                            <!-- Hyperparameters -->
+                            <div class="mlp-panel-box" style="margin-top:20px;">
+                                <h3>Hyperparamètres</h3>
+                                <div class="input-group">
+                                    <label for="mlp-epochs">Epochs</label>
+                                    <input type="number" id="mlp-epochs" value="3000" step="500">
+                                </div>
+                                <div class="input-group">
+                                    <label for="mlp-lr">Learning Rate</label>
+                                    <input type="number" id="mlp-lr" value="0.1" step="0.01">
+                                </div>
+                                <button id="mlp-train-btn" class="cyber-btn">ENTRAÎNER LE RÉSEAU_</button>
+                                
+                                <div class="mlp-status">
+                                    <p>Epoch: <span id="mlp-epoch-display">0</span></p>
+                                    <p>Loss: <span id="mlp-loss-display">0.000000</span></p>
+                                </div>
                             </div>
                         </div>
                         
-                        <!-- Canvas View -->
-                        <div class="mlp-viz-section">
-                            <h3>Architecture & Poids</h3>
-                            <canvas id="mlp-canvas" width="400" height="350" style="background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.1);"></canvas>
+                        <!-- Right Panel: Visualizations -->
+                        <div class="mlp-right-panel">
+                            <div class="mlp-panel-box viz-box">
+                                <h3>Réseau Organique</h3>
+                                <canvas id="mlp-canvas" class="responsive-canvas"></canvas>
+                            </div>
+                            <div class="mlp-panel-box viz-box" style="margin-top:20px;">
+                                <h3>Courbes de Prédiction</h3>
+                                <canvas id="mlp-chart-canvas" class="responsive-canvas"></canvas>
+                                <div class="chart-legend">
+                                    <span style="color:#00ffff;">■ f(x) Réelle</span>
+                                    <span style="color:#ff003c;">■ f(x) Apprise</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
