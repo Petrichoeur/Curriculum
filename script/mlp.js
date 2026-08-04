@@ -21,8 +21,8 @@ const MLPStudio = {
     sx: { min: 0, max: 10 },
     sy: { min: 0, max: 1 },
 
-    // Architecture: 1 → 12 → 10 → 8 → 1
-    L: [1, 12, 10, 8, 1],
+    // Architecture: 1 → 6 → 6 → 6 → 1
+    L: [1, 6, 6, 6, 1],
 
     // Weights and biases per layer transition
     W: [],  // W[l][i][j] = weight from layer l node j to layer l+1 node i
@@ -33,6 +33,7 @@ const MLPStudio = {
     currentLoss: 0,
 
     _terms: [],
+    _particles: [], // Dynamic flow particles
 
     init: function(config) {
         if (this.isInitialized) return;
@@ -44,20 +45,27 @@ const MLPStudio = {
 
         setTimeout(() => {
             this.initNetwork();
-            this.drawNetwork();
             this.drawChart();
+            this.startAnimLoop();
         }, 120);
 
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
-                this.drawNetwork();
                 this.drawChart();
             }, 150);
         });
 
         this.isInitialized = true;
+    },
+
+    startAnimLoop: function() {
+        const loop = () => {
+            this.drawNetwork();
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
     },
 
     /* ==========================================================
@@ -298,15 +306,28 @@ const MLPStudio = {
             }
         }
 
-        // Update weights (SGD)
+        // Update weights (SGD) + L1 Pruning (Dropout equivalent)
         let scale = lr / m;
+        let l1 = 0.001; // Regularization factor to push weights to 0
+
         for (let l = 0; l < numLayers - 1; l++) {
             let fanOut = this.L[l + 1];
             let fanIn = this.L[l];
             for (let i = 0; i < fanOut; i++) {
                 this.B[l][i] -= scale * gB[l][i];
                 for (let j = 0; j < fanIn; j++) {
-                    this.W[l][i][j] -= scale * gW[l][i][j];
+                    let w = this.W[l][i][j];
+                    
+                    // Gradient descent step
+                    w -= scale * gW[l][i][j];
+                    
+                    // L1 Penalty (forces unused weights towards 0)
+                    w -= scale * l1 * Math.sign(w);
+                    
+                    // Pruning: if weight is extremely close to 0, "drop" it completely
+                    if (Math.abs(w) < 0.03) w = 0;
+                    
+                    this.W[l][i][j] = w;
                 }
             }
         }
@@ -405,7 +426,6 @@ const MLPStudio = {
 
             this.updateStatus();
             this.updateMetrics();
-            this.drawNetwork();
             this.drawChart();
 
             if (done < epochsToRun) {
@@ -428,15 +448,17 @@ const MLPStudio = {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width || 500;
-        canvas.height = rect.height || 380;
+        if (canvas.width !== rect.width || canvas.height !== rect.height) {
+            canvas.width = rect.width || 500;
+            canvas.height = rect.height || 380;
+        }
         const w = canvas.width;
         const h = canvas.height;
         ctx.clearRect(0, 0, w, h);
 
         let nL = this.L.length;
         let mx = 55, my = 25;
-        let layerLabels = ['In', 'H1 (12)', 'H2 (10)', 'H3 (8)', 'Out'];
+        let layerLabels = ['In', 'H1 (6)', 'H2 (6)', 'H3 (6)', 'Out'];
 
         // X positions
         let lx = [];
@@ -456,41 +478,78 @@ const MLPStudio = {
             nodes.push(pos);
         }
 
-        // Layer labels at top
+        // Layer labels
         ctx.fillStyle = 'rgba(255,255,255,0.25)';
         ctx.font = '8px monospace';
         ctx.textAlign = 'center';
-        for (let l = 0; l < nL; l++) {
-            ctx.fillText(layerLabels[l] || '', lx[l], 12);
-        }
+        for (let l = 0; l < nL; l++) ctx.fillText(layerLabels[l] || '', lx[l], 12);
 
-        // Draw connections (thin, elegant)
+        // Draw connections
         for (let l = 0; l < nL - 1; l++) {
             for (let i = 0; i < this.L[l + 1]; i++) {
                 for (let j = 0; j < this.L[l]; j++) {
-                    this.drawEdge(ctx, nodes[l][j], nodes[l + 1][i], this.W[l][i][j]);
+                    let wVal = this.W[l][i][j];
+                    if (wVal !== 0) this.drawEdge(ctx, nodes[l][j], nodes[l + 1][i], wVal);
                 }
             }
         }
 
+        // Spawner des particules aléatoirement sur les connexions actives
+        if (this.isTraining && Math.random() < 0.6) {
+            let l = Math.floor(Math.random() * (nL - 1));
+            let i = Math.floor(Math.random() * this.L[l + 1]);
+            let j = Math.floor(Math.random() * this.L[l]);
+            let wVal = this.W[l][i][j];
+            if (Math.abs(wVal) > 0.05) {
+                this._particles.push({
+                    l, i, j, t: 0, speed: 0.015 + Math.random() * 0.02, wVal
+                });
+            }
+        }
+
+        // Mettre à jour et dessiner les particules
+        for (let p = this._particles.length - 1; p >= 0; p--) {
+            let pt = this._particles[p];
+            pt.t += pt.speed;
+            
+            // Supprimer si arrivé au bout ou si le poids a été pruned
+            if (pt.t >= 1 || this.W[pt.l][pt.i][pt.j] === 0) {
+                this._particles.splice(p, 1);
+                continue;
+            }
+
+            let a = nodes[pt.l][pt.j];
+            let b = nodes[pt.l + 1][pt.i];
+            let cpx = (a.x + b.x) / 2;
+            
+            // Calcul position Bézier cubique
+            let mt = 1 - pt.t;
+            let px = mt*mt*mt*a.x + 3*mt*mt*pt.t*cpx + 3*mt*pt.t*pt.t*cpx + pt.t*pt.t*pt.t*b.x;
+            let py = mt*mt*mt*a.y + 3*mt*mt*pt.t*a.y + 3*mt*pt.t*pt.t*b.y + pt.t*pt.t*pt.t*b.y;
+
+            ctx.beginPath();
+            ctx.arc(px, py, 1.5 + Math.abs(pt.wVal)*0.5, 0, Math.PI * 2);
+            ctx.fillStyle = pt.wVal > 0 ? '#00ffff' : '#ff005a';
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.shadowBlur = 6;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
         // Draw nodes
-        // Input
         this.drawNode(ctx, nodes[0][0], 'x', null, 16, true);
-        // Hidden
         for (let l = 1; l < nL - 1; l++) {
             for (let i = 0; i < this.L[l]; i++) {
                 let b = this.B[l - 1][i];
-                this.drawNode(ctx, nodes[l][i], b.toFixed(1), b, 8, false);
+                this.drawNode(ctx, nodes[l][i], b.toFixed(1), b, 10, false);
             }
         }
-        // Output
         this.drawNode(ctx, nodes[nL - 1][0], 'ŷ', null, 16, true);
     },
 
     drawEdge: function(ctx, a, b, weight) {
         let absW = Math.abs(weight);
-        if (absW < 0.03) return;
-
+        
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         let cpx = (a.x + b.x) / 2;
@@ -506,19 +565,16 @@ const MLPStudio = {
     },
 
     drawNode: function(ctx, pos, label, bias, r, isIO) {
-        // Subtle outer glow ring
         let color;
         if (isIO) {
             color = label === 'x' ? '#00d4ff' : '#00ffaa';
         } else {
-            // Gradient from cyan to magenta based on bias value
             let t = bias !== null ? Math.min(Math.abs(bias), 2) / 2 : 0;
             color = bias >= 0
                 ? `rgba(0,${Math.round(200 + 55*t)},255,1)`
                 : `rgba(255,${Math.round(40 + 60*(1-t))},${Math.round(100 + 50*(1-t))},1)`;
         }
 
-        // Dark fill
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(8,8,15,0.9)';
@@ -530,9 +586,8 @@ const MLPStudio = {
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Label
         ctx.fillStyle = isIO ? '#fff' : 'rgba(255,255,255,0.85)';
-        ctx.font = isIO ? 'bold 11px monospace' : '6px monospace';
+        ctx.font = isIO ? 'bold 11px monospace' : '7.5px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(String(label), pos.x, pos.y);
