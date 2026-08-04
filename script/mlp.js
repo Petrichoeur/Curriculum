@@ -107,7 +107,7 @@ const MLPStudio = {
             if (closestEdge) {
                 // Calcul de l'activation (forward passe avec une valeur de test : x=5 normalisé)
                 let testNormX = this.normX(5);
-                let A = this.forward(testNormX);
+                let A = this.forward(testNormX).A;
                 let activationResult = A[closestEdge.l + 1][closestEdge.i];
 
                 tooltip.innerHTML = `
@@ -395,7 +395,7 @@ const MLPStudio = {
 
         // Update weights (SGD) + L1 Pruning (Dropout equivalent)
         let scale = lr / m;
-        let l1 = 0.002; // Regularization factor to push weights to 0
+        let l1 = 0.008; // Pénalité L1 MASSIVE pour forcer la mort des neurones inutiles
 
         for (let l = 0; l < numLayers - 1; l++) {
             let fanOut = this.L[l + 1];
@@ -411,8 +411,8 @@ const MLPStudio = {
                     // L1 Penalty (forces unused weights towards 0)
                     w -= scale * l1 * Math.sign(w);
                     
-                    // Hard Pruning: if weight is close to 0, "drop" it completely for elegance
-                    if (Math.abs(w) < 0.08) w = 0;
+                    // Hard Pruning: Seuil ultra agressif pour générer de l'asymétrie
+                    if (Math.abs(w) < 0.15) w = 0;
                     
                     this.W[l][i][j] = w;
                 }
