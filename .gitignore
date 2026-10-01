@@ -1,0 +1,21 @@
+# Dépendances
+node_modules/
+
+# Vercel
+.vercel/
+
+# Environnement — ne jamais commiter les secrets
+.env
+.env.local
+.env.*.local
+
+# Système / éditeurs
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*

@@ -946,19 +946,10 @@ body {
     text-shadow: 0 0 10px var(--neon-cyan);
 }
 
-/* =========================================
-   BOOK GENERATOR & FLIPBOOK (Scroll Fix & Inputs)
-   ========================================= */
-.book-config-panel {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 30px;
-    border: 1px solid var(--neon-purple);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
+/* ==========================================
+   FORM CONTROLS & SHARED BUTTONS
+   (utilises par les panneaux MLP et Projets)
+   ========================================== */
 .input-group label {
     display: block;
     color: var(--neon-cyan);
@@ -967,7 +958,6 @@ body {
     margin-bottom: 8px;
 }
 
-/* FIX INPUTS & SELECTS */
 .input-group input,
 .input-group select {
     width: 100%;
@@ -982,12 +972,6 @@ body {
     background-repeat: no-repeat;
     background-position: right 15px top 50%;
     background-size: 12px auto;
-}
-
-#gemini-model-select option {
-    background-color: var(--bg-dark);
-    color: #fff;
-    padding: 10px;
 }
 
 .cyber-btn {
@@ -1007,192 +991,6 @@ body {
     background: var(--neon-cyan);
     color: #000;
     box-shadow: 0 0 20px var(--neon-cyan);
-}
-
-.book-loader {
-    text-align: center;
-    padding: 40px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px dashed var(--neon-purple);
-    border-radius: 8px;
-    margin-top: 20px;
-}
-
-.loader-bar {
-    width: 100%;
-    height: 6px;
-    background: #222;
-    margin: 15px 0;
-    border-radius: 3px;
-}
-
-.loader-progress {
-    height: 100%;
-    background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink));
-    width: 0%;
-    transition: width 0.3s;
-    box-shadow: 0 0 10px var(--neon-purple);
-}
-
-.console-log {
-    font-family: monospace;
-    color: #aaa;
-    margin-top: 15px;
-    height: 25px;
-}
-
-/* Flipbook */
-.flip-book-viewport {
-    width: 100%;
-    height: 650px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    background: radial-gradient(circle at center, #1a1a20 0%, #000 100%);
-}
-
-.page {
-    background-color: #121215;
-    color: #c0c0c0;
-    border: 1px solid #333;
-    padding: 30px;
-    font-family: 'Georgia', serif;
-    font-size: 0.95rem;
-    line-height: 1.7;
-    overflow: hidden;
-}
-
-.page-content {
-    height: 100%;
-    border: 1px dashed rgba(189, 0, 255, 0.1);
-    padding: 15px;
-    overflow-y: auto;
-    /* SCROLL INTERNE */
-    scrollbar-width: thin;
-    scrollbar-color: var(--neon-purple) #222;
-}
-
-.page-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.page-content::-webkit-scrollbar-thumb {
-    background-color: var(--neon-purple);
-    border-radius: 3px;
-}
-
-.page h1,
-.page h2 {
-    color: var(--neon-cyan);
-    margin-top: 0;
-    font-family: var(--font-tech);
-}
-
-.page-cover {
-    background-color: #08080a;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    border: 2px solid var(--neon-purple);
-}
-
-.cover-title {
-    font-size: 2.2rem;
-    color: var(--neon-cyan);
-    margin-bottom: 20px;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-}
-
-/* =========================================
-   MEDIA PRINT (PDF CLEAN & AIRY)
-   ========================================= */
-#clean-book-container {
-    position: fixed;
-    top: 0;
-    left: -9999px;
-    width: 210mm;
-    background: white;
-    z-index: -1;
-    visibility: hidden;
-}
-
-@media print {
-    body * {
-        visibility: hidden;
-    }
-
-    #clean-book-container {
-        visibility: visible;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        display: block !important;
-        background-color: white !important;
-        color: black !important;
-        padding: 0;
-        margin: 0;
-    }
-
-    #clean-book-container * {
-        visibility: visible;
-    }
-
-    @page {
-        size: A4;
-        margin: 2.5cm;
-    }
-
-    body {
-        font-family: 'Georgia', 'Times New Roman', serif;
-        font-size: 12pt;
-        line-height: 1.8;
-        background: white;
-    }
-
-    #clean-book-container h1 {
-        font-size: 28pt;
-        text-align: center;
-        margin-top: 40%;
-        margin-bottom: 2cm;
-        page-break-before: always;
-        color: #000;
-    }
-
-    #clean-book-container h2 {
-        font-size: 18pt;
-        border-bottom: 2px solid #333;
-        padding-bottom: 10px;
-        margin-top: 0;
-        margin-bottom: 25px;
-        page-break-before: always;
-        color: #333;
-    }
-
-    #clean-book-container h3 {
-        font-size: 14pt;
-        margin-top: 30px;
-        margin-bottom: 15px;
-        color: #444;
-        page-break-after: avoid;
-    }
-
-    #clean-book-container p {
-        margin-bottom: 15px;
-        text-align: justify;
-    }
-
-    #clean-book-container blockquote {
-        font-style: italic;
-        border-left: 4px solid #ddd;
-        padding-left: 15px;
-        margin: 20px 0;
-        color: #555;
-    }
 }
 
 /* =========================================

@@ -66,7 +66,7 @@
 
     <main class="main-container">
         <nav class="top-nav">
-            <a href="#home" class="nav-link active" data-module="Home">Accueil</a>
+            <a href="#home" class="nav-link active">Accueil</a>
             <a href="#digital-twin" class="nav-link" data-module="DigitalTwin">Jumeau Numérique</a>
             <a href="#projects" class="nav-link" data-module="Projects">Projets</a>
             <a href="#educational" class="nav-link" data-module="Educational">Pédagogie</a>
@@ -110,7 +110,7 @@
             <section id="mlp-studio" class="tab-content">
                 <div class="glass-panel mlp-panel">
                     <h1>MLP Studio <span class="version-tag">From Scratch</span></h1>
-                    <p class="cmd-text">Réseau de neurones profond (3 couches cachées · 30 neurones · Leaky ReLU) — approximation de fonctions en temps réel.</p>
+                    <p class="cmd-text">Réseau de neurones profond écrit from scratch (3 couches cachées · 22 neurones · Swish/SiLU · Adam + L1 + élagage) — approximation de fonctions en temps réel.</p>
                     
                     <div class="mlp-layout">
                         <!-- Left Panel: Builder & Controls -->
@@ -193,11 +193,6 @@
         <a class="modal-next" onclick="Educational.changeModalSlide(1)">❯</a>
         <div id="modal-caption"></div>
     </div>
-
-    <div id="clean-book-container"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
 
     <script src="script/digital-twin.js"></script>
     <script src="script/projects.js"></script>
