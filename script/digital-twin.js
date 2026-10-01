@@ -44,7 +44,7 @@ const DigitalTwin = {
                 <strong>Profil chargé :</strong> ${data.identity.name}<br>
                 <strong>Statut :</strong> En ligne et prêt à discuter.<br>
                 <em>(Posez-moi une question sur mon parcours, mes compétences ou mes hobbies...)</em>
-            `);
+            `, true);
 
             this.isInitialized = true;
         }
@@ -88,8 +88,6 @@ const DigitalTwin = {
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-
-        const cognitive = data.psychology.cognitive_style.split('.')[0];
 
         const bioEl = document.getElementById('bio-text');
         if (bioEl) {
@@ -189,21 +187,48 @@ const DigitalTwin = {
         };
 
         newBtn.addEventListener('click', handleSend);
-        newInput.addEventListener('keypress', (e) => {
+        newInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') handleSend();
         });
     },
 
-    addMessage: function (role, text) {
+    /**
+     * Échappe le HTML. Le texte issu du LLM est non fiable :
+     * sans ça, une injection de prompt peut injecter du balisage arbitraire.
+     */
+    escapeHtml: function (text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    /**
+     * @param {string} role
+     * @param {string} text
+     * @param {boolean} trusted  true uniquement pour le HTML statique écrit
+     *        dans ce fichier. Tout texte externe (LLM, utilisateur) doit
+     *        passer par l'échappement.
+     */
+    addMessage: function (role, text, trusted = false) {
         const chatWindow = document.getElementById('chat-window');
         if (!chatWindow) return;
 
         const div = document.createElement('div');
         div.className = `message ${role}-msg`;
-        let formattedText = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n/g, '<br>');
-        div.innerHTML = formattedText;
+
+        if (trusted) {
+            div.innerHTML = text;
+        } else {
+            // Échappement AVANT toute transformation : le Markdown ne doit
+            // jamais pouvoir réintroduire de balises.
+            div.innerHTML = this.escapeHtml(text)
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+
         chatWindow.appendChild(div);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     },
