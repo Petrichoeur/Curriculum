@@ -42,17 +42,6 @@
     ]
   },
   {
-    "title": "Harlequin",
-    "url": "https://github.com/Petrichoeur/Harlequin",
-    "description": "Module de visualisation de données complexes en Python piloté par D3.js : la puissance d'un graphe web avec la rigueur d'un jeu de données propre.",
-    "tags": [
-      "Python",
-      "D3.js",
-      "Data Visualisation",
-      "OpenSource"
-    ]
-  },
-  {
     "title": "Neural Net from scratch",
     "url": "https://github.com/Petrichoeur/Neural_Net_from_scratch",
     "description": "Parcours de’implémentation pas à pas des réseaux de neurones, du perceptron à la rétropropagation, entièrement en notebooks Jupyter et sans framework. Le socle des ateliers de pédagogie dispensés sur ce site.",

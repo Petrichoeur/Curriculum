@@ -25,7 +25,7 @@ fonction serverless :
 
 ```bash
 npx vercel dev
-cp .env.example .env   # puis renseigner GEMINI_API_KEY
+cp .env.example .env   # puis renseigner OPENROUTER_API_KEY
 ```
 
 Sans clé API, le reste du site fonctionne normalement ; seul le chat est
@@ -33,11 +33,11 @@ inopérant (le serveur renvoie un message d'erreur explicite).
 
 ## Variables d'environnement
 
-Voir `.env.example`. La seule obligatoire est `GEMINI_API_KEY`.
+Voir `.env.example`. La seule obligatoire est `OPENROUTER_API_KEY`.
 
 `ALLOWED_ORIGIN` restreint les appels à `/api/chat` à une origine donnée.
 Fortement recommandée en production : elle empêche d'utiliser le déploiement
-comme proxy gratuit vers Gemini.
+comme proxy gratuit vers OpenRouter.
 
 ## Architecture
 
@@ -93,6 +93,23 @@ le constructeur `NeuralNetwork(architecture, options)`.
 
 ## À noter
 
-Le prompt système envoyé à Gemini contient des informations personnelles
+Le prompt système envoyé à OpenRouter contient des informations personnelles
 détaillées issues de `config/data.json` (localisation, entourage). C'est un
 choix assumé — à revoir si les données évoluent.
+
+## Jumeau numérique — OpenRouter
+
+Le chat du jumeau numérique passe par OpenRouter, en API compatible OpenAI
+(`POST /api/v1/chat/completions`), avec `openrouter/free` par défaut : OpenRouter
+route vers un modèle gratuit de son catalogue. Même approche que le moteur
+distant de mirza (`mirza/engine/llm/openRouterLlm.py`), dont on reprend notamment
+les en-têtes d'attribution `HTTP-Referer` et `X-Title`.
+
+Le modèle se change sans toucher au code via `OPENROUTER_MODEL`, par exemple
+`anthropic/claude-sonnet-4.5`.
+
+Côté client, `messages` ne contient que des tours `user`/`assistant`. Le prompt
+système est transmis dans un champ séparé `systemPrompt` et **reconstruit côté
+serveur**, qui le place en tête : le client ne peut pas s'en servir pour
+s'affranchir de la persona. Seuls `temperature` et `max_tokens` sont acceptés
+et bornés ; tout le reste du corps de la requête est reconstruit.
