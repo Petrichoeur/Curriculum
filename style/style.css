@@ -1143,12 +1143,13 @@ body {
     }
 
     /* Les anneaux décoratifs n'ont pas la place autour d'une photo de 52px.
-       Les compétences et intérêts, eux, sont la signature du site : ils
-       restent affichés mais en rangées compactes (voir plus bas). */
+       Le tagline est une phrase de ~110 caractères : masqué sur mobile, il
+       reste visible sur desktop. */
 .ring-one,
-.ring-two {
-    display: none;
-}
+    .ring-two,
+    .tagline {
+        display: none;
+    }
 
     /* Bloc de texte à côté de la photo : c'est lui qui doit pouvoir
        rétrécir, sinon le nom long force l débordement. */
@@ -1311,6 +1312,20 @@ body {
         opacity: 0.8;
     }
 
+    /* Les quatre blocs de compétences et d'intérêts sont masqués sur mobile :
+       même compactés, ils prenaient ~104px, soit un tiers de l'écran d'un
+       téléphone, et repoussaient le contenu hors du premier écran. Sur
+       desktop ils restent visibles, tickers compris.
+
+       Cette règle est placée APRÈS les formats compacts ci-dessus, qui
+       déclarent `display: block` / `display: flex` : de même spécificité,
+       c'est le dernier qui gagne, et le `display: none` placé plus haut
+       se faisait écraser. */
+    .skills-section,
+    .interests-section {
+        display: none;
+    }
+
     /* ---------- NAVIGATION ----------
        justify-content:center sur un contenu plus large que le conteneur
        rendait le DÉBUT de la liste inatteignable (bug flexbox classique :
@@ -1417,33 +1432,22 @@ body {
         text-align: center;
     }
 
-    /* ---------- CHAT ----------
-       Le panneau suivait la hauteur du contenu au lieu de la place réelle.
-       `calc(100dvh - 150px)` supposait un en-tête de 150px, or il en fait
-       ~330px une fois les tickers rétablis : le panneau débordait de 138px et
-       laissait un grand vide sous le message d'accueil. On garde donc une
-       hauteur de contenu, avec un plancher pour que la zone de dialogue ne
-       s'effondre pas. */
+    /* ---------- CHAT ---------- */
 
     .chat-wrapper {
-        height: auto;
-        min-height: 0;
-        padding: 0;
+        height: calc(100dvh - 150px);
+        min-height: 360px;
     }
 
     .chat-window {
-        flex: 0 1 auto;
-        min-height: 200px;
         padding: 12px;
         gap: 10px;
-        overflow-y: auto;
     }
 
     .message {
-        max-width: 94%;
-        font-size: 0.82rem;
-        line-height: 1.5;
-        padding: 9px 12px;
+        max-width: 92%;
+        font-size: 0.9rem;
+        padding: 10px 14px;
         overflow-wrap: anywhere;
     }
 
