@@ -1085,15 +1085,21 @@ body {
         -webkit-text-size-adjust: 100%;
     }
 
+    /* Sur mobile, le document entier doit défiler : la barre latérale et le
+       contenu s'empilent, il ne doit donc pas y avoir de conteneur à hauteur
+       fixe. `overflow-y: auto` est indispensable : la règle de base
+       `body { overflow: hidden }` se propage au viewport (quand `html` est
+       en `visible`, c'est l'overflow du body qui s'applique) et bloquait tout
+       scroll tactile. Les deux axes sont posés explicitement pour éviter que
+       `overflow-x: hidden` fasse basculer `overflow-y` en `auto` par calcul
+       implicite. */
     body {
         flex-direction: column;
         height: auto;
         min-height: 100dvh;
-        width: 100%;
-        /* 100vw inclut la largeur du scrollbar et provoquait un
-           débordement horizontal de quelques px */
         width: auto;
         overflow-x: hidden;
+        overflow-y: auto;
     }
 
     /* ---------- SIDEBAR / EN-TÊTE ---------- */
@@ -1236,18 +1242,17 @@ body {
     /* ---------- CONTENU ---------- */
 
     .main-container {
-        overflow-x: hidden;
+        overflow: visible;
         min-width: 0;
     }
 
     .content-wrapper {
         padding: 12px;
         align-items: flex-start;
-    }
-
-    /* min-height calc(100vh - 150px) laissait un grand vide sous un
-       panneau court, et 100vh est faux avec la barre d'adresse mobile */
-    .content-wrapper {
+        /* Un seul scroller sur mobile : la page. `overflow: visible` évite
+           un scroller imbriqué : avec `overflow-x: hidden`, l'overflow-y
+           se calcule à `auto` et crée une zone morte au scroll tactile. */
+        overflow: visible;
         min-height: 0;
     }
 
