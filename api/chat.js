@@ -68,16 +68,32 @@ function checkRateLimit(key) {
 
 /**
  * Vérifie que la requête vient bien du site (anti-CSRF / anti-relay).
- * À désactiver uniquement si l'API doit être publique.
+ *
+ * `ALLOWED_ORIGIN` accepte une liste séparée par des virgules, ce qui est
+ * nécessaire en pratique : un déploiement a au moins deux origines (le
+ * domaine custom ET l'URL *.vercel.app), plus une URL différente par
+ * preview. Exemple :
+ *   https://mon-domaine.fr,https://mon-domaine.vercel.app
+ *
+ * Comparaison après normalisation : le navigateur envoie l'Origin telle
+ * quelle (schéma + hôte + port, sans slash final).
+ *
+ * À laisser vide pour désactiver le contrôle — la clé reste protégée par le
+ * rate-limiting dans tous les cas.
  */
 function isOriginAllowed(req) {
-    const allowed = process.env.ALLOWED_ORIGIN;
-    if (!allowed) return true; // non configuré -> pas de contrôle
+    const raw = process.env.ALLOWED_ORIGIN;
+    if (!raw) return true; // non configuré -> pas de contrôle
 
     const origin = req.headers.origin;
     if (!origin) return false;
 
-    return origin === allowed;
+    const normalize = s => s.trim().replace(/\/+$/, '').toLowerCase();
+    const allowed = raw.split(',').map(normalize).filter(Boolean);
+
+    if (allowed.length === 0) return true; // variable présente mais vide
+
+    return allowed.includes(normalize(origin));
 }
 
 /**

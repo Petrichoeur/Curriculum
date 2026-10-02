@@ -35,9 +35,22 @@ inopérant (le serveur renvoie un message d'erreur explicite).
 
 Voir `.env.example`. La seule obligatoire est `OPENROUTER_API_KEY`.
 
-`ALLOWED_ORIGIN` restreint les appels à `/api/chat` à une origine donnée.
-Fortement recommandée en production : elle empêche d'utiliser le déploiement
-comme proxy gratuit vers OpenRouter.
+`ALLOWED_ORIGIN` restreint les appels à `/api/chat` aux origines indiquées,
+**liste séparée par des virgules**. Fortement recommandée en production :
+elle empêche d'utiliser le déploiement comme proxy gratuit vers OpenRouter.
+
+```
+ALLOWED_ORIGIN=https://mon-domaine.fr,https://mon-domaine.vercel.app
+```
+
+La comparaison est stricte et normalisée (casse et slashs finaux ignorés) :
+un dépôt en production a au moins deux origines — le domaine custom et l'URL
+`*.vercel.app` — et les previews en génèrent une nouvelle à chaque commit. La
+comparaison ne gère pas les jokers, donc un déploiement preview imposera soit
+d'ajouter son URL, soit de laisser la variable vide (le rate-limiting reste actif).
+
+Les variables d'environnement Vercel ne s'appliquent qu'aux déploiements
+**créés après** leur définition : pense à redéployer.
 
 ## Architecture
 

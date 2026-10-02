@@ -1109,8 +1109,8 @@ body {
         height: auto;
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
-        padding: 12px 14px;
+        gap: 8px;
+        padding: 10px 12px;
         border-right: none;
         border-bottom: 1px solid var(--neon-purple);
         overflow: visible;
@@ -1142,13 +1142,13 @@ body {
         height: 52px;
     }
 
-    .ring-one,
-    .ring-two,
-    .skills-section,
-    .interests-section,
-    .tagline {
-        display: none;
-    }
+    /* Les anneaux décoratifs n'ont pas la place autour d'une photo de 52px.
+       Les compétences et intérêts, eux, sont la signature du site : ils
+       restent affichés mais en rangées compactes (voir plus bas). */
+.ring-one,
+.ring-two {
+    display: none;
+}
 
     /* Bloc de texte à côté de la photo : c'est lui qui doit pouvoir
        rétrécir, sinon le nom long force l débordement. */
@@ -1201,6 +1201,95 @@ body {
         align-items: center;
         /* sécurité sur les écrans 320px */
         max-width: 100%;
+    }
+
+    /* Le tagline est une phrase de ~110 caractères : sur mobile elle prenait 4
+       lignes et plus du tiers de l'écran. On la borne à 2 hauteurs de ligne.
+       `-webkit-line-clamp` ne fonctionne pas ici : l'élément est un flex
+       item de .profile-section, et `display: -webkit-box` se fait blockifier
+       (le clamp est alors ignoré). Une hauteur maximale est robuste. */
+    .tagline {
+        font-size: 0.68rem;
+        line-height: 1.4;
+        text-align: left;
+        margin: 2px 0 0;
+        padding: 0 0 6px;
+        border-bottom: none;
+        max-height: 2.8em;
+        overflow: hidden;
+    }
+
+    /* ---------- COMPÉTENCES & INTÉRÊTS ----------
+       Version mobile : le design desktop empile 4 blocs de 40px avec un titre
+       au-dessus, ce qui mangeait la moitié d'un écran de téléphone. On passe
+       à une rangée par bloc — libellé à gauche, ticker défilant à droite —
+       soit ~30px par ligne au lieu de ~70px. L'effet glitch et la rotation
+       des tickers sont conservés tels quels. */
+
+.skills-section,
+    .interests-section {
+        display: block;
+        margin-top: 6px;
+    }
+
+    .skill-category {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+    }
+
+    .skill-category h3 {
+        flex: 0 0 auto;
+        width: 96px;
+        font-size: 0.5rem;
+        letter-spacing: 0.3px;
+        line-height: 1.2;
+        margin: 0;
+        padding: 0 6px 0 0;
+        border-left: none;
+        border-right: 2px solid var(--neon-cyan);
+        text-align: right;
+        opacity: 0.85;
+    }
+
+    .skill-ticker-box {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 27px;
+        padding: 3px 8px;
+    }
+
+    .ticker-text {
+        font-size: 0.68rem;
+    }
+
+    /* Les intérêts suivent exactement le même gabarit que les compétences :
+       une rangée, libellé à gauche, ticker à droite. */
+.interests-section {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        background: none;
+        padding: 0;
+        margin: 4px 0 0;
+        border-radius: 0;
+    }
+
+    .interests-section h3 {
+        flex: 0 0 auto;
+        width: 96px;
+        color: var(--neon-red);
+        font-size: 0.5rem;
+        letter-spacing: 0.3px;
+        line-height: 1.2;
+        margin: 0;
+        padding: 0 6px 0 0;
+        border-right: 2px solid var(--neon-red);
+        text-align: right;
+        text-transform: uppercase;
+        opacity: 0.85;
     }
 
     /* ---------- NAVIGATION ----------
