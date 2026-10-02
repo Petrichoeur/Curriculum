@@ -1417,22 +1417,33 @@ body {
         text-align: center;
     }
 
-    /* ---------- CHAT ---------- */
+    /* ---------- CHAT ----------
+       Le panneau suivait la hauteur du contenu au lieu de la place réelle.
+       `calc(100dvh - 150px)` supposait un en-tête de 150px, or il en fait
+       ~330px une fois les tickers rétablis : le panneau débordait de 138px et
+       laissait un grand vide sous le message d'accueil. On garde donc une
+       hauteur de contenu, avec un plancher pour que la zone de dialogue ne
+       s'effondre pas. */
 
     .chat-wrapper {
-        height: calc(100dvh - 150px);
-        min-height: 360px;
+        height: auto;
+        min-height: 0;
+        padding: 0;
     }
 
     .chat-window {
+        flex: 0 1 auto;
+        min-height: 200px;
         padding: 12px;
         gap: 10px;
+        overflow-y: auto;
     }
 
     .message {
-        max-width: 92%;
-        font-size: 0.9rem;
-        padding: 10px 14px;
+        max-width: 94%;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        padding: 9px 12px;
         overflow-wrap: anywhere;
     }
 
