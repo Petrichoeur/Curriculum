@@ -25,7 +25,9 @@ body {
     color: #e0e0e0;
     font-family: var(--font-main);
     height: 100vh;
-    width: 100vw;
+    /* 100vw inclut la largeur du scrollbar verticale et provoquait un
+       débordement horizontal ; 100% est équivalent sans l'effet de bord. */
+    width: 100%;
     display: flex;
     overflow: hidden;
 }
@@ -154,6 +156,21 @@ body {
     background: var(--neon-purple);
     color: #fff;
     box-shadow: 0 0 10px var(--neon-purple);
+}
+
+/* --- INFO / BIO (généré par digital-twin.js) --- */
+.info-section {
+    margin-top: 15px;
+    min-width: 0;
+}
+
+.bio-line {
+    font-size: 0.8rem;
+    color: #b8b8c8;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    /* évite qu'une longue chaîne (ville, libellé) force un débordement */
+    overflow-wrap: anywhere;
 }
 
 /* --- SKILL TICKER (Défilement) --- */
@@ -289,7 +306,14 @@ body {
     gap: 20px;
     background: linear-gradient(to bottom, rgba(7, 2, 10, 0.95), transparent);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* la barre de scroll cassait l'esthétique sur un seul rang */
+    scrollbar-width: none;
     flex-shrink: 0;
+}
+
+.top-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .nav-link {
@@ -302,6 +326,9 @@ body {
     padding-bottom: 5px;
     transition: 0.3s;
     letter-spacing: 1px;
+    /* sans cela, un onglet un peu long déborde et déforme toute la rangée */
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -519,7 +546,8 @@ body {
    ========================================= */
 .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    /* min() évite qu'une piste de 300px déborde sur un écran plus étroit */
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
     gap: 25px;
     margin-top: 20px;
 }
@@ -993,97 +1021,304 @@ body {
     box-shadow: 0 0 20px var(--neon-cyan);
 }
 
-/* =========================================
-   MOBILE
-   ========================================= */
+/* Variante compacte : utilisée par le bouton "Générer" du MLP Studio.
+   La classe était présente dans index.html sans aucune règle, d'où un
+   bouton natif blanc cassant le thème. */
+.cyber-btn-small {
+    background: var(--neon-purple);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    font-family: var(--font-tech);
+    font-weight: bold;
+    font-size: 0.72rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.3s;
+    border-radius: 4px;
+}
+
+.cyber-btn-small:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 15px var(--neon-cyan);
+}
+
+/* ==========================================
+   RESPONSIVE — TABLETTE (≤1200px)
+   ========================================== */
+@media (max-width: 1200px) {
+    :root {
+        --sidebar-width: 260px;
+    }
+
+    .top-nav {
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .nav-link {
+        font-size: 0.78rem;
+        letter-spacing: 0.5px;
+    }
+
+    .glass-panel {
+        padding: 30px;
+    }
+
+    /* La colonne de droite devient trop étroite face à la grille 1fr/2fr */
+    .mlp-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .projects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+    }
+}
+
+/* ==========================================
+   RESPONSIVE — MOBILE (≤900px)
+   ========================================== */
 @media (max-width: 900px) {
+    /* iOS gonfle les polices en auto-zoom sans ça */
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
     body {
         flex-direction: column;
-        overflow: auto;
         height: auto;
+        min-height: 100dvh;
+        width: 100%;
+        /* 100vw inclut la largeur du scrollbar et provoquait un
+           débordement horizontal de quelques px */
+        width: auto;
+        overflow-x: hidden;
     }
+
+    /* ---------- SIDEBAR / EN-TÊTE ---------- */
 
     .sidebar {
         width: 100%;
         height: auto;
-        flex-direction: row;
-        padding: 15px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px 14px;
         border-right: none;
         border-bottom: 1px solid var(--neon-purple);
+        overflow: visible;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     }
 
+    /* Photo + nom sur une ligne, bio dessous en pleine largeur.
+       En `row` l'en-tête débordait : la localisation passait à la ligne
+       et poussait le reste hors écran. */
     .profile-section {
         display: flex;
         align-items: center;
-        gap: 15px;
+        /* wrap indispensable : sans lui le bloc de boutons (basis 100%)
+           reste sur la ligne du nom et déborde de 169px */
+        flex-wrap: wrap;
+        gap: 12px;
+        min-width: 0;
     }
 
     .photo-container {
-        width: 55px;
-        height: 55px;
+        width: 52px;
+        height: 52px;
         margin: 0;
+        flex-shrink: 0;
     }
 
     .profile-pic {
-        width: 55px;
-        height: 55px;
+        width: 52px;
+        height: 52px;
     }
 
-    .sidebar h1 {
-        font-size: 1.1rem;
-        text-align: left;
-        margin: 0;
-    }
-
-    .sidebar h2,
-    .tagline,
+    .ring-one,
+    .ring-two,
     .skills-section,
     .interests-section,
-    .ring-one,
-    .ring-two {
+    .tagline {
         display: none;
     }
 
-    .social-links {
+    /* Bloc de texte à côté de la photo : c'est lui qui doit pouvoir
+       rétrécir, sinon le nom long force l débordement. */
+    .profile-section > div:not(.photo-container):not(.social-links) {
+        min-width: 0;
+    }
+
+    .sidebar h1 {
+        font-size: 1.15rem;
+        text-align: left;
         margin: 0;
+        line-height: 1.2;
+    }
+
+    .sidebar h2 {
+        font-size: 0.78rem;
+        margin: 2px 0 0;
+        color: var(--neon-cyan);
+    }
+
+    .info-section {
+        min-width: 0;
+    }
+
+    .bio-line {
+        font-size: 0.78rem;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    /* Le conteneur des boutons occupe sa propre ligne : à 320px, nom + rôle +
+       bouton ne tiennent pas côte à côte, et le bouton sortait de 3px.
+       Spécificité 0,2,0 : il faut Battre `.profile-section > div:not(...)`
+       (0,3,1) ligne 1123, sinon c'est ce dernier qui s'applique et donne
+       flex:1 1 0 au conteneur (largeur ~54px, bouton débordant). */
+    .profile-section > .social-links {
+        flex: 1 0 100%;
+        display: flex;
+        justify-content: flex-start;
+        gap: 8px;
+        margin: 0;
+        flex-wrap: wrap;
     }
 
     .social-btn {
-        padding: 5px 10px;
-        font-size: 0.7rem;
+        padding: 7px 14px;
+        font-size: 0.68rem;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        /* sécurité sur les écrans 320px */
+        max-width: 100%;
     }
+
+    /* ---------- NAVIGATION ----------
+       justify-content:center sur un contenu plus large que le conteneur
+       rendait le DÉBUT de la liste inatteignable (bug flexbox classique :
+       "ACCUEIL" apparaissait coupé, "MLP Studio" invisible). On passe en
+       flex-start + scroll tactile. */
+    .top-nav {
+        justify-content: flex-start;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 14px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+        /* ombre portée indicating qu'il reste du contenu à droite */
+        mask-image: linear-gradient(to right, #000 92%, transparent);
+        -webkit-mask-image: linear-gradient(to right, #000 92%, transparent);
+    }
+
+    .top-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-link {
+        flex-shrink: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        padding: 10px 2px 8px;
+        white-space: nowrap;
+        scroll-snap-align: center;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* ---------- CONTENU ---------- */
 
     .main-container {
         overflow-x: hidden;
+        min-width: 0;
     }
 
     .content-wrapper {
-        padding: 15px;
-        min-height: calc(100vh - 150px);
+        padding: 12px;
+        align-items: flex-start;
+    }
+
+    /* min-height calc(100vh - 150px) laissait un grand vide sous un
+       panneau court, et 100vh est faux avec la barre d'adresse mobile */
+    .content-wrapper {
+        min-height: 0;
     }
 
     .glass-panel {
-        padding: 20px;
+        padding: 18px;
         width: 100%;
-        max-height: none;
+        max-width: 100%;
         height: auto;
+        max-height: none;
     }
 
-    /* Chat responsive sur mobile */
+    .tab-content {
+        width: 100%;
+    }
+
+    /* ---------- HOME ---------- */
+
+    .glitch-title {
+        /* 3rem fixe débordait (« FLORIAN BOB ») sur écran étroit */
+        font-size: clamp(1.6rem, 8vw, 2.4rem);
+        letter-spacing: 1px;
+        overflow-wrap: break-word;
+    }
+
+    .neon-subtitle {
+        font-size: clamp(0.95rem, 4.5vw, 1.3rem);
+        letter-spacing: 1px;
+        margin-bottom: 18px;
+    }
+
+    .intro-text p {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .cmd-text {
+        font-size: 0.75rem;
+    }
+
+    .cta-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .intro-btn {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 14px 12px;
+        font-size: 0.78rem;
+        text-align: center;
+    }
+
+    /* ---------- CHAT ---------- */
+
     .chat-wrapper {
-        height: calc(100vh - 180px);
-        min-height: 400px;
+        height: calc(100dvh - 150px);
+        min-height: 360px;
     }
 
     .chat-window {
-        padding: 15px;
+        padding: 12px;
         gap: 10px;
     }
 
     .message {
-        max-width: 90%;
+        max-width: 92%;
         font-size: 0.9rem;
         padding: 10px 14px;
+        overflow-wrap: anywhere;
     }
 
     .bot-msg::before {
@@ -1093,7 +1328,7 @@ body {
 
     .input-area {
         flex-wrap: wrap;
-        padding: 15px;
+        padding: 12px;
     }
 
     #user-input {
@@ -1104,32 +1339,38 @@ body {
 
     #send-btn {
         width: 100%;
-        margin-top: 5px;
+        margin-top: 6px;
         min-height: 44px;
         padding: 0 20px;
     }
 
-    /* Book Generator sur mobile */
-    .book-panel {
-        padding: 15px;
+    /* ---------- PROJETS ---------- */
+
+    .projects-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 
-    .input-group input,
-    .input-group select {
-        font-size: 16px;
+    .project-card h3 {
+        font-size: 1rem;
     }
 
-    /* Navigation Mobile */
-    .top-nav {
-        padding: 15px 10px;
-        gap: 10px;
-        white-space: nowrap;
+    .project-card p {
+        font-size: 0.85rem;
     }
 
-    .nav-link {
-        font-size: 0.75rem;
-        padding-bottom: 3px;
+    .project-actions {
+        flex-wrap: wrap;
     }
+
+    .cyber-btn.small,
+    .project-actions .cyber-btn {
+        flex: 1 1 auto;
+        min-height: 44px;
+        text-align: center;
+    }
+
+    /* ---------- PÉDAGOGIE ---------- */
 
     .pedagogy-panel {
         flex-direction: column;
@@ -1138,29 +1379,182 @@ body {
 
     .pedagogy-menu {
         width: 100%;
-        max-height: 180px;
+        max-height: 190px;
         border-right: none;
         border-bottom: 1px solid #333;
+        overflow-y: auto;
+    }
+
+    .pedagogy-menu ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0 0 8px;
+    }
+
+    .pedagogy-menu li {
+        list-style: none;
+    }
+
+    /* Les 6 cours en pastilles plutôt qu'en longue liste verticale */
+    .course-btn {
+        width: auto;
+        padding: 8px 12px;
+        font-size: 0.7rem;
+        min-height: 40px;
     }
 
     .pedagogy-viewer {
         height: auto;
-        min-height: 400px;
-        padding: 20px;
+        min-height: 300px;
+        padding: 14px;
+    }
+
+    .pedagogy-viewer h2 {
+        font-size: 1.1rem;
+    }
+
+    .pedagogy-viewer p,
+    .pedagogy-viewer li {
+        font-size: 0.85rem;
+        line-height: 1.65;
     }
 
     .colab-card {
         flex-direction: column;
         text-align: center;
+        padding: 14px;
     }
 
     .colab-btn {
         margin: 15px 0 0 0;
         width: 100%;
+        min-height: 44px;
     }
+
+    .slide-img {
+        max-height: 220px;
+    }
+
+    /* ---------- MLP STUDIO ---------- */
+
+    /* Le h1 n'avait aucune règle : il gardait 2em (32px) et prenait
+       deux lignes sur mobile. */
+    .mlp-panel h1 {
+        font-size: 1.2rem;
+        line-height: 1.25;
+        margin-bottom: 8px;
+    }
+
+    .mlp-panel-box h3 {
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .cyber-btn-small {
+        width: 100%;
+        min-height: 44px;
+        font-size: 0.68rem;
+        padding: 12px;
+    }
+
+    .metric-row {
+        font-size: 0.78rem;
+    }
+
+    .mlp-status p,
+    .mlp-status-text {
+        font-size: 0.75rem;
+    }
+
+    /* ---------- MODALES ---------- */
 
     .modal-content {
         width: 95%;
+        max-height: 80vh;
+    }
+
+    .modal-next,
+    .modal-prev {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .close-modal {
+        width: 44px;
+        height: 44px;
+    }
+
+    .video-container {
+        padding: 0;
+    }
+
+    #demo-video {
+        max-height: 70vh;
+    }
+}
+
+/* ==========================================
+   RESPONSIVE — TRÈS PETIT ÉCRAN (≤480px)
+   ========================================== */
+@media (max-width: 480px) {
+    .sidebar {
+        padding: 10px 12px;
+    }
+
+    .photo-container,
+    .profile-pic {
+        width: 44px;
+        height: 44px;
+    }
+
+    .sidebar h1 {
+        font-size: 1rem;
+    }
+
+    .nav-link {
+        font-size: 0.68rem;
+        gap: 14px;
+    }
+
+    .glass-panel {
+        padding: 14px;
+    }
+
+    .glitch-title {
+        font-size: clamp(1.35rem, 7.5vw, 1.75rem);
+    }
+
+    .intro-btn {
+        font-size: 0.72rem;
+        padding: 12px 10px;
+    }
+
+    .message {
+        max-width: 96%;
+    }
+
+    .term-mul {
+        display: none;
+    }
+
+    .mlp-term {
+        gap: 4px;
+    }
+}
+
+/* ==========================================
+   ACCESSIBILITÉ — MOUVEMENT RÉDUIT
+   ========================================== */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 
@@ -1275,6 +1669,10 @@ body {
 
 .responsive-canvas {
     width: 100%;
+    /* max-width évite que le canvas n'explose si la feuille de style
+       échoue : le JS relit son propre getBoundingClientRect() pour fixer
+       l'attribut width, ce qui peut causer une croissance incontrôlée */
+    max-width: 100%;
     height: 380px;
     background: rgba(0,0,0,0.3);
     border-radius: 10px;
