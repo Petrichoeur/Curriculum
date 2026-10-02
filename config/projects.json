@@ -1,5 +1,70 @@
 [
   {
+    "title": "Mirza — Assistant vocal agentique",
+    "url": "https://mirz-ai.com",
+    "description": "Assistant vocal agentique 100% local pour Apple Silicon : ASR Nemotron 3.5 (< 200 ms), LLM Qwen 3.8 9B quantifié via MTPLX Turbo (28-34 tok/s) et TTS Edge/Kokoro, en ~9 Go de VRAM. Protocole bi-canal séparant la voix du code dense, mémoire RAG et agent smolagents. 14 800 lignes de Python, 446 tests.",
+    "tags": [
+      "Python",
+      "Apple Silicon",
+      "MLX",
+      "ASR",
+      "LLM",
+      "TTS",
+      "WebSocket",
+      "RAG",
+      "React"
+    ]
+  },
+  {
+    "title": "Mirza.local — Station d'inférence IA",
+    "url": "https://github.com/Petrichoeur/mirza.local",
+    "description": "Transformer un Mac Mini en serveur d'inférence IA headless, piloté à distance depuis un client Linux. CLI de 16 commandes, WebUI complète, stack Grafana + Prometheus et API compatible OpenAI servie par llama-cpp-python sur Metal. Aucun cloud, aucune clé API, aucun écran requis.",
+    "tags": [
+      "MLOps",
+      "Apple Silicon",
+      "llama.cpp",
+      "Metal",
+      "FastAPI",
+      "Grafana",
+      "Linux",
+      "OpenSource"
+    ]
+  },
+  {
+    "title": "Flop-o-Matic",
+    "url": "https://github.com/Petrichoeur/Flop-o-Matic",
+    "description": "Calculateur web pour estimer les besoins GPU d'un modèle d'apprentissage profond, en croisant taille du modèle, quantification et longueur de contexte.",
+    "tags": [
+      "GPU",
+      "LLM",
+      "Quantification",
+      "MLOps"
+    ]
+  },
+  {
+    "title": "Harlequin",
+    "url": "https://github.com/Petrichoeur/Harlequin",
+    "description": "Module de visualisation de données complexes en Python piloté par D3.js : la puissance d'un graphe web avec la rigueur d'un jeu de données propre.",
+    "tags": [
+      "Python",
+      "D3.js",
+      "Data Visualisation",
+      "OpenSource"
+    ]
+  },
+  {
+    "title": "Neural Net from scratch",
+    "url": "https://github.com/Petrichoeur/Neural_Net_from_scratch",
+    "description": "Parcours de’implémentation pas à pas des réseaux de neurones, du perceptron à la rétropropagation, entièrement en notebooks Jupyter et sans framework. Le socle des ateliers de pédagogie dispensés sur ce site.",
+    "tags": [
+      "Python",
+      "Numpy",
+      "Jupyter",
+      "Pédagogie",
+      "OpenSource"
+    ]
+  },
+  {
     "title": "GreenGen Academy",
     "url": "https://greengen-academy.iaops.fr",
     "description": "Module éducatif à destination du grand public pour s'évaluer face aux challenges du Green IT dans l'I.A.",
