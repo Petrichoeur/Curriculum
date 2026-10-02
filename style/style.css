@@ -1179,18 +1179,20 @@ body {
         overflow-wrap: anywhere;
     }
 
-    /* Le conteneur des boutons occupe sa propre ligne : à 320px, nom + rôle +
-       bouton ne tiennent pas côte à côte, et le bouton sortait de 3px.
+    /* Le bouton garde sa largeur naturelle et reste sur la ligne du nom, à sa
+       droite : il consommait une rangée entière (~80px) pour 84px de large.
+       `flex: 0 0 auto` évite aussi l'ancien débordement de 3px, où un basis
+       à 0 réduisait le conteneur à 54px et laissait le bouton dépasser.
        Spécificité 0,2,0 : il faut Battre `.profile-section > div:not(...)`
-       (0,3,1) ligne 1123, sinon c'est ce dernier qui s'applique et donne
-       flex:1 1 0 au conteneur (largeur ~54px, bouton débordant). */
+       (0,3,1) ligne 1123, qui s'appliquerait sinon à ce conteneur aussi. */
     .profile-section > .social-links {
-        flex: 1 0 100%;
+        flex: 0 0 auto;
+        flex-shrink: 0;
         display: flex;
-        justify-content: flex-start;
-        gap: 8px;
+        justify-content: flex-end;
+        gap: 6px;
         margin: 0;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
 
     .social-btn {
@@ -1203,20 +1205,34 @@ body {
         max-width: 100%;
     }
 
-    /* Le tagline est une phrase de ~110 caractères : sur mobile elle prenait 4
-       lignes et plus du tiers de l'écran. On la borne à 2 hauteurs de ligne.
-       `-webkit-line-clamp` ne fonctionne pas ici : l'élément est un flex
-       item de .profile-section, et `display: -webkit-box` se fait blockifier
-       (le clamp est alors ignoré). Une hauteur maximale est robuste. */
+    /* Le tagline est une phrase de ~110 caractères. Sur mobile, avec les quatre
+       tickers et la bio, l'en-tête consommait 66% de l'écran pour une
+       information décorative : il reste masqué ici, il est déjà présent sur
+       desktop et sur la page CV. */
     .tagline {
-        font-size: 0.68rem;
-        line-height: 1.4;
-        text-align: left;
-        margin: 2px 0 0;
-        padding: 0 0 6px;
-        border-bottom: none;
-        max-height: 2.8em;
-        overflow: hidden;
+        display: none;
+    }
+
+    /* Sur téléphone, on retire le flou de fond : au-dessus d'un canvas animé
+       plein écran, `backdrop-filter` force un repaint du viewport à chaque
+       frame sur le GPU mobile. C'est la source la plus probable des frames
+       noires vues sur iOS Safari, et le fond est déjà assez opaque pour que
+       le flou ne serve à rien en dessous. */
+    .sidebar,
+    .glass-panel,
+    .course-btn,
+    .slide-img,
+    .mlp-tooltip {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .glass-panel {
+        background: rgba(12, 8, 20, 0.94);
+    }
+
+    .sidebar {
+        background: rgba(5, 0, 10, 0.97);
     }
 
     /* ---------- COMPÉTENCES & INTÉRÊTS ----------
@@ -1235,33 +1251,33 @@ body {
     .skill-category {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 5px;
+        gap: 7px;
+        margin-bottom: 4px;
     }
 
     .skill-category h3 {
         flex: 0 0 auto;
-        width: 96px;
-        font-size: 0.5rem;
-        letter-spacing: 0.3px;
-        line-height: 1.2;
+        width: 72px;
+        font-size: 0.48rem;
+        letter-spacing: 0.2px;
+        line-height: 1.15;
         margin: 0;
-        padding: 0 6px 0 0;
+        padding: 0 5px 0 0;
         border-left: none;
         border-right: 2px solid var(--neon-cyan);
         text-align: right;
-        opacity: 0.85;
+        opacity: 0.8;
     }
 
     .skill-ticker-box {
         flex: 1 1 auto;
         min-width: 0;
-        height: 27px;
-        padding: 3px 8px;
+        height: 23px;
+        padding: 1px 7px;
     }
 
     .ticker-text {
-        font-size: 0.68rem;
+        font-size: 0.6rem;
     }
 
     /* Les intérêts suivent exactement le même gabarit que les compétences :
@@ -1269,27 +1285,27 @@ body {
 .interests-section {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
         border: none;
         background: none;
         padding: 0;
-        margin: 4px 0 0;
+        margin: 2px 0 0;
         border-radius: 0;
     }
 
     .interests-section h3 {
         flex: 0 0 auto;
-        width: 96px;
+        width: 72px;
         color: var(--neon-red);
-        font-size: 0.5rem;
-        letter-spacing: 0.3px;
-        line-height: 1.2;
+        font-size: 0.48rem;
+        letter-spacing: 0.2px;
+        line-height: 1.15;
         margin: 0;
-        padding: 0 6px 0 0;
+        padding: 0 5px 0 0;
         border-right: 2px solid var(--neon-red);
         text-align: right;
         text-transform: uppercase;
-        opacity: 0.85;
+        opacity: 0.8;
     }
 
     /* ---------- NAVIGATION ----------
@@ -1307,9 +1323,11 @@ body {
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         scroll-snap-type: x proximity;
-        /* ombre portée indicating qu'il reste du contenu à droite */
-        mask-image: linear-gradient(to right, #000 92%, transparent);
-        -webkit-mask-image: linear-gradient(to right, #000 92%, transparent);
+        /* Le dégradé (mask-image) est purement décoratif et Safari iOS le gère mal
+           sur un conteneur défilant : il est remplacé par une bordure, qui
+           signale la même présence de contenu à droite sans créer de couche
+           composée. */
+        border-bottom: 1px solid rgba(0, 243, 255, 0.25);
     }
 
     .top-nav::-webkit-scrollbar {
