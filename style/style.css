@@ -1152,7 +1152,11 @@ body {
 
     /* Bloc de texte à côté de la photo : c'est lui qui doit pouvoir
        rétrécir, sinon le nom long force l débordement. */
-    .profile-section > div:not(.photo-container):not(.social-links) {
+    /* `.profile-text` regroupe nom, rôle et tagline (voir index.html). C'est lui,
+       et non plus h1/h2 pris séparément, qui doit pouvoir rétrécir : c'est ce
+       qui permet au bouton LinkedIn de tenir sur la même ligne. */
+    .profile-section > .profile-text {
+        flex: 1 1 auto;
         min-width: 0;
     }
 
@@ -1179,12 +1183,11 @@ body {
         overflow-wrap: anywhere;
     }
 
-    /* Le bouton garde sa largeur naturelle et reste sur la ligne du nom, à sa
-       droite : il consommait une rangée entière (~80px) pour 84px de large.
-       `flex: 0 0 auto` évite aussi l'ancien débordement de 3px, où un basis
-       à 0 réduisait le conteneur à 54px et laissait le bouton dépasser.
-       Spécificité 0,2,0 : il faut Battre `.profile-section > div:not(...)`
-       (0,3,1) ligne 1123, qui s'appliquerait sinon à ce conteneur aussi. */
+    /* Le bouton garde sa largeur naturelle et s'aligne à droite du bloc de texte
+       sur la même ligne : il consommait une rangée entière (~42px) pour 84px
+       de large. `flex: 0 0 auto` évite aussi l'ancien débordement de 3px, où
+       un basis à 0 réduisait le conteneur à 54px et laissait le bouton
+       dépasser. */
     .profile-section > .social-links {
         flex: 0 0 auto;
         flex-shrink: 0;

@@ -17,9 +17,14 @@
                 <div class="ring-one"></div>
                 <div class="ring-two"></div>
             </div>
-            <h1 id="name-placeholder" data-text="...">Chargement...</h1>
-            <h2 id="title-placeholder">...</h2>
-            <p id="tagline-placeholder" class="tagline">...</p>
+            <!-- Nom, rôle et tagline regroupés : sans ce conteneur, h1 et h2 sont deux
+                 flex items distincts de .profile-section, et le bouton LinkedIn
+                 ne peut plus s'aligner sur une seule ligne. -->
+            <div class="profile-text">
+                <h1 id="name-placeholder" data-text="...">Chargement...</h1>
+                <h2 id="title-placeholder">...</h2>
+                <p id="tagline-placeholder" class="tagline">...</p>
+            </div>
 
             <div class="social-links">
                 <a id="linkedin-btn" href="#" target="_blank" class="social-btn" rel="noopener">LinkedIn</a>
