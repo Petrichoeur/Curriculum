@@ -160,10 +160,10 @@ export default async function handler(req, res) {
     }
 
     // 2. Clé API
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.OPEN_ROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
         return res.status(500).json({
-            error: 'Configuration serveur manquante (OPENROUTER_API_KEY)'
+            error: 'Configuration serveur manquante (OPEN_ROUTER_API_KEY ou OPENROUTER_API_KEY)'
         });
     }
 
@@ -182,9 +182,9 @@ export default async function handler(req, res) {
     }
     res.setHeader('X-RateLimit-Remaining', String(remaining));
 
-    const baseUrl = (process.env.OPENROUTER_BASE_URL || DEFAULT_BASE_URL)
+    const baseUrl = (process.env.OPEN_ROUTER_BASE_URL || process.env.OPENROUTER_BASE_URL || DEFAULT_BASE_URL)
         .trim().replace(/\/+$/, '');
-    const model = process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+    const model = process.env.OPEN_ROUTER_MODEL || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
     const apiUrl = `${baseUrl}/chat/completions`;
 
     try {

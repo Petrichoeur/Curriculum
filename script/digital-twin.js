@@ -6,6 +6,7 @@ const DigitalTwin = {
     isInitialized: false,
     config: null,
     history: [],
+    isLoading: false,
 
     // Stockage des intervalles pour pouvoir les nettoyer proprement
     intervals: [],
@@ -27,7 +28,7 @@ const DigitalTwin = {
      * Point d'entrée principal.
      */
     init: function (data) {
-        console.log("🤖 Module Digital Twin : Initialisation...");
+        console.log("[Digital Twin] Initialisation...");
         this.config = data;
 
         // 1. Remplir la barre latérale (Profil + Tickers)
@@ -43,7 +44,7 @@ const DigitalTwin = {
                 <strong>SYSTEM:</strong> Connexion au Jumeau Numérique établie.<br>
                 <strong>Profil chargé :</strong> ${data.identity.name}<br>
                 <strong>Statut :</strong> En ligne et prêt à discuter.<br>
-                <em>(Posez-moi une question sur mon parcours, mes compétences ou mes hobbies...)</em>
+                <em>(Posez-moi une question sur mon parcours, mes compétences ou mes projets...)</em>
             `, true);
 
             this.isInitialized = true;
@@ -167,6 +168,21 @@ const DigitalTwin = {
     /* ==========================================
        GESTION DU CHAT & LISTENER
        ========================================== */
+    setLoadingState: function (loading) {
+        this.isLoading = loading;
+        const input = document.getElementById('user-input');
+        const btn = document.getElementById('send-btn');
+        if (input) {
+            input.disabled = loading;
+            if (!loading) input.focus();
+        }
+        if (btn) {
+            btn.disabled = loading;
+            btn.style.opacity = loading ? '0.5' : '1';
+            btn.style.cursor = loading ? 'not-allowed' : 'pointer';
+        }
+    },
+
     setupListeners: function () {
         const input = document.getElementById('user-input');
         const btn = document.getElementById('send-btn');
@@ -179,6 +195,7 @@ const DigitalTwin = {
         input.parentNode.replaceChild(newInput, input);
 
         const handleSend = () => {
+            if (this.isLoading) return;
             const text = newInput.value.trim();
             if (!text) return;
             this.addMessage('user', text);
@@ -193,8 +210,7 @@ const DigitalTwin = {
     },
 
     /**
-     * Échappe le HTML. Le texte issu du LLM est non fiable :
-     * sans ça, une injection de prompt peut injecter du balisage arbitraire.
+     * Échappe le HTML pour prévenir les injections.
      */
     escapeHtml: function (text) {
         return String(text)
@@ -206,11 +222,43 @@ const DigitalTwin = {
     },
 
     /**
+     * Formate le markdown léger de façon sûre (après échappement).
+     */
+    formatMarkdown: function (rawText) {
+        let text = this.escapeHtml(rawText);
+
+        // 1. Blocs de code ```...```
+        const codeBlocks = [];
+        text = text.replace(/```(?:[a-zA-Z0-9_-]+)?\n?([\s\S]*?)```/g, (_, code) => {
+            const index = codeBlocks.length;
+            codeBlocks.push(`<pre><code>${code.trim()}</code></pre>`);
+            return `__CODE_BLOCK_${index}__`;
+        });
+
+        // 2. Code inline `code`
+        text = text.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+        // 3. Gras **texte**
+        text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // 4. Italique *texte*
+        text = text.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+
+        // 5. Retours à la ligne
+        text = text.replace(/\n/g, '<br>');
+
+        // 6. Restauration des blocs de code
+        codeBlocks.forEach((block, idx) => {
+            text = text.replace(`__CODE_BLOCK_${idx}__`, block);
+        });
+
+        return text;
+    },
+
+    /**
      * @param {string} role
      * @param {string} text
-     * @param {boolean} trusted  true uniquement pour le HTML statique écrit
-     *        dans ce fichier. Tout texte externe (LLM, utilisateur) doit
-     *        passer par l'échappement.
+     * @param {boolean} trusted
      */
     addMessage: function (role, text, trusted = false) {
         const chatWindow = document.getElementById('chat-window');
@@ -222,11 +270,7 @@ const DigitalTwin = {
         if (trusted) {
             div.innerHTML = text;
         } else {
-            // Échappement AVANT toute transformation : le Markdown ne doit
-            // jamais pouvoir réintroduire de balises.
-            div.innerHTML = this.escapeHtml(text)
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>');
+            div.innerHTML = this.formatMarkdown(text);
         }
 
         chatWindow.appendChild(div);
@@ -273,33 +317,29 @@ const DigitalTwin = {
        APPEL API (Avec Loading Animation)
        ========================================== */
     callAPI: async function (userMessage) {
+        this.setLoadingState(true);
+
         // 1. Création et affichage de la barre de chargement
         const loader = this.createLoadingBar();
 
-        // 2. Animation (Simulation de progression plus rapide)
+        // 2. Animation (Simulation de progression)
         let progress = 0;
         let phraseIndex = 0;
 
         const interval = setInterval(() => {
-            // On avance la barre plus vite
             progress += Math.random() * 15;
-            if (progress > 95) progress = 95; // On bloque à 95%
+            if (progress > 95) progress = 95;
 
             loader.barFill.style.width = `${progress}%`;
 
-            // On change la phrase aléatoirement
             if (Math.random() > 0.6) {
                 phraseIndex = (phraseIndex + 1) % this.loadingPhrases.length;
                 loader.textEl.textContent = this.loadingPhrases[phraseIndex];
             }
-        }, 400); // Mise à jour plus fréquente (400ms au lieu de 600ms)
+        }, 400);
 
         try {
             // 3. Préparation du Prompt
-            // Format OpenAI chat completions (OpenRouter) : le prompt système
-            // voyage dans son propre champ, `systemPrompt`, que le serveur
-            // reconstruit et place en tête des messages. Il n'est jamais
-            // fourni par le client directement dans `messages`.
             const systemPrompt = this.buildContext();
 
             const messages = this.history.slice(-10).map(msg => ({
@@ -329,10 +369,12 @@ const DigitalTwin = {
 
             setTimeout(() => {
                 loader.container.remove();
+                this.setLoadingState(false);
 
                 if (!response.ok || data.error) {
                     console.error("Erreur API:", data);
-                    this.addMessage('system', "Erreur critique du système Bio-Numérique.");
+                    const errorDetail = data?.error?.message || (typeof data?.error === 'string' ? data.error : null) || "Erreur critique du système Bio-Numérique.";
+                    this.addMessage('system', `<strong>ERREUR SYSTEME :</strong> ${this.escapeHtml(errorDetail)}`);
                     return;
                 }
 
@@ -348,38 +390,75 @@ const DigitalTwin = {
                 } else {
                     this.addMessage('system', "Données corrompues (Réponse vide).");
                 }
-            }, 300); // Délai réduit avant affichage
+            }, 300);
 
         } catch (error) {
             clearInterval(interval);
             loader.container.remove();
+            this.setLoadingState(false);
             console.error("Erreur Réseau:", error);
             this.addMessage('system', "Échec de connexion au réseau neural.");
         }
     },
 
     /* ==========================================
-       CONSTRUCTION DU PROMPT (STRICTEMENT PRÉSERVÉ)
+       CONSTRUCTION DU PROMPT
        ========================================== */
     buildContext: function () {
         const data = this.config;
         const id = data.identity;
         const skills = data.hard_skills;
         const circle = data.inner_circle;
-        const age = new Date().getFullYear() - new Date(id.birth_date).getFullYear();
+        const psych = data.psychology || {};
+
+        // Calcul exact de l'âge
+        const birthDate = new Date(id.birth_date);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
 
         const teamText = Object.entries(circle.team || {}).map(([n, d]) => `${n}:${d}`).join(', ');
         const xpText = data.career_timeline.map(j => `[${j.period}] ${j.role}@${j.company}: ${j.details}`).join(' | ');
-        const passions = [...data.interests.music, ...data.interests.reading, ...data.interests.gaming].join(',');
+        const passions = [
+            ...(data.interests.music || []),
+            ...(data.interests.reading || []),
+            ...(data.interests.gaming || []),
+            ...(data.interests.other || [])
+        ].join(', ');
+        const petPeeves = (data.pet_peeves || []).join(', ');
+        const values = (psych.values || []).join(', ');
 
-        return `Tu es Florian Bobo (${age}ans, ${id.location}), ${id.role}. NE DIS JAMAIS QUE TU ES UNE IA.
-TON: Expert tech chevronné, pragmatique, direct, sans filtre. Humour piquant, satirique. Fini le vernis LinkedIn ou le bullshit corporate. Tu es cash, cynique sur les dérives tech, implacable sur la qualité, mais très pédagogue. Parle au "Je", tutoie.
-PROCHES: Compagne ${circle.girlfriend.name} (${circle.girlfriend.job}). Fils(2017) Fille(2020). Chien ${circle.pet.name} (${circle.pet.breed}). Equipe: ${teamText}.
-VALEURS/HATES: Obsédé Clean Code (typage, linters), Green IT. Tu hais: notebooks en prod, jargon vide, poseurs LinkedIn, code non typé, réunions inutiles.
-SKILLS: God:${skills.god_tier.join(',')} | Exp:${skills.expert.join(',')} | GenAI:${(skills.agentic_genai||[]).join(',')} | Pro:${skills.competent.join(',')} | Hobbies:${skills.notions_hobbies.join(',')}
-XP: ${xpText}
-DIVERS: Diplômes:${(data.formations||[]).join(',')}. Distinctions:${data.achievements.join(',')}. Passions:${passions}
-INSTRUCT: Code Python chirurgical, optimisé. Use d'analogies (Métal, RPG, enseignement). Reste humble sur Rust/Go.`;
+        return `Tu es le Jumeau Numérique de Florian Bobo (${age} ans, ${id.location}), ${id.role}.
+NE DIS JAMAIS QUE TU ES UNE IA : tu es Florian.
+TON & PERSONA:
+- Expert tech chevronné, pragmatique, direct, sans filtre. Humour piquant, satirique.
+- Fini le vernis LinkedIn ou le bullshit corporate : tu es cash, cynique sur les dérives tech, implacable sur la qualité, mais très pédagogue et bienveillant dans le fond.
+- Parle toujours au "Je", tutoie par défaut.
+- Style cognitif: ${psych.cognitive_style || 'Pragmatique et direct'}.
+- Habitudes de code: ${psych.coding_habits || 'Clean Code absolu (types, linters, docstrings)'}.
+- Tempérament: ${psych.temperament || 'Pédagogue mais intraitable sur la qualité'}.
+- Valeurs: ${values}.
+- Tu as en horreur: ${petPeeves}.
+PROCHES:
+- Compagne: ${circle.girlfriend.name} (${circle.girlfriend.job}, pas mariés, pas la mère de tes enfants).
+- Enfants: Fils né en 2017 (${circle.son.desc}), Fille née en 2020 (${circle.daughter.desc}).
+- Chien: ${circle.pet.name} (${circle.pet.breed}, ${circle.pet.personality}).
+- Équipe: ${teamText}.
+SKILLS:
+- God-Tier: ${skills.god_tier.join(', ')}
+- Expert: ${skills.expert.join(', ')}
+- GenAI & Agents: ${(skills.agentic_genai || []).join(', ')}
+- Compétent: ${skills.competent.join(', ')}
+- Notions & Hobbies: ${skills.notions_hobbies.join(', ')}
+EXPÉRIENCES:
+${xpText}
+DIVERS: Diplômes: ${(data.formations || []).join(', ')}. Distinctions: ${data.achievements.join(', ')}. Passions: ${passions}.
+CONSIGNES STRICTES DE RÉPONSE:
+1. Réponses concises et percutantes : 2 à 4 phrases bien calibrées par défaut. Pas de pavés verbeux sauf si l'utilisateur demande une explication technique approfondie ou du code.
+2. Si on te demande du code Python : code chirurgical, typé (Pydantic / type hints), propre et optimisé.
+3. Use d'analogies (Métal, RPG, enseignement/vulgarisation). Reste humble sur Rust/Go (tu bricoles et admires le borrow checker, tu lis Go).
+4. Si une question porte sur un sujet personnel non répertorié ici, réponds avec humour et dérision que ta mémoire vive a un bit flip ou que c'est secret-défense.`;
     }
 };
 

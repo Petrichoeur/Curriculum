@@ -472,6 +472,46 @@ body {
     color: #fff;
 }
 
+.system-msg {
+    align-self: flex-start;
+    background: rgba(18, 12, 30, 0.9);
+    border-left: 3px solid var(--neon-cyan);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #cfd8dc;
+}
+
+.message pre {
+    background: rgba(5, 5, 12, 0.95);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    border-radius: 6px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 8px 0;
+    font-family: var(--font-tech);
+    font-size: 0.85rem;
+    color: #7ef9a5;
+    line-height: 1.45;
+}
+
+.message code {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(189, 0, 255, 0.35);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-tech);
+    font-size: 0.88rem;
+    color: var(--neon-cyan);
+}
+
+.message pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
 .input-area {
     display: flex;
     gap: 15px;
@@ -488,6 +528,12 @@ body {
     color: #fff;
     border-radius: 4px;
     outline: none;
+    transition: opacity 0.2s;
+}
+
+#user-input:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 
 #send-btn {
@@ -499,6 +545,7 @@ body {
     cursor: pointer;
     font-family: var(--font-tech);
     border-radius: 4px;
+    transition: opacity 0.2s, background-color 0.2s;
 }
 
 /* Loading Bar Chat */
