@@ -226,10 +226,12 @@ class HardwareLabApp {
 
         const speed = this.clockMultiplier;
 
-        // 1. CPU Update (Séquentiel / 4 Cœurs rapides)
+        // 1. CPU Update (Séquentiel / 4 Cœurs rapides à 4.5 GHz)
         if (this.cpu.completed < this.batchSize) {
             this.cpu.timeMs += 16 * speed;
-            const taskDuration = this.workload === 'branch' ? 14 : 10;
+            // En branchements : le Branch Predictor (96%) et la haute fréquence rendent le CPU ultra véloce !
+            // En GEMM/Pixel : chaque cœur traite 1 tâche scalaire séquentielle
+            const taskDuration = this.workload === 'branch' ? 3.5 : (this.workload === 'pixel' ? 6 : 8);
 
             for (let c = 0; c < this.cpu.cores; c++) {
                 if (this.remainingCpuTasks > 0 || this.cpu.coreStates[c] > 0) {
@@ -248,18 +250,19 @@ class HardwareLabApp {
             }
         }
 
-        // 2. GPU Update (SIMT / 256 Cœurs)
+        // 2. GPU Update (SIMT / 256 Cœurs à 1.8 GHz)
         if (this.gpu.completed < this.batchSize) {
             this.gpu.timeMs += 16 * speed;
 
             if (this.workload === 'gemm' || this.workload === 'pixel') {
-                const waveDuration = 42;
+                // Parallélisme massif : Le GPU traite jusqu'à 256 calculs par vague
+                const waveDuration = this.workload === 'gemm' ? 24 : 28;
                 for (let i = 0; i < this.gpu.numSMs; i++) {
-                    this.gpu.smStates[i] = 1;
+                    this.gpu.smStates[i] = 1; // Actif (vert)
                 }
 
                 this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
-                if (Math.random() < 0.35 * speed) {
+                if (Math.random() < 0.4 * speed) {
                     this.spawnGpuParticle();
                 }
 
@@ -273,20 +276,23 @@ class HardwareLabApp {
                     }
                 }
             } else {
-                // Branchements conditionnels : Warp Divergence
-                const waveDuration = 110;
+                // Branchements conditionnels : WARP DIVERGENCE & SÉRIALISATION FORCÉE
+                // Les threads d'un même Warp divergent : l'écrasante majorité des cœurs est mise en pause !
+                const waveDuration = 55;
                 for (let i = 0; i < this.gpu.numSMs; i++) {
-                    this.gpu.smStates[i] = (i % 2 === 0) ? 1 : 2; // Stalled
+                    // La plupart des SMs sont bloqués ou attendent l'exécution de la branche opposée
+                    this.gpu.smStates[i] = (i % 3 === 0) ? 1 : 2; // 2 = Stalled (orange)
                 }
 
                 this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
-                if (Math.random() < 0.2 * speed) {
+                if (Math.random() < 0.15 * speed) {
                     this.spawnGpuParticle();
                 }
 
                 if (this.gpuProgressInWave >= 1) {
                     this.gpuProgressInWave = 0;
-                    const processed = Math.min(32, this.batchSize - this.gpu.completed);
+                    // Seulement une fraction de tâches est retirée par vague (divergence sérialisée)
+                    const processed = Math.min(12, this.batchSize - this.gpu.completed);
                     this.gpu.completed += processed;
 
                     if (this.gpu.completed >= this.batchSize) {
@@ -394,7 +400,7 @@ class HardwareLabApp {
 
         if (gpuActiveEl) {
             if (this.isRunning && this.gpu.completed < this.batchSize) {
-                gpuActiveEl.textContent = this.workload === 'branch' ? '32 / 256 (Divergence)' : '256 / 256 (Plein régime)';
+                gpuActiveEl.textContent = this.workload === 'branch' ? '12 / 256 (Warp Divergence)' : '256 / 256 (Plein régime)';
             } else {
                 gpuActiveEl.textContent = '0 / 256 (Inactif)';
             }
@@ -410,8 +416,12 @@ class HardwareLabApp {
                     verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span><br><span style="font-weight:normal;color:#aaa;">Traitement matriciel 2D parfait sans dépendance séquentielle.</span>`;
                 } else {
                     const ratio = (this.gpu.timeMs / Math.max(1, this.cpu.timeMs)).toFixed(1);
-                    verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">VAINQUEUR : CPU (${ratio}x plus rapide)</span><br><span style="font-weight:normal;color:#aaa;">Grâce à son Branch Predictor, le CPU n'a pas ralenti. Le GPU a été bloqué par la Warp Divergence.</span>`;
+                    verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">VAINQUEUR : CPU (${ratio}x plus rapide)</span><br><span style="font-weight:normal;color:#aaa;">Grâce à son Branch Predictor (4.5 GHz), le CPU n'a pas ralenti. Le GPU a été lourdement pénalisé par la Warp Divergence.</span>`;
                 }
+            } else if (this.cpu.completed === this.batchSize && this.gpu.completed < this.batchSize) {
+                verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">CPU A TERMINÉ EN PREMIER !</span><br><span style="font-weight:normal;color:#aaa;">Le GPU est encore bloqué par la divergence des branches de threads...</span>`;
+            } else if (this.gpu.completed === this.batchSize && this.cpu.completed < this.batchSize) {
+                verdictEl.innerHTML = `<span style="color:var(--neon-purple);">GPU A TERMINÉ EN PREMIER !</span><br><span style="font-weight:normal;color:#aaa;">Le CPU continue de vider séquentiellement sa file d'attente...</span>`;
             } else if (this.isRunning) {
                 verdictEl.textContent = "Calcul en cours d'exécution...";
             } else {
