@@ -2519,7 +2519,7 @@ input[type="range"]::-moz-range-thumb {
 .hw-canvas {
     width: 100% !important;
     max-width: 100% !important;
-    height: 360px;
+    height: 380px;
     display: block;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2618,7 +2618,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 320px;
+        height: 380px;
     }
 }
 
@@ -2628,7 +2628,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 300px;
+        height: 370px;
     }
 }
 

@@ -73,15 +73,25 @@ class HardwareLabApp {
     }
 
     resizeCanvas() {
-        if (!this.canvas) return;
+        if (!this.canvas || !this.ctx) return;
         const rect = this.canvas.getBoundingClientRect();
         const targetW = Math.round(rect.width) || 320;
-        const targetH = Math.round(rect.height) || 320;
+        const targetH = Math.round(rect.height) || 380;
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
 
-        if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
-            this.canvas.width = targetW;
-            this.canvas.height = targetH;
+        const physicalW = Math.round(targetW * dpr);
+        const physicalH = Math.round(targetH * dpr);
+
+        if (this.canvas.width !== physicalW || this.canvas.height !== physicalH) {
+            this.canvas.width = physicalW;
+            this.canvas.height = physicalH;
         }
+
+        // Échelle haute résolution Retina / HiDPI
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingQuality = 'high';
+
         this.logicalWidth = targetW;
         this.logicalHeight = targetH;
     }
@@ -620,38 +630,41 @@ class HardwareLabApp {
         const c = this.getCpuCoordinates();
         const isCompact = this.isStacked();
 
+        const fontUi = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const fontMono = 'ui-monospace, "SF Mono", Consolas, monospace';
+
         // En-tête CPU
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.font = isCompact ? 'bold 10px "Courier New", monospace' : 'bold 11px "Courier New", monospace';
+        ctx.font = 'bold 11px ' + fontUi;
         ctx.fillStyle = '#00f3ff';
         ctx.fillText('CPU // FAIBLE LATENCE (4 CŒURS @ 4.5 GHz)', c.x, c.y);
 
         // 1. RAM Système
-        ctx.fillStyle = 'rgba(20, 20, 35, 0.8)';
-        ctx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
+        ctx.fillStyle = 'rgba(20, 20, 35, 0.85)';
+        ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
         ctx.lineWidth = 1;
         ctx.strokeRect(c.ramX, c.ramY, c.ramW, c.ramH);
         ctx.fillRect(c.ramX, c.ramY, c.ramW, c.ramH);
 
-        ctx.fillStyle = '#00f3ff';
-        ctx.font = isCompact ? '9px "Courier New", monospace' : '10px "Courier New", monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px ' + fontUi;
         ctx.fillText('RAM SYSTÈME DDR5 · 64-BIT (80 Go/s)', c.ramX + 8, c.ramY + (isCompact ? 5 : 8));
 
         // 2. Cache L3 Partagé
-        ctx.fillStyle = 'rgba(0, 243, 255, 0.06)';
-        ctx.strokeStyle = 'rgba(0, 243, 255, 0.5)';
+        ctx.fillStyle = 'rgba(0, 243, 255, 0.08)';
+        ctx.strokeStyle = 'rgba(0, 243, 255, 0.6)';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(c.l3X, c.l3Y, c.l3W, c.l3H);
         ctx.fillRect(c.l3X, c.l3Y, c.l3W, c.l3H);
 
         ctx.fillStyle = '#00f3ff';
-        ctx.font = isCompact ? 'bold 9px "Courier New", monospace' : 'bold 10px "Courier New", monospace';
+        ctx.font = 'bold 10px ' + fontUi;
         ctx.fillText('CACHE L3 (32 Mo) + BRANCH PREDICTOR', c.l3X + 8, c.l3Y + (isCompact ? 4 : 8));
 
         if (!isCompact) {
-            ctx.font = '9px "Courier New", monospace';
-            ctx.fillStyle = '#88aaff';
+            ctx.font = '9px ' + fontUi;
+            ctx.fillStyle = '#c7d2fe';
             ctx.fillText('Prédiction spéculative 96% sans pénalité', c.l3X + 8, c.l3Y + 24);
         }
 
@@ -661,8 +674,8 @@ class HardwareLabApp {
             const isBusy = this.cpu.coreStates[i] > 0;
 
             // Bloc Cœur
-            ctx.fillStyle = isBusy ? 'rgba(0, 243, 255, 0.14)' : 'rgba(15, 15, 25, 0.9)';
-            ctx.strokeStyle = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.3)';
+            ctx.fillStyle = isBusy ? 'rgba(0, 243, 255, 0.18)' : 'rgba(15, 15, 25, 0.95)';
+            ctx.strokeStyle = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.35)';
             ctx.lineWidth = isBusy ? 1.5 : 1;
 
             if (isBusy) {
@@ -675,21 +688,21 @@ class HardwareLabApp {
             ctx.shadowBlur = 0;
 
             // Titre Cœur
-            ctx.fillStyle = '#fff';
-            ctx.font = isCompact ? 'bold 8px "Courier New", monospace' : 'bold 9px "Courier New", monospace';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 9px ' + fontUi;
             ctx.textAlign = 'center';
             ctx.fillText(`CŒUR ${i}`, coreX + c.coreW * 0.5, c.coreY + 6);
 
             // ALU
-            ctx.fillStyle = isBusy ? '#00f3ff' : '#666';
-            ctx.font = isCompact ? 'bold 11px "Courier New", monospace' : 'bold 13px "Courier New", monospace';
-            ctx.fillText('ALU', coreX + c.coreW * 0.5, c.coreY + (isCompact ? 18 : 28));
+            ctx.fillStyle = isBusy ? '#00f3ff' : '#888';
+            ctx.font = 'bold 12px ' + fontMono;
+            ctx.fillText('ALU', coreX + c.coreW * 0.5, c.coreY + (isCompact ? 18 : 26));
 
             // Barre de progression dans le cœur
             const prog = this.cpu.coreStates[i];
             const pBarH = isCompact ? 4 : 5;
             const pBarY = c.coreY + c.coreH - (isCompact ? 14 : 20);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.fillRect(coreX + 4, pBarY, c.coreW - 8, pBarH);
             if (prog > 0) {
                 ctx.fillStyle = '#00f3ff';
@@ -697,43 +710,44 @@ class HardwareLabApp {
             }
 
             // Statut texte
-            ctx.font = '8px "Courier New", monospace';
-            ctx.fillStyle = isBusy ? '#00ff88' : '#666';
-            ctx.fillText(isBusy ? 'CALCUL' : 'REPOS', coreX + c.coreW * 0.5, c.coreY + c.coreH - (isCompact ? 8 : 10));
+            ctx.font = 'bold 8px ' + fontMono;
+            ctx.fillStyle = isBusy ? '#00ff88' : '#777';
+            ctx.fillText(isBusy ? 'ACTIF' : 'IDLE', coreX + c.coreW * 0.5, c.coreY + c.coreH - (isCompact ? 8 : 10));
         }
     }
 
     drawGpu(ctx) {
         const g = this.getGpuCoordinates();
         const isCompact = this.isStacked();
+        const fontUi = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
         // En-tête GPU
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.font = isCompact ? 'bold 10px "Courier New", monospace' : 'bold 11px "Courier New", monospace';
-        ctx.fillStyle = '#bd00ff';
+        ctx.font = 'bold 11px ' + fontUi;
+        ctx.fillStyle = '#e879f9';
         ctx.fillText('GPU // HAUT DÉBIT SIMT (256 CŒURS @ 1.8 GHz)', g.x, g.y);
 
         // 1. VRAM HBM3
-        ctx.fillStyle = 'rgba(25, 10, 35, 0.8)';
-        ctx.strokeStyle = 'rgba(189, 0, 255, 0.4)';
+        ctx.fillStyle = 'rgba(25, 10, 35, 0.85)';
+        ctx.strokeStyle = 'rgba(217, 70, 239, 0.45)';
         ctx.lineWidth = 1;
         ctx.strokeRect(g.vramX, g.vramY, g.vramW, g.vramH);
         ctx.fillRect(g.vramX, g.vramY, g.vramW, g.vramH);
 
-        ctx.fillStyle = '#bd00ff';
-        ctx.font = isCompact ? '9px "Courier New", monospace' : '10px "Courier New", monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px ' + fontUi;
         ctx.fillText('VRAM HBM3 · BUS 4096-BIT (3000 Go/s)', g.vramX + 8, g.vramY + (isCompact ? 5 : 8));
 
         // 2. Matrice de Streaming Multiprocessors (SM)
-        ctx.fillStyle = 'rgba(189, 0, 255, 0.04)';
-        ctx.strokeStyle = 'rgba(189, 0, 255, 0.3)';
+        ctx.fillStyle = 'rgba(189, 0, 255, 0.05)';
+        ctx.strokeStyle = 'rgba(217, 70, 239, 0.35)';
         ctx.lineWidth = 1;
         ctx.strokeRect(g.gridX, g.gridY, g.gridW, g.gridH);
         ctx.fillRect(g.gridX, g.gridY, g.gridW, g.gridH);
 
-        ctx.fillStyle = '#bd00ff';
-        ctx.font = 'bold 8px "Courier New", monospace';
+        ctx.fillStyle = '#e879f9';
+        ctx.font = 'bold 9px ' + fontUi;
         ctx.fillText('16 STREAMING MULTIPROCESSORS (SM)', g.gridX + 8, g.gridY + 4);
 
         // Rendu des SMs
