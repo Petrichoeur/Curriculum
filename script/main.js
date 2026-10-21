@@ -19,13 +19,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function loadGlobalConfig() {
     try {
         const response = await fetch('config/data.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         globalConfig = await response.json();
-        
+
         if (window.DigitalTwin) {
             window.DigitalTwin.init(globalConfig);
         }
     } catch (e) {
         console.error("Erreur chargement config:", e);
+        // On marque le chargement en échec pour éviter que handleRouting
+        // n'appelle init() avec un objet vide (TypeError sur identity.name).
+        globalConfig = null;
+        const bio = document.getElementById('bio-text');
+        if (bio) {
+            bio.innerHTML = '<div class="bio-line" style="color:#ff003c;">'
+                + 'Configuration indisponible.</div>';
+        }
     }
 }
 
@@ -39,15 +48,29 @@ function handleRouting() {
 
     document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
     const activeLink = document.querySelector(`.nav-link[href="#${hash}"]`);
-    
+
     if (activeLink) {
         activeLink.classList.add('active');
         const moduleName = activeLink.getAttribute('data-module');
-        if (moduleName && window[moduleName] && typeof window[moduleName].init === 'function') {
-            if (!window[moduleName].isInitialized && moduleName !== 'DigitalTwin') {
-                window[moduleName].init(globalConfig);
-            }
+        if (!moduleName || moduleName === 'DigitalTwin') return;
+
+        const mod = window[moduleName];
+        if (!mod || typeof mod.init !== 'function') return;
+
+        // Les modules lazy-load ont besoin de la config partagée.
+        // MLPStudio est autonome et ne prend pas de config.
+        if (mod.needsConfig && !globalConfig) return;
+
+        // init() est async sur Projects/Educational : sans ce garde-fou,
+        // deux navigations rapides initialisent deux fois (DOM dupliqué,
+        // listeners clavier dupliqués).
+        if (mod.initPromise) {
+            mod.initPromise.then(() => {
+                if (!mod.isInitialized) mod.init(globalConfig);
+            });
+            return;
         }
+        if (!mod.isInitialized) mod.init(globalConfig);
     }
 }
 
@@ -63,6 +86,7 @@ function initNeuralNetwork() {
     let particles = [];
     let globalHue = 0; // Pour la rotation des couleurs
     let mouse = { x: null, y: null };
+    let rafId = null;   // ID de la frame en cours, pour pouvoir la suspendre
 
     // Configuration
     const config = {
@@ -200,10 +224,27 @@ function initNeuralNetwork() {
                 }
             }
         }
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
     }
+
+    function start() {
+        if (rafId) return;
+        rafId = requestAnimationFrame(animate);
+    }
+
+    function stop() {
+        if (!rafId) return;
+        cancelAnimationFrame(rafId);
+        rafId = null;
+    }
+
+    // rAF est déjà throttlé par le navigateur quand l'onglet est caché, mais on
+    // libère réellement le CPU (O(n²) sur ~130 particules) en arrière-plan.
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stop(); else start();
+    });
 
     window.addEventListener('resize', resize);
     resize();
-    animate();
+    start();
 }

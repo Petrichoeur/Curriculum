@@ -25,7 +25,9 @@ body {
     color: #e0e0e0;
     font-family: var(--font-main);
     height: 100vh;
-    width: 100vw;
+    /* 100vw inclut la largeur du scrollbar verticale et provoquait un
+       débordement horizontal ; 100% est équivalent sans l'effet de bord. */
+    width: 100%;
     display: flex;
     overflow: hidden;
 }
@@ -154,6 +156,21 @@ body {
     background: var(--neon-purple);
     color: #fff;
     box-shadow: 0 0 10px var(--neon-purple);
+}
+
+/* --- INFO / BIO (généré par digital-twin.js) --- */
+.info-section {
+    margin-top: 15px;
+    min-width: 0;
+}
+
+.bio-line {
+    font-size: 0.8rem;
+    color: #b8b8c8;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    /* évite qu'une longue chaîne (ville, libellé) force un débordement */
+    overflow-wrap: anywhere;
 }
 
 /* --- SKILL TICKER (Défilement) --- */
@@ -289,7 +306,14 @@ body {
     gap: 20px;
     background: linear-gradient(to bottom, rgba(7, 2, 10, 0.95), transparent);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* la barre de scroll cassait l'esthétique sur un seul rang */
+    scrollbar-width: none;
     flex-shrink: 0;
+}
+
+.top-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .nav-link {
@@ -302,6 +326,9 @@ body {
     padding-bottom: 5px;
     transition: 0.3s;
     letter-spacing: 1px;
+    /* sans cela, un onglet un peu long déborde et déforme toute la rangée */
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -519,7 +546,8 @@ body {
    ========================================= */
 .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    /* min() évite qu'une piste de 300px déborde sur un écran plus étroit */
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
     gap: 25px;
     margin-top: 20px;
 }
@@ -946,19 +974,10 @@ body {
     text-shadow: 0 0 10px var(--neon-cyan);
 }
 
-/* =========================================
-   BOOK GENERATOR & FLIPBOOK (Scroll Fix & Inputs)
-   ========================================= */
-.book-config-panel {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 30px;
-    border: 1px solid var(--neon-purple);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
+/* ==========================================
+   FORM CONTROLS & SHARED BUTTONS
+   (utilises par les panneaux MLP et Projets)
+   ========================================== */
 .input-group label {
     display: block;
     color: var(--neon-cyan);
@@ -967,7 +986,6 @@ body {
     margin-bottom: 8px;
 }
 
-/* FIX INPUTS & SELECTS */
 .input-group input,
 .input-group select {
     width: 100%;
@@ -982,12 +1000,6 @@ body {
     background-repeat: no-repeat;
     background-position: right 15px top 50%;
     background-size: 12px auto;
-}
-
-#gemini-model-select option {
-    background-color: var(--bg-dark);
-    color: #fff;
-    padding: 10px;
 }
 
 .cyber-btn {
@@ -1009,283 +1021,434 @@ body {
     box-shadow: 0 0 20px var(--neon-cyan);
 }
 
-.book-loader {
-    text-align: center;
-    padding: 40px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px dashed var(--neon-purple);
-    border-radius: 8px;
-    margin-top: 20px;
-}
-
-.loader-bar {
-    width: 100%;
-    height: 6px;
-    background: #222;
-    margin: 15px 0;
-    border-radius: 3px;
-}
-
-.loader-progress {
-    height: 100%;
-    background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink));
-    width: 0%;
-    transition: width 0.3s;
-    box-shadow: 0 0 10px var(--neon-purple);
-}
-
-.console-log {
-    font-family: monospace;
-    color: #aaa;
-    margin-top: 15px;
-    height: 25px;
-}
-
-/* Flipbook */
-.flip-book-viewport {
-    width: 100%;
-    height: 650px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    background: radial-gradient(circle at center, #1a1a20 0%, #000 100%);
-}
-
-.page {
-    background-color: #121215;
-    color: #c0c0c0;
-    border: 1px solid #333;
-    padding: 30px;
-    font-family: 'Georgia', serif;
-    font-size: 0.95rem;
-    line-height: 1.7;
-    overflow: hidden;
-}
-
-.page-content {
-    height: 100%;
-    border: 1px dashed rgba(189, 0, 255, 0.1);
-    padding: 15px;
-    overflow-y: auto;
-    /* SCROLL INTERNE */
-    scrollbar-width: thin;
-    scrollbar-color: var(--neon-purple) #222;
-}
-
-.page-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.page-content::-webkit-scrollbar-thumb {
-    background-color: var(--neon-purple);
-    border-radius: 3px;
-}
-
-.page h1,
-.page h2 {
-    color: var(--neon-cyan);
-    margin-top: 0;
+/* Variante compacte : utilisée par le bouton "Générer" du MLP Studio.
+   La classe était présente dans index.html sans aucune règle, d'où un
+   bouton natif blanc cassant le thème. */
+.cyber-btn-small {
+    background: var(--neon-purple);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
     font-family: var(--font-tech);
-}
-
-.page-cover {
-    background-color: #08080a;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    border: 2px solid var(--neon-purple);
-}
-
-.cover-title {
-    font-size: 2.2rem;
-    color: var(--neon-cyan);
-    margin-bottom: 20px;
+    font-weight: bold;
+    font-size: 0.72rem;
+    cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    transition: 0.3s;
+    border-radius: 4px;
 }
 
-/* =========================================
-   MEDIA PRINT (PDF CLEAN & AIRY)
-   ========================================= */
-#clean-book-container {
-    position: fixed;
-    top: 0;
-    left: -9999px;
-    width: 210mm;
-    background: white;
-    z-index: -1;
-    visibility: hidden;
+.cyber-btn-small:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 15px var(--neon-cyan);
 }
 
-@media print {
-    body * {
-        visibility: hidden;
+/* ==========================================
+   RESPONSIVE — TABLETTE (≤1200px)
+   ========================================== */
+@media (max-width: 1200px) {
+    :root {
+        --sidebar-width: 260px;
     }
 
-    #clean-book-container {
-        visibility: visible;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        display: block !important;
-        background-color: white !important;
-        color: black !important;
-        padding: 0;
-        margin: 0;
+    .top-nav {
+        gap: 14px;
+        padding: 16px;
     }
 
-    #clean-book-container * {
-        visibility: visible;
+    .nav-link {
+        font-size: 0.78rem;
+        letter-spacing: 0.5px;
     }
 
-    @page {
-        size: A4;
-        margin: 2.5cm;
+    .glass-panel {
+        padding: 30px;
     }
 
-    body {
-        font-family: 'Georgia', 'Times New Roman', serif;
-        font-size: 12pt;
-        line-height: 1.8;
-        background: white;
+    /* La colonne de droite devient trop étroite face à la grille 1fr/2fr */
+    .mlp-layout {
+        grid-template-columns: 1fr;
     }
 
-    #clean-book-container h1 {
-        font-size: 28pt;
-        text-align: center;
-        margin-top: 40%;
-        margin-bottom: 2cm;
-        page-break-before: always;
-        color: #000;
-    }
-
-    #clean-book-container h2 {
-        font-size: 18pt;
-        border-bottom: 2px solid #333;
-        padding-bottom: 10px;
-        margin-top: 0;
-        margin-bottom: 25px;
-        page-break-before: always;
-        color: #333;
-    }
-
-    #clean-book-container h3 {
-        font-size: 14pt;
-        margin-top: 30px;
-        margin-bottom: 15px;
-        color: #444;
-        page-break-after: avoid;
-    }
-
-    #clean-book-container p {
-        margin-bottom: 15px;
-        text-align: justify;
-    }
-
-    #clean-book-container blockquote {
-        font-style: italic;
-        border-left: 4px solid #ddd;
-        padding-left: 15px;
-        margin: 20px 0;
-        color: #555;
+    .projects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
     }
 }
 
-/* =========================================
-   MOBILE
-   ========================================= */
+/* ==========================================
+   RESPONSIVE — MOBILE (≤900px)
+   ========================================== */
 @media (max-width: 900px) {
+    /* iOS gonfle les polices en auto-zoom sans ça */
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    /* Sur mobile, le document entier doit défiler : la barre latérale et le
+       contenu s'empilent, il ne doit donc pas y avoir de conteneur à hauteur
+       fixe. `overflow-y: auto` est indispensable : la règle de base
+       `body { overflow: hidden }` se propage au viewport (quand `html` est
+       en `visible`, c'est l'overflow du body qui s'applique) et bloquait tout
+       scroll tactile. Les deux axes sont posés explicitement pour éviter que
+       `overflow-x: hidden` fasse basculer `overflow-y` en `auto` par calcul
+       implicite. */
     body {
         flex-direction: column;
-        overflow: auto;
         height: auto;
+        min-height: 100dvh;
+        width: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
+
+    /* ---------- SIDEBAR / EN-TÊTE ---------- */
 
     .sidebar {
         width: 100%;
         height: auto;
-        flex-direction: row;
-        padding: 15px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px 12px;
         border-right: none;
         border-bottom: 1px solid var(--neon-purple);
+        overflow: visible;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     }
 
+    /* Photo + nom sur une ligne, bio dessous en pleine largeur.
+       En `row` l'en-tête débordait : la localisation passait à la ligne
+       et poussait le reste hors écran. */
     .profile-section {
         display: flex;
         align-items: center;
-        gap: 15px;
+        /* wrap indispensable : sans lui le bloc de boutons (basis 100%)
+           reste sur la ligne du nom et déborde de 169px */
+        flex-wrap: wrap;
+        gap: 12px;
+        min-width: 0;
     }
 
     .photo-container {
-        width: 55px;
-        height: 55px;
+        width: 52px;
+        height: 52px;
         margin: 0;
+        flex-shrink: 0;
     }
 
     .profile-pic {
-        width: 55px;
-        height: 55px;
+        width: 52px;
+        height: 52px;
     }
 
-    .sidebar h1 {
-        font-size: 1.1rem;
-        text-align: left;
-        margin: 0;
-    }
-
-    .sidebar h2,
-    .tagline,
-    .skills-section,
-    .interests-section,
-    .ring-one,
-    .ring-two {
+    /* Les anneaux décoratifs n'ont pas la place autour d'une photo de 52px.
+       Le tagline est une phrase de ~110 caractères : masqué sur mobile, il
+       reste visible sur desktop. */
+.ring-one,
+    .ring-two,
+    .tagline {
         display: none;
     }
 
-    .social-links {
+    /* Bloc de texte à côté de la photo : c'est lui qui doit pouvoir
+       rétrécir, sinon le nom long force l débordement. */
+    /* `.profile-text` regroupe nom, rôle et tagline (voir index.html). C'est lui,
+       et non plus h1/h2 pris séparément, qui doit pouvoir rétrécir : c'est ce
+       qui permet au bouton LinkedIn de tenir sur la même ligne. */
+    .profile-section > .profile-text {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .sidebar h1 {
+        font-size: 1.15rem;
+        text-align: left;
         margin: 0;
+        line-height: 1.2;
+    }
+
+    .sidebar h2 {
+        font-size: 0.78rem;
+        margin: 2px 0 0;
+        color: var(--neon-cyan);
+    }
+
+    .info-section {
+        min-width: 0;
+    }
+
+    .bio-line {
+        font-size: 0.78rem;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    /* Le bouton garde sa largeur naturelle et s'aligne à droite du bloc de texte
+       sur la même ligne : il consommait une rangée entière (~42px) pour 84px
+       de large. `flex: 0 0 auto` évite aussi l'ancien débordement de 3px, où
+       un basis à 0 réduisait le conteneur à 54px et laissait le bouton
+       dépasser. */
+    .profile-section > .social-links {
+        flex: 0 0 auto;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin: 0;
+        flex-wrap: nowrap;
     }
 
     .social-btn {
-        padding: 5px 10px;
-        font-size: 0.7rem;
+        padding: 7px 14px;
+        font-size: 0.68rem;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        /* sécurité sur les écrans 320px */
+        max-width: 100%;
     }
 
-    .main-container {
-        overflow-x: hidden;
+    /* Le tagline est une phrase de ~110 caractères. Sur mobile, avec les quatre
+       tickers et la bio, l'en-tête consommait 66% de l'écran pour une
+       information décorative : il reste masqué ici, il est déjà présent sur
+       desktop et sur la page CV. */
+    .tagline {
+        display: none;
     }
 
-    .content-wrapper {
-        padding: 15px;
-        min-height: calc(100vh - 150px);
+    /* Sur téléphone, on retire le flou de fond : au-dessus d'un canvas animé
+       plein écran, `backdrop-filter` force un repaint du viewport à chaque
+       frame sur le GPU mobile. C'est la source la plus probable des frames
+       noires vues sur iOS Safari, et le fond est déjà assez opaque pour que
+       le flou ne serve à rien en dessous. */
+    .sidebar,
+    .glass-panel,
+    .course-btn,
+    .slide-img,
+    .mlp-tooltip {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     .glass-panel {
-        padding: 20px;
-        width: 100%;
-        max-height: none;
-        height: auto;
+        background: rgba(12, 8, 20, 0.94);
     }
 
-    /* Chat responsive sur mobile */
+    .sidebar {
+        background: rgba(5, 0, 10, 0.97);
+    }
+
+    /* ---------- COMPÉTENCES & INTÉRÊTS ----------
+       Version mobile : le design desktop empile 4 blocs de 40px avec un titre
+       au-dessus, ce qui mangeait la moitié d'un écran de téléphone. On passe
+       à une rangée par bloc — libellé à gauche, ticker défilant à droite —
+       soit ~30px par ligne au lieu de ~70px. L'effet glitch et la rotation
+       des tickers sont conservés tels quels. */
+
+.skills-section,
+    .interests-section {
+        display: block;
+        margin-top: 6px;
+    }
+
+    .skill-category {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 4px;
+    }
+
+    .skill-category h3 {
+        flex: 0 0 auto;
+        width: 72px;
+        font-size: 0.48rem;
+        letter-spacing: 0.2px;
+        line-height: 1.15;
+        margin: 0;
+        padding: 0 5px 0 0;
+        border-left: none;
+        border-right: 2px solid var(--neon-cyan);
+        text-align: right;
+        opacity: 0.8;
+    }
+
+    .skill-ticker-box {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 23px;
+        padding: 1px 7px;
+    }
+
+    .ticker-text {
+        font-size: 0.6rem;
+    }
+
+    /* Les intérêts suivent exactement le même gabarit que les compétences :
+       une rangée, libellé à gauche, ticker à droite. */
+.interests-section {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        border: none;
+        background: none;
+        padding: 0;
+        margin: 2px 0 0;
+        border-radius: 0;
+    }
+
+    .interests-section h3 {
+        flex: 0 0 auto;
+        width: 72px;
+        color: var(--neon-red);
+        font-size: 0.48rem;
+        letter-spacing: 0.2px;
+        line-height: 1.15;
+        margin: 0;
+        padding: 0 5px 0 0;
+        border-right: 2px solid var(--neon-red);
+        text-align: right;
+        text-transform: uppercase;
+        opacity: 0.8;
+    }
+
+    /* Les quatre blocs de compétences et d'intérêts sont masqués sur mobile :
+       même compactés, ils prenaient ~104px, soit un tiers de l'écran d'un
+       téléphone, et repoussaient le contenu hors du premier écran. Sur
+       desktop ils restent visibles, tickers compris.
+
+       Cette règle est placée APRÈS les formats compacts ci-dessus, qui
+       déclarent `display: block` / `display: flex` : de même spécificité,
+       c'est le dernier qui gagne, et le `display: none` placé plus haut
+       se faisait écraser. */
+    .skills-section,
+    .interests-section {
+        display: none;
+    }
+
+    /* ---------- NAVIGATION ----------
+       justify-content:center sur un contenu plus large que le conteneur
+       rendait le DÉBUT de la liste inatteignable (bug flexbox classique :
+       "ACCUEIL" apparaissait coupé, "MLP Studio" invisible). On passe en
+       flex-start + scroll tactile. */
+    .top-nav {
+        justify-content: flex-start;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 14px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+        /* Le dégradé (mask-image) est purement décoratif et Safari iOS le gère mal
+           sur un conteneur défilant : il est remplacé par une bordure, qui
+           signale la même présence de contenu à droite sans créer de couche
+           composée. */
+        border-bottom: 1px solid rgba(0, 243, 255, 0.25);
+    }
+
+    .top-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-link {
+        flex-shrink: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        padding: 10px 2px 8px;
+        white-space: nowrap;
+        scroll-snap-align: center;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* ---------- CONTENU ---------- */
+
+    .main-container {
+        overflow: visible;
+        min-width: 0;
+    }
+
+    .content-wrapper {
+        padding: 12px;
+        align-items: flex-start;
+        /* Un seul scroller sur mobile : la page. `overflow: visible` évite
+           un scroller imbriqué : avec `overflow-x: hidden`, l'overflow-y
+           se calcule à `auto` et crée une zone morte au scroll tactile. */
+        overflow: visible;
+        min-height: 0;
+    }
+
+    .glass-panel {
+        padding: 18px;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: none;
+    }
+
+    .tab-content {
+        width: 100%;
+    }
+
+    /* ---------- HOME ---------- */
+
+    .glitch-title {
+        /* 3rem fixe débordait (« FLORIAN BOB ») sur écran étroit */
+        font-size: clamp(1.6rem, 8vw, 2.4rem);
+        letter-spacing: 1px;
+        overflow-wrap: break-word;
+    }
+
+    .neon-subtitle {
+        font-size: clamp(0.95rem, 4.5vw, 1.3rem);
+        letter-spacing: 1px;
+        margin-bottom: 18px;
+    }
+
+    .intro-text p {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .cmd-text {
+        font-size: 0.75rem;
+    }
+
+    .cta-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .intro-btn {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 14px 12px;
+        font-size: 0.78rem;
+        text-align: center;
+    }
+
+    /* ---------- CHAT ---------- */
+
     .chat-wrapper {
-        height: calc(100vh - 180px);
-        min-height: 400px;
+        height: calc(100dvh - 150px);
+        min-height: 360px;
     }
 
     .chat-window {
-        padding: 15px;
+        padding: 12px;
         gap: 10px;
     }
 
     .message {
-        max-width: 90%;
+        max-width: 92%;
         font-size: 0.9rem;
         padding: 10px 14px;
+        overflow-wrap: anywhere;
     }
 
     .bot-msg::before {
@@ -1295,7 +1458,7 @@ body {
 
     .input-area {
         flex-wrap: wrap;
-        padding: 15px;
+        padding: 12px;
     }
 
     #user-input {
@@ -1306,32 +1469,38 @@ body {
 
     #send-btn {
         width: 100%;
-        margin-top: 5px;
+        margin-top: 6px;
         min-height: 44px;
         padding: 0 20px;
     }
 
-    /* Book Generator sur mobile */
-    .book-panel {
-        padding: 15px;
+    /* ---------- PROJETS ---------- */
+
+    .projects-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 
-    .input-group input,
-    .input-group select {
-        font-size: 16px;
+    .project-card h3 {
+        font-size: 1rem;
     }
 
-    /* Navigation Mobile */
-    .top-nav {
-        padding: 15px 10px;
-        gap: 10px;
-        white-space: nowrap;
+    .project-card p {
+        font-size: 0.85rem;
     }
 
-    .nav-link {
-        font-size: 0.75rem;
-        padding-bottom: 3px;
+    .project-actions {
+        flex-wrap: wrap;
     }
+
+    .cyber-btn.small,
+    .project-actions .cyber-btn {
+        flex: 1 1 auto;
+        min-height: 44px;
+        text-align: center;
+    }
+
+    /* ---------- PÉDAGOGIE ---------- */
 
     .pedagogy-panel {
         flex-direction: column;
@@ -1340,29 +1509,182 @@ body {
 
     .pedagogy-menu {
         width: 100%;
-        max-height: 180px;
+        max-height: 190px;
         border-right: none;
         border-bottom: 1px solid #333;
+        overflow-y: auto;
+    }
+
+    .pedagogy-menu ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0 0 8px;
+    }
+
+    .pedagogy-menu li {
+        list-style: none;
+    }
+
+    /* Les 6 cours en pastilles plutôt qu'en longue liste verticale */
+    .course-btn {
+        width: auto;
+        padding: 8px 12px;
+        font-size: 0.7rem;
+        min-height: 40px;
     }
 
     .pedagogy-viewer {
         height: auto;
-        min-height: 400px;
-        padding: 20px;
+        min-height: 300px;
+        padding: 14px;
+    }
+
+    .pedagogy-viewer h2 {
+        font-size: 1.1rem;
+    }
+
+    .pedagogy-viewer p,
+    .pedagogy-viewer li {
+        font-size: 0.85rem;
+        line-height: 1.65;
     }
 
     .colab-card {
         flex-direction: column;
         text-align: center;
+        padding: 14px;
     }
 
     .colab-btn {
         margin: 15px 0 0 0;
         width: 100%;
+        min-height: 44px;
     }
+
+    .slide-img {
+        max-height: 220px;
+    }
+
+    /* ---------- MLP STUDIO ---------- */
+
+    /* Le h1 n'avait aucune règle : il gardait 2em (32px) et prenait
+       deux lignes sur mobile. */
+    .mlp-panel h1 {
+        font-size: 1.2rem;
+        line-height: 1.25;
+        margin-bottom: 8px;
+    }
+
+    .mlp-panel-box h3 {
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .cyber-btn-small {
+        width: 100%;
+        min-height: 44px;
+        font-size: 0.68rem;
+        padding: 12px;
+    }
+
+    .metric-row {
+        font-size: 0.78rem;
+    }
+
+    .mlp-status p,
+    .mlp-status-text {
+        font-size: 0.75rem;
+    }
+
+    /* ---------- MODALES ---------- */
 
     .modal-content {
         width: 95%;
+        max-height: 80vh;
+    }
+
+    .modal-next,
+    .modal-prev {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .close-modal {
+        width: 44px;
+        height: 44px;
+    }
+
+    .video-container {
+        padding: 0;
+    }
+
+    #demo-video {
+        max-height: 70vh;
+    }
+}
+
+/* ==========================================
+   RESPONSIVE — TRÈS PETIT ÉCRAN (≤480px)
+   ========================================== */
+@media (max-width: 480px) {
+    .sidebar {
+        padding: 10px 12px;
+    }
+
+    .photo-container,
+    .profile-pic {
+        width: 44px;
+        height: 44px;
+    }
+
+    .sidebar h1 {
+        font-size: 1rem;
+    }
+
+    .nav-link {
+        font-size: 0.68rem;
+        gap: 14px;
+    }
+
+    .glass-panel {
+        padding: 14px;
+    }
+
+    .glitch-title {
+        font-size: clamp(1.35rem, 7.5vw, 1.75rem);
+    }
+
+    .intro-btn {
+        font-size: 0.72rem;
+        padding: 12px 10px;
+    }
+
+    .message {
+        max-width: 96%;
+    }
+
+    .term-mul {
+        display: none;
+    }
+
+    .mlp-term {
+        gap: 4px;
+    }
+}
+
+/* ==========================================
+   ACCESSIBILITÉ — MOUVEMENT RÉDUIT
+   ========================================== */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 
@@ -1477,6 +1799,10 @@ body {
 
 .responsive-canvas {
     width: 100%;
+    /* max-width évite que le canvas n'explose si la feuille de style
+       échoue : le JS relit son propre getBoundingClientRect() pour fixer
+       l'attribut width, ce qui peut causer une croissance incontrôlée */
+    max-width: 100%;
     height: 380px;
     background: rgba(0,0,0,0.3);
     border-radius: 10px;

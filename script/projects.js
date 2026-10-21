@@ -4,27 +4,34 @@
 
 const Projects = {
     isInitialized: false,
+    needsConfig: false,   // lit son propre JSON, pas data.json
     projects: [],
 
-    init: async function (globalConfig) {
+    init: function () {
+        if (this.isInitialized) return this.initPromise;
+
         console.log("🚀 Module Projects : Chargement...");
 
         const container = document.getElementById('projects-list');
         if (!container) return;
 
-        try {
-            const response = await fetch('config/projects.json');
-            if (!response.ok) throw new Error("Impossible de charger les projets");
-            this.projects = await response.json();
-            console.log("✅ Projets chargés :", this.projects.length);
-        } catch (error) {
-            console.error("Erreur critique Projets:", error);
-            container.innerHTML = '<p style="color:red; padding:10px;">Erreur de chargement des projets.</p>';
-            return;
-        }
+        this.initPromise = (async () => {
+            try {
+                const response = await fetch('config/projects.json');
+                if (!response.ok) throw new Error("Impossible de charger les projets");
+                this.projects = await response.json();
+                console.log("✅ Projets chargés :", this.projects.length);
+            } catch (error) {
+                console.error("Erreur critique Projets:", error);
+                container.innerHTML = '<p style="color:red; padding:10px;">Erreur de chargement des projets.</p>';
+                return;
+            }
 
-        this.render();
-        this.isInitialized = true;
+            this.render();
+            this.isInitialized = true;
+        })();
+
+        return this.initPromise;
     },
 
     render: function () {

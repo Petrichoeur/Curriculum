@@ -13,8 +13,17 @@ export class ChartRenderer {
         if (!this.nn || !this.dataGen) return;
 
         const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width || 500;
-        this.canvas.height = rect.height || 380;
+        const targetW = Math.round(rect.width) || 500;
+        const targetH = Math.round(rect.height) || 380;
+
+        // Ne réassigner canvas.width/height que si la taille a changé : cette
+        // propriété réalloue le backing store et reset le contexte 2D. Sans ce
+        // garde-fou, on le faisait 60 fois par seconde pendant l'entraînement.
+        if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
+            this.canvas.width = targetW;
+            this.canvas.height = targetH;
+        }
+
         const w = this.canvas.width;
         const h = this.canvas.height;
         this.ctx.clearRect(0, 0, w, h);

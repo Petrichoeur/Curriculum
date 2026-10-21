@@ -22,20 +22,24 @@ class MLPStudioApp {
         if (this.isInitialized) return;
         this.buildTermUI();
         this.setupUI();
+        // generateData() réinitialise déjà le réseau et dessine le graphe.
         this.generateData();
+        this.startAnimLoop();
 
-        setTimeout(() => {
-            this.nn.initNetwork();
-            this.chartViz.draw();
-            this.startAnimLoop();
-        }, 120);
+        // Le canvas est dimensionné au premier frame : sinon on dessine dans
+        // une zone de 0x0 et le chart reste vide jusqu'au resize suivant.
+        requestAnimationFrame(() => this.chartViz.draw());
 
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                this.chartViz.draw();
-            }, 150);
+            resizeTimeout = setTimeout(() => this.chartViz.draw(), 150);
+        });
+
+        // Au retour sur l'onglet, le canvas a pu être redimensionné par le
+        // navigateur : on force un redessin.
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) this.chartViz.draw();
         });
 
         this.isInitialized = true;
@@ -154,7 +158,12 @@ class MLPStudioApp {
         let done = 0;
         const batchSize = 20;
 
-        const loop = () => {
+        // updateMetrics() fait 25 forward passes. À chaque frame ça revient à
+        // 1500 passes/seconde pour une valeur que l'œil ne peut pas suivre :
+        // on la throttlie, la loss et le graphique restent à 60fps.
+        let lastMetricsAt = 0;
+
+        const loop = (now) => {
             for (let i = 0; i < batchSize && done < epochsToRun; i++) {
                 this.nn.currentLoss = this.nn.trainStep(this.dataGen.normTrain, lr);
                 done++;
@@ -162,26 +171,42 @@ class MLPStudioApp {
             }
 
             this.updateStatus();
-            this.updateMetrics();
+            if (now - lastMetricsAt > 100) {
+                lastMetricsAt = now;
+                this.updateMetrics();
+            }
             this.chartViz.draw();
 
             if (done < epochsToRun) {
-                requestAnimationFrame(loop);
+                this._trainRaf = requestAnimationFrame(loop);
             } else {
                 this.isTraining = false;
+                this._trainRaf = null;
                 btn.textContent = "ENTRAÎNER LE RÉSEAU_";
                 btn.classList.remove('active');
+                // État final exact, au-delà de la throttlisation.
+                this.updateMetrics();
+                this.chartViz.draw();
             }
         };
-        requestAnimationFrame(loop);
+        this._trainRaf = requestAnimationFrame(loop);
     }
 
     startAnimLoop() {
         const loop = () => {
+            this._animRaf = requestAnimationFrame(loop);
+            // Inactif si l'onglet est caché ou si la section MLP n'est pas
+            // celle affichée : inutile de redessiner hors champ.
+            if (document.hidden || !this.isSectionVisible()) return;
             this.networkViz.draw(this.isTraining);
-            requestAnimationFrame(loop);
         };
-        requestAnimationFrame(loop);
+        this._animRaf = requestAnimationFrame(loop);
+    }
+
+    isSectionVisible() {
+        const section = document.getElementById('mlp-studio');
+        if (!section) return true;
+        return section.classList.contains('active');
     }
 }
 

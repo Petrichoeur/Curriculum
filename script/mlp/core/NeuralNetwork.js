@@ -1,6 +1,15 @@
 export class NeuralNetwork {
-    constructor(architecture) {
+    constructor(architecture, options = {}) {
         this.L = architecture;
+
+        // Hyperparamètres d'entraînement, surchargeables depuis l'UI.
+        this.lrScale = options.lrScale ?? 0.1;  // Adam est bruité : on lisse le lr
+        this.l1Lambda = options.l1Lambda ?? 0.001;
+        this.pruneInterval = options.pruneInterval ?? 10;
+        this.pruneThreshold = options.pruneThreshold ?? 0.05;
+        this.protectStrength = options.protectStrength ?? 0.3;
+        this.protectTopK = options.protectTopK ?? 3;
+
         this.W = [];
         this.B = [];
         this.mW = [];
@@ -14,8 +23,13 @@ export class NeuralNetwork {
         this.initNetwork();
     }
 
-    xavier(fanIn) {
-        return (Math.random() * 2 - 1) * Math.sqrt(2.0 / fanIn);
+    /**
+     * Initialisation de Xavier/Glorot : variance 2/(fanIn + fanOut).
+     * (L'ancienne version utilisait 2/fanIn, soit une initialisation de He,
+     * et ignorait fanOut.)
+     */
+    xavier(fanIn, fanOut) {
+        return (Math.random() * 2 - 1) * Math.sqrt(2.0 / (fanIn + fanOut));
     }
 
     initNetwork() {
@@ -32,7 +46,7 @@ export class NeuralNetwork {
             let fanOut = this.L[l + 1];
             
             this.W.push(Array.from({ length: fanOut }, () =>
-                Array.from({ length: fanIn }, () => this.xavier(fanIn))
+                Array.from({ length: fanIn }, () => this.xavier(fanIn, fanOut))
             ));
             this.B.push(new Array(fanOut).fill(0));
             
@@ -138,7 +152,7 @@ export class NeuralNetwork {
         let beta2 = 0.999;
         let epsilon = 1e-8;
         
-        let adamLr = lr * 0.1; 
+        let adamLr = lr * this.lrScale; 
         
         for (let l = 0; l < numLayers - 1; l++) {
             let fanOut = this.L[l + 1];
@@ -157,7 +171,7 @@ export class NeuralNetwork {
                     if (w === 0) continue; 
                     
                     let gradW = gW[l][i][j] / m;
-                    gradW += 0.001 * w; 
+                    gradW += this.l1Lambda * w; 
 
                     this.mW[l][i][j] = beta1 * this.mW[l][i][j] + (1 - beta1) * gradW;
                     this.vW[l][i][j] = beta2 * this.vW[l][i][j] + (1 - beta2) * gradW * gradW;
@@ -169,8 +183,11 @@ export class NeuralNetwork {
             }
         }
 
-        // Systematic Pruning Elegant
-        if (t % 10 === 0) {
+        // Élagage structurel : on isole les neurones faibles en mettant à zéro leurs
+        // poids entrants/sortants. Comme la boucle Adam ci-dessus ignore les poids
+        // nuls (`if (w === 0) continue`), un neurone éliminé ne repousse jamais :
+        // c'est une sparsification définitive, pas du weight decay classique.
+        if (t % this.pruneInterval === 0) {
             for (let l = 1; l < numLayers - 1; l++) { 
                 let numNodes = this.L[l];
 
@@ -182,17 +199,20 @@ export class NeuralNetwork {
                 });
 
                 strengths.sort((a, b) => b.sum - a.sum);
-                let top3 = new Set(strengths.slice(0, 3).map(n => n.i));
+                let topK = new Set(
+                    strengths.slice(0, this.protectTopK).map(n => n.i)
+                );
 
                 for (let {i, sum} of strengths) {
-                    let isProtected = (sum > 0.3) || (top3.has(i) && sum >= 0.1); 
+                    let isProtected = (sum > this.protectStrength) 
+                                      || (topK.has(i) && sum >= this.protectStrength / 3); 
                     
                     if (!isProtected) {
                         for (let j = 0; j < this.L[l-1]; j++) {
-                            if (Math.abs(this.W[l-1][i][j]) < 0.05) this.W[l-1][i][j] = 0;
+                            if (Math.abs(this.W[l-1][i][j]) < this.pruneThreshold) this.W[l-1][i][j] = 0;
                         }
                         for (let k = 0; k < this.L[l+1]; k++) {
-                            if (Math.abs(this.W[l][k][i]) < 0.05) this.W[l][k][i] = 0;
+                            if (Math.abs(this.W[l][k][i]) < this.pruneThreshold) this.W[l][k][i] = 0;
                         }
                     }
                 }

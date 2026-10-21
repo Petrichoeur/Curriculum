@@ -4,19 +4,25 @@
 
 const Educational = {
     isInitialized: false,
+    needsConfig: false,   // lit son propre JSON, pas data.json
     currentCourseIndex: 0,
     currentSlideIndex: 0,
     courses: [], // Vide au départ, sera rempli par le JSON
 
     /**
-     * Initialisation : Charge le JSON puis construit l'interface
+     * Initialisation : Charge le JSON puis construit l'interface.
+     * Retourne une promesse pour que le routeur n'initialise pas deux fois
+     * si l'utilisateur clique vite sur l'onglet.
      */
-    init: async function(globalConfig) {
+    init: function () {
+        if (this.isInitialized) return this.initPromise;
+
         console.log("🎓 Module Pédagogie : Chargement...");
 
         const listContainer = document.getElementById('pedagogy-list');
-        if(!listContainer) return;
+        if (!listContainer) return;
 
+        this.initPromise = (async () => {
         // 1. Récupération des données depuis le fichier JSON
         try {
             const response = await fetch('config/educational.json');
@@ -60,6 +66,9 @@ const Educational = {
         }
 
         this.isInitialized = true;
+        })();
+
+        return this.initPromise;
     },
 
     /**

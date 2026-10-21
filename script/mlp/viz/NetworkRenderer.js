@@ -123,7 +123,12 @@ export class NetworkRenderer {
 
         let nL = this.nn.L.length;
         let mx = 55, my = 25;
-        let layerLabels = ['In', 'H1 (8)', 'H2 (6)', 'H3 (8)', 'Out'];
+        // Les libellés sont dérivés de l'architecture réelle : les écrire en
+        // dur désynchronisait l'affichage et les tooltips dès que [1,8,6,8,1]
+        // changeait.
+        let layerLabels = this.nn.L.map((size, l) =>
+            l === 0 ? 'In' : l === nL - 1 ? 'Out' : `H${l} (${size})`
+        );
 
         let lx = [];
         for (let l = 0; l < nL; l++) lx.push(mx + l * ((w - 2 * mx) / (nL - 1)));

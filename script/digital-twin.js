@@ -44,7 +44,7 @@ const DigitalTwin = {
                 <strong>Profil chargé :</strong> ${data.identity.name}<br>
                 <strong>Statut :</strong> En ligne et prêt à discuter.<br>
                 <em>(Posez-moi une question sur mon parcours, mes compétences ou mes hobbies...)</em>
-            `);
+            `, true);
 
             this.isInitialized = true;
         }
@@ -88,8 +88,6 @@ const DigitalTwin = {
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-
-        const cognitive = data.psychology.cognitive_style.split('.')[0];
 
         const bioEl = document.getElementById('bio-text');
         if (bioEl) {
@@ -189,21 +187,48 @@ const DigitalTwin = {
         };
 
         newBtn.addEventListener('click', handleSend);
-        newInput.addEventListener('keypress', (e) => {
+        newInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') handleSend();
         });
     },
 
-    addMessage: function (role, text) {
+    /**
+     * Échappe le HTML. Le texte issu du LLM est non fiable :
+     * sans ça, une injection de prompt peut injecter du balisage arbitraire.
+     */
+    escapeHtml: function (text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    /**
+     * @param {string} role
+     * @param {string} text
+     * @param {boolean} trusted  true uniquement pour le HTML statique écrit
+     *        dans ce fichier. Tout texte externe (LLM, utilisateur) doit
+     *        passer par l'échappement.
+     */
+    addMessage: function (role, text, trusted = false) {
         const chatWindow = document.getElementById('chat-window');
         if (!chatWindow) return;
 
         const div = document.createElement('div');
         div.className = `message ${role}-msg`;
-        let formattedText = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n/g, '<br>');
-        div.innerHTML = formattedText;
+
+        if (trusted) {
+            div.innerHTML = text;
+        } else {
+            // Échappement AVANT toute transformation : le Markdown ne doit
+            // jamais pouvoir réintroduire de balises.
+            div.innerHTML = this.escapeHtml(text)
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+
         chatWindow.appendChild(div);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     },
@@ -271,35 +296,28 @@ const DigitalTwin = {
 
         try {
             // 3. Préparation du Prompt
+            // Format OpenAI chat completions (OpenRouter) : le prompt système
+            // voyage dans son propre champ, `systemPrompt`, que le serveur
+            // reconstruit et place en tête des messages. Il n'est jamais
+            // fourni par le client directement dans `messages`.
             const systemPrompt = this.buildContext();
 
-            let contents = [
-                { role: "user", parts: [{ text: systemPrompt }] },
-                { role: "model", parts: [{ text: "Bien reçu. Je suis Florian Bobo. Je suis prêt." }] }
-            ];
+            const messages = this.history.slice(-10).map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'assistant',
+                content: msg.content
+            }));
 
-            this.history.slice(-10).forEach(msg => {
-                contents.push({
-                    role: msg.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.content }]
-                });
-            });
-
-            contents.push({ role: "user", parts: [{ text: userMessage }] });
+            messages.push({ role: 'user', content: userMessage });
 
             // 4. Appel API Réel
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: contents,
-                    generationConfig: {
-                        temperature: 0.8,
-                        maxOutputTokens: 500,
-                        thinkingConfig: {
-                            thinkingLevel: "MINIMAL"
-                        }
-                    }
+                    systemPrompt: systemPrompt,
+                    messages: messages,
+                    temperature: 0.8,
+                    maxTokens: 500
                 })
             });
 
@@ -318,13 +336,14 @@ const DigitalTwin = {
                     return;
                 }
 
-                if (data.candidates && data.candidates[0].content) {
-                    const botReply = data.candidates[0].content.parts
-                        .map(p => p.text)
-                        .filter(Boolean)
-                        .join('');
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const botReply = data.choices[0].message.content;
+                    if (!botReply) {
+                        this.addMessage('system', "Données corrompues (Réponse vide).");
+                        return;
+                    }
                     this.history.push({ role: "user", content: userMessage });
-                    this.history.push({ role: "model", content: botReply });
+                    this.history.push({ role: "assistant", content: botReply });
                     this.addMessage('bot', botReply);
                 } else {
                     this.addMessage('system', "Données corrompues (Réponse vide).");
