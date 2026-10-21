@@ -282,47 +282,10 @@
                                     </div>
                                 </div>
                                 <div class="viz-legend">
-                                    <span class="cpu-legend">● CPU (L3)</span>
-                                    <span class="gpu-legend">● GPU (SIMT)</span>
-                                    <span class="stall-legend">● Divergence</span>
+                                    <span class="cpu-legend">● CPU (Séquentiel)</span>
+                                    <span class="gpu-legend">● GPU (Parallèle)</span>
                                 </div>
                                 <canvas id="hardware-canvas" class="responsive-canvas hw-canvas"></canvas>
-                            </div>
-
-                            <!-- Concise Knowledge Tabs -->
-                            <div class="hw-panel-box hw-theory-box">
-                                <div class="hw-tabs-nav">
-                                    <button class="hw-tab-btn active" data-tab="why-gpu">IA &amp; GEMM</button>
-                                    <button class="hw-tab-btn" data-tab="memory-wall">Memory Wall</button>
-                                    <button class="hw-tab-btn" data-tab="divergence">if / else</button>
-                                    <button class="hw-tab-btn" data-tab="mlops">MLOps</button>
-                                </div>
-                                <div class="hw-tabs-content">
-                                    <div id="tab-why-gpu" class="hw-tab-pane active">
-                                        <ul class="theory-list">
-                                            <li><strong>90% de l'IA = <code>Y = W * X + b</code> :</strong> Des milliards de multiplications indépendantes.</li>
-                                            <li><strong>SIMT &amp; Tensor Cores :</strong> Le GPU calcule des milliers de poids en 1 seul cycle d'horloge.</li>
-                                        </ul>
-                                    </div>
-                                    <div id="tab-memory-wall" class="hw-tab-pane">
-                                        <ul class="theory-list">
-                                            <li><strong>RAM DDR5 (CPU) :</strong> ~80 Go/s (bus 64-bit), optimisé pour la faible latence.</li>
-                                            <li><strong>VRAM HBM3 (GPU) :</strong> ~3000 Go/s (bus 4096-bit), vital pour charger les poids d'un LLM.</li>
-                                        </ul>
-                                    </div>
-                                    <div id="tab-divergence" class="hw-tab-pane">
-                                        <ul class="theory-list">
-                                            <li><strong>Branch Predictor (CPU) :</strong> Anticipe les <code>if/else</code> à 96% sans perte de cycle.</li>
-                                            <li><strong>Warp Divergence (GPU) :</strong> Si un groupe de 32 threads diverge, les branches s'exécutent à tour de rôle (attente forcée).</li>
-                                        </ul>
-                                    </div>
-                                    <div id="tab-mlops" class="hw-tab-pane">
-                                        <ul class="theory-list">
-                                            <li><strong>Nvidia MIG :</strong> Découpe 1 GPU physique (H100) en 7 instances isolées.</li>
-                                            <li><strong>Run:AI &amp; Kubernetes :</strong> Ordonnancement dynamique pour saturer les GPU et réduire les coûts FinOps.</li>
-                                        </ul>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>

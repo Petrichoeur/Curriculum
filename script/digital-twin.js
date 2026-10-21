@@ -116,8 +116,8 @@ const DigitalTwin = {
         const bioEl = document.getElementById('bio-text');
         if (bioEl) {
             bioEl.innerHTML = `
-                <div class="bio-line">📍 ${id.location}</div>
-                <div class="bio-line">🎂 ${age} ans</div>
+                <div class="bio-line">Localisation : ${id.location}</div>
+                <div class="bio-line">Âge : ${age} ans</div>
             `;
             // J'ai retiré le style cognitif ici pour alléger, mais vous pouvez le remettre si souhaité
         }

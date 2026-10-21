@@ -43,9 +43,6 @@ class HardwareLabApp {
             timeMs: 0
         };
 
-        // Particules de flux de données
-        this.particles = [];
-
         // Canvas & Contexte
         this.canvas = null;
         this.ctx = null;
@@ -126,7 +123,6 @@ class HardwareLabApp {
                 viewBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.viewMode = btn.dataset.view;
-                this.particles = [];
                 this.draw();
             });
         });
@@ -175,20 +171,6 @@ class HardwareLabApp {
                 if (startBtn) startBtn.textContent = 'LANCER';
             });
         }
-
-        // Onglets Théoriques
-        const tabBtns = document.querySelectorAll('.hw-tab-btn');
-        const tabPanes = document.querySelectorAll('.hw-tab-pane');
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.dataset.tab;
-                tabBtns.forEach(b => b.classList.remove('active'));
-                tabPanes.forEach(p => p.classList.remove('active'));
-                btn.classList.add('active');
-                const pane = document.getElementById(`tab-${target}`);
-                if (pane) pane.classList.add('active');
-            });
-        });
     }
 
     setupEventListeners() {
@@ -217,7 +199,6 @@ class HardwareLabApp {
         this.gpu.smStates.fill(0);
         this.gpu.timeMs = 0;
 
-        this.particles = [];
         this.updateTelemetry();
         this.draw();
     }
@@ -248,7 +229,6 @@ class HardwareLabApp {
                     if (this.cpu.coreStates[c] === 0 && this.remainingCpuTasks > 0) {
                         this.remainingCpuTasks--;
                         this.cpu.coreStates[c] = 0.01;
-                        this.spawnCpuParticle(c);
                     } else if (this.cpu.coreStates[c] > 0) {
                         this.cpu.coreStates[c] += (1 / taskDuration) * speed;
                         if (this.cpu.coreStates[c] >= 1) {
@@ -272,9 +252,6 @@ class HardwareLabApp {
                 }
 
                 this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
-                if (Math.random() < 0.4 * speed) {
-                    this.spawnGpuParticle();
-                }
 
                 if (this.gpuProgressInWave >= 1) {
                     this.gpuProgressInWave = 0;
@@ -295,9 +272,6 @@ class HardwareLabApp {
                 }
 
                 this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
-                if (Math.random() < 0.15 * speed) {
-                    this.spawnGpuParticle();
-                }
 
                 if (this.gpuProgressInWave >= 1) {
                     this.gpuProgressInWave = 0;
@@ -312,7 +286,6 @@ class HardwareLabApp {
             }
         }
 
-        this.updateParticles();
         this.updateTelemetry();
 
         // Fin de simulation
@@ -320,64 +293,6 @@ class HardwareLabApp {
             this.isRunning = false;
             const startBtn = document.getElementById('hw-start-btn');
             if (startBtn) startBtn.textContent = 'RELANCER';
-        }
-    }
-
-    spawnCpuParticle(coreIndex) {
-        if (this.particles.length > 80) return;
-        const coords = this.getCpuCoordinates();
-        const startX = coords.ramX + (coords.ramW * (coreIndex + 0.5)) / 4;
-        const startY = coords.ramY + 10;
-        const targetX = coords.coreX + coreIndex * (coords.coreW + coords.coreGap) + coords.coreW * 0.5;
-        const targetY = coords.coreY + 20;
-
-        this.particles.push({
-            type: 'cpu',
-            x: startX,
-            y: startY,
-            targetX: targetX,
-            targetY: targetY,
-            progress: 0,
-            speed: 0.05 * this.clockMultiplier,
-            color: '#00f3ff'
-        });
-    }
-
-    spawnGpuParticle() {
-        if (this.particles.length > 100) return;
-        const coords = this.getGpuCoordinates();
-        const startX = coords.vramX + Math.random() * (coords.vramW - 20) + 10;
-        const startY = coords.vramY + 10;
-
-        const smIdx = Math.floor(Math.random() * 16);
-        const row = Math.floor(smIdx / coords.smCols);
-        const col = smIdx % coords.smCols;
-
-        const targetX = coords.gridX + coords.padding + col * (coords.smW + coords.padding) + coords.smW * 0.5;
-        const targetY = coords.gridY + 16 + coords.padding + row * (coords.smH + coords.padding) + coords.smH * 0.5;
-
-        this.particles.push({
-            type: 'gpu',
-            x: startX,
-            y: startY,
-            targetX: targetX,
-            targetY: targetY,
-            progress: 0,
-            speed: 0.07 * this.clockMultiplier,
-            color: this.workload === 'branch' ? '#ff9900' : '#bd00ff'
-        });
-    }
-
-    updateParticles() {
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const p = this.particles[i];
-            p.progress += p.speed;
-            p.x += (p.targetX - p.x) * 0.16;
-            p.y += (p.targetY - p.y) * 0.16;
-
-            if (p.progress >= 1) {
-                this.particles.splice(i, 1);
-            }
         }
     }
 
@@ -622,8 +537,6 @@ class HardwareLabApp {
         } else if (this.viewMode === 'gpu') {
             this.drawGpu(ctx);
         }
-
-        this.drawParticles(ctx);
     }
 
     drawCpu(ctx) {
@@ -651,6 +564,18 @@ class HardwareLabApp {
         ctx.font = 'bold 10px ' + fontUi;
         ctx.fillText('RAM SYSTÈME DDR5 · 64-BIT (80 Go/s)', c.ramX + 8, c.ramY + (isCompact ? 5 : 8));
 
+        // Bus RAM -> L3 (conduit calme)
+        const busRamY1 = c.ramY + c.ramH;
+        const busRamY2 = c.l3Y;
+        if (busRamY2 > busRamY1) {
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.25)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(c.ramX + c.ramW * 0.5, busRamY1);
+            ctx.lineTo(c.ramX + c.ramW * 0.5, busRamY2);
+            ctx.stroke();
+        }
+
         // 2. Cache L3 Partagé
         ctx.fillStyle = 'rgba(0, 243, 255, 0.08)';
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.6)';
@@ -668,24 +593,33 @@ class HardwareLabApp {
             ctx.fillText('Prédiction spéculative 96% sans pénalité', c.l3X + 8, c.l3Y + 24);
         }
 
+        // Bus L3 -> Cores (conduits dédiés par cœur)
+        const busL3Y1 = c.l3Y + c.l3H;
+        const busL3Y2 = c.coreY;
+        if (busL3Y2 > busL3Y1) {
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 4; i++) {
+                const cx = c.coreX + i * (c.coreW + c.coreGap) + c.coreW * 0.5;
+                ctx.beginPath();
+                ctx.moveTo(cx, busL3Y1);
+                ctx.lineTo(cx, busL3Y2);
+                ctx.stroke();
+            }
+        }
+
         // 3. Les 4 Cœurs CPU
         for (let i = 0; i < 4; i++) {
             const coreX = c.coreX + i * (c.coreW + c.coreGap);
             const isBusy = this.cpu.coreStates[i] > 0;
 
-            // Bloc Cœur
-            ctx.fillStyle = isBusy ? 'rgba(0, 243, 255, 0.18)' : 'rgba(15, 15, 25, 0.95)';
+            // Bloc Cœur (sans effet stroboscopique)
+            ctx.fillStyle = isBusy ? 'rgba(0, 243, 255, 0.12)' : 'rgba(15, 15, 25, 0.95)';
             ctx.strokeStyle = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.35)';
-            ctx.lineWidth = isBusy ? 1.5 : 1;
-
-            if (isBusy) {
-                ctx.shadowColor = '#00f3ff';
-                ctx.shadowBlur = 8;
-            }
+            ctx.lineWidth = 1;
 
             ctx.strokeRect(coreX, c.coreY, c.coreW, c.coreH);
             ctx.fillRect(coreX, c.coreY, c.coreW, c.coreH);
-            ctx.shadowBlur = 0;
 
             // Titre Cœur
             ctx.fillStyle = '#ffffff';
@@ -694,7 +628,7 @@ class HardwareLabApp {
             ctx.fillText(`CŒUR ${i}`, coreX + c.coreW * 0.5, c.coreY + 6);
 
             // ALU
-            ctx.fillStyle = isBusy ? '#00f3ff' : '#888';
+            ctx.fillStyle = isBusy ? '#00f3ff' : '#666';
             ctx.font = 'bold 12px ' + fontMono;
             ctx.fillText('ALU', coreX + c.coreW * 0.5, c.coreY + (isCompact ? 18 : 26));
 
@@ -711,8 +645,8 @@ class HardwareLabApp {
 
             // Statut texte
             ctx.font = 'bold 8px ' + fontMono;
-            ctx.fillStyle = isBusy ? '#00ff88' : '#777';
-            ctx.fillText(isBusy ? 'ACTIF' : 'IDLE', coreX + c.coreW * 0.5, c.coreY + c.coreH - (isCompact ? 8 : 10));
+            ctx.fillStyle = isBusy ? '#00f3ff' : '#555';
+            ctx.fillText(isBusy ? 'ACTIF' : 'ATTENTE', coreX + c.coreW * 0.5, c.coreY + c.coreH - (isCompact ? 8 : 10));
         }
     }
 
@@ -738,6 +672,17 @@ class HardwareLabApp {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 10px ' + fontUi;
         ctx.fillText('VRAM HBM3 · BUS 4096-BIT (3000 Go/s)', g.vramX + 8, g.vramY + (isCompact ? 5 : 8));
+
+        // Bus VRAM -> SMs (large bande passante 4096-bit)
+        const busVramY1 = g.vramY + g.vramH;
+        const busVramY2 = g.gridY;
+        if (busVramY2 > busVramY1) {
+            ctx.fillStyle = 'rgba(217, 70, 239, 0.12)';
+            ctx.fillRect(g.vramX + 10, busVramY1, g.vramW - 20, busVramY2 - busVramY1);
+            ctx.strokeStyle = 'rgba(217, 70, 239, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(g.vramX + 10, busVramY1, g.vramW - 20, busVramY2 - busVramY1);
+        }
 
         // 2. Matrice de Streaming Multiprocessors (SM)
         ctx.fillStyle = 'rgba(189, 0, 255, 0.05)';
@@ -791,18 +736,6 @@ class HardwareLabApp {
                 }
             }
         }
-    }
-
-    drawParticles(ctx) {
-        for (const p of this.particles) {
-            ctx.fillStyle = p.color;
-            ctx.shadowColor = p.color;
-            ctx.shadowBlur = 6;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.type === 'gpu' ? 2 : 3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        ctx.shadowBlur = 0;
     }
 
     /* ==========================================

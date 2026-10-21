@@ -17,7 +17,7 @@ const Educational = {
     init: function () {
         if (this.isInitialized) return this.initPromise;
 
-        console.log("🎓 Module Pédagogie : Chargement...");
+        console.log("[Pedagogie] Chargement...");
 
         const listContainer = document.getElementById('pedagogy-list');
         if (!listContainer) return;
@@ -28,7 +28,7 @@ const Educational = {
             const response = await fetch('config/educational.json');
             if (!response.ok) throw new Error("Impossible de charger les cours");
             this.courses = await response.json();
-            console.log("✅ Cours chargés :", this.courses.length);
+            console.log("[Pedagogie] Cours chargés :", this.courses.length);
         } catch (error) {
             console.error("Erreur critique Pédagogie:", error);
             listContainer.innerHTML = '<li style="color:red; padding:10px;">Erreur de chargement des données.</li>';
