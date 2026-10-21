@@ -49,6 +49,7 @@ class HardwareLabApp {
         this.tooltip = null;
         this.logicalWidth = 800;
         this.logicalHeight = 420;
+        this.animTime = 0;
     }
 
     init() {
@@ -360,6 +361,7 @@ class HardwareLabApp {
             const section = document.getElementById('hardware-lab');
             const isVisible = section && section.classList.contains('active');
             if (isVisible) {
+                this.animTime += (this.isRunning && !this.isPaused ? 0.04 * this.clockMultiplier : 0.015);
                 this.resizeCanvas();
                 this.update();
                 this.draw();
@@ -539,6 +541,20 @@ class HardwareLabApp {
         }
     }
 
+    drawRoundedRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
     drawCpu(ctx) {
         const c = this.getCpuCoordinates();
         const isCompact = this.isStacked();
@@ -553,7 +569,7 @@ class HardwareLabApp {
         ctx.fillStyle = '#00f3ff';
         ctx.fillText('CPU // FAIBLE LATENCE (4 CŒURS @ 4.5 GHz)', c.x, c.y);
 
-        // 1. RAM Système
+        // 1. RAM Système DDR5
         ctx.fillStyle = 'rgba(20, 20, 35, 0.85)';
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
         ctx.lineWidth = 1;
@@ -562,21 +578,9 @@ class HardwareLabApp {
 
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 10px ' + fontUi;
-        ctx.fillText('RAM SYSTÈME DDR5 · 64-BIT (80 Go/s)', c.ramX + 8, c.ramY + (isCompact ? 5 : 8));
+        ctx.fillText('RAM SYSTÈME DDR5 · BUS ÉTROIT 64-BIT (80 Go/s)', c.ramX + 8, c.ramY + (isCompact ? 5 : 8));
 
-        // Bus RAM -> L3 (conduit calme)
-        const busRamY1 = c.ramY + c.ramH;
-        const busRamY2 = c.l3Y;
-        if (busRamY2 > busRamY1) {
-            ctx.strokeStyle = 'rgba(0, 243, 255, 0.25)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(c.ramX + c.ramW * 0.5, busRamY1);
-            ctx.lineTo(c.ramX + c.ramW * 0.5, busRamY2);
-            ctx.stroke();
-        }
-
-        // 2. Cache L3 Partagé
+        // 2. Cache L3 Partagé & Prédiction de branche
         ctx.fillStyle = 'rgba(0, 243, 255, 0.08)';
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.6)';
         ctx.lineWidth = 1.5;
@@ -589,34 +593,80 @@ class HardwareLabApp {
 
         if (!isCompact) {
             ctx.font = '9px ' + fontUi;
-            ctx.fillStyle = '#c7d2fe';
-            ctx.fillText('Prédiction spéculative 96% sans pénalité', c.l3X + 8, c.l3Y + 24);
-        }
-
-        // Bus L3 -> Cores (conduits dédiés par cœur)
-        const busL3Y1 = c.l3Y + c.l3H;
-        const busL3Y2 = c.coreY;
-        if (busL3Y2 > busL3Y1) {
-            ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 4; i++) {
-                const cx = c.coreX + i * (c.coreW + c.coreGap) + c.coreW * 0.5;
-                ctx.beginPath();
-                ctx.moveTo(cx, busL3Y1);
-                ctx.lineTo(cx, busL3Y2);
-                ctx.stroke();
+            if (this.workload === 'branch') {
+                ctx.fillStyle = '#00ff88';
+                ctx.fillText('Branch Predictor 96% : Pipeline plein régime sans arrêt', c.l3X + 8, c.l3Y + 24);
+            } else {
+                ctx.fillStyle = '#c7d2fe';
+                ctx.fillText('Anticipation spéculative · Latence unitaire ~10ns', c.l3X + 8, c.l3Y + 24);
             }
         }
 
-        // 3. Les 4 Cœurs CPU
+        // 3. Les 4 Conduits Pipelines (RAM -> L3 -> Cores)
+        const busTopY = c.ramY + c.ramH;
+        const busCoreY = c.coreY;
+
+        for (let i = 0; i < 4; i++) {
+            const cx = c.coreX + i * (c.coreW + c.coreGap) + c.coreW * 0.5;
+
+            // Conduit de bus passif
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.15)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(cx, busTopY);
+            ctx.lineTo(cx, busCoreY);
+            ctx.stroke();
+
+            // Conduit central lumineux
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx, busTopY);
+            ctx.lineTo(cx, busCoreY);
+            ctx.stroke();
+
+            // Paquet d'instruction en transit le long du bus séquentiel
+            const prog = this.cpu.coreStates[i];
+            if (this.isRunning && prog > 0 && prog < 0.45) {
+                const t = prog / 0.45;
+                const packetY = busTopY + (busCoreY - busTopY) * t;
+
+                // Traînée de vitesse fluide
+                const tailLen = Math.min(18, (busCoreY - busTopY) * t);
+                const tailGrad = ctx.createLinearGradient(cx, packetY - tailLen, cx, packetY);
+                tailGrad.addColorStop(0, 'rgba(0, 243, 255, 0)');
+                tailGrad.addColorStop(1, 'rgba(0, 243, 255, 0.45)');
+                ctx.strokeStyle = tailGrad;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(cx, packetY - tailLen);
+                ctx.lineTo(cx, packetY);
+                ctx.stroke();
+
+                // Capsule de données (Instruction scalaire)
+                const pW = Math.min(22, c.coreW - 6);
+                const pH = 6;
+                ctx.fillStyle = '#00f3ff';
+                this.drawRoundedRect(ctx, cx - pW * 0.5, packetY - pH * 0.5, pW, pH, 2);
+                ctx.fill();
+
+                // Cœur blanc haute densité
+                ctx.fillStyle = '#ffffff';
+                this.drawRoundedRect(ctx, cx - pW * 0.25, packetY - 1, pW * 0.5, 2, 1);
+                ctx.fill();
+            }
+        }
+
+        // 4. Les 4 Cœurs CPU
         for (let i = 0; i < 4; i++) {
             const coreX = c.coreX + i * (c.coreW + c.coreGap);
-            const isBusy = this.cpu.coreStates[i] > 0;
+            const prog = this.cpu.coreStates[i];
+            const isBusy = prog > 0;
 
-            // Bloc Cœur (sans effet stroboscopique)
+            // Bloc Cœur
             ctx.fillStyle = isBusy ? 'rgba(0, 243, 255, 0.12)' : 'rgba(15, 15, 25, 0.95)';
             ctx.strokeStyle = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.35)';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = isBusy ? 1.5 : 1;
 
             ctx.strokeRect(coreX, c.coreY, c.coreW, c.coreH);
             ctx.fillRect(coreX, c.coreY, c.coreW, c.coreH);
@@ -627,13 +677,42 @@ class HardwareLabApp {
             ctx.textAlign = 'center';
             ctx.fillText(`CŒUR ${i}`, coreX + c.coreW * 0.5, c.coreY + 6);
 
-            // ALU
-            ctx.fillStyle = isBusy ? '#00f3ff' : '#666';
-            ctx.font = 'bold 12px ' + fontMono;
-            ctx.fillText('ALU', coreX + c.coreW * 0.5, c.coreY + (isCompact ? 18 : 26));
+            // Oscillogramme Fréquence Horloge ALU (4.5 GHz)
+            const aluW = Math.max(20, c.coreW - 10);
+            const aluH = isCompact ? 22 : 32;
+            const aluY = c.coreY + (isCompact ? 18 : 26);
+            const aluX = coreX + 5;
+
+            ctx.fillStyle = 'rgba(5, 5, 15, 0.85)';
+            ctx.fillRect(aluX, aluY, aluW, aluH);
+            ctx.strokeStyle = isBusy ? 'rgba(0, 243, 255, 0.6)' : 'rgba(0, 243, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(aluX, aluY, aluW, aluH);
+
+            if (isBusy && prog >= 0.4) {
+                // Onde oscillatoire continue (Fréquence de calcul haute vitesse)
+                ctx.beginPath();
+                ctx.strokeStyle = '#00f3ff';
+                ctx.lineWidth = 1.5;
+                const midAluY = aluY + aluH * 0.5;
+                const amp = aluH * 0.32;
+                for (let px = aluX + 2; px <= aluX + aluW - 2; px += 2) {
+                    const py = midAluY + Math.sin((px - aluX) * 0.4 + this.animTime * 22) * amp;
+                    if (px === aluX + 2) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 8px ' + fontMono;
+                ctx.fillText('4.5 GHz', coreX + c.coreW * 0.5, aluY + aluH - 6);
+            } else {
+                ctx.fillStyle = '#666';
+                ctx.font = 'bold 10px ' + fontMono;
+                ctx.fillText('ALU', coreX + c.coreW * 0.5, aluY + aluH * 0.5 + 3);
+            }
 
             // Barre de progression dans le cœur
-            const prog = this.cpu.coreStates[i];
             const pBarH = isCompact ? 4 : 5;
             const pBarY = c.coreY + c.coreH - (isCompact ? 14 : 20);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
@@ -646,7 +725,7 @@ class HardwareLabApp {
             // Statut texte
             ctx.font = 'bold 8px ' + fontMono;
             ctx.fillStyle = isBusy ? '#00f3ff' : '#555';
-            ctx.fillText(isBusy ? 'ACTIF' : 'ATTENTE', coreX + c.coreW * 0.5, c.coreY + c.coreH - (isCompact ? 8 : 10));
+            ctx.fillText(isBusy ? '4.5 GHz SÉQ' : 'ATTENTE', coreX + c.coreW * 0.5, c.coreY + c.coreH - (isCompact ? 8 : 10));
         }
     }
 
@@ -654,6 +733,7 @@ class HardwareLabApp {
         const g = this.getGpuCoordinates();
         const isCompact = this.isStacked();
         const fontUi = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const fontMono = 'ui-monospace, "SF Mono", Consolas, monospace';
 
         // En-tête GPU
         ctx.textAlign = 'left';
@@ -673,18 +753,30 @@ class HardwareLabApp {
         ctx.font = 'bold 10px ' + fontUi;
         ctx.fillText('VRAM HBM3 · BUS 4096-BIT (3000 Go/s)', g.vramX + 8, g.vramY + (isCompact ? 5 : 8));
 
-        // Bus VRAM -> SMs (large bande passante 4096-bit)
+        // 2. Bus Ultra-Large VRAM -> SMs (4096-bit)
         const busVramY1 = g.vramY + g.vramH;
         const busVramY2 = g.gridY;
         if (busVramY2 > busVramY1) {
-            ctx.fillStyle = 'rgba(217, 70, 239, 0.12)';
-            ctx.fillRect(g.vramX + 10, busVramY1, g.vramW - 20, busVramY2 - busVramY1);
+            ctx.fillStyle = 'rgba(217, 70, 239, 0.1)';
+            ctx.fillRect(g.vramX + 6, busVramY1, g.vramW - 12, busVramY2 - busVramY1);
             ctx.strokeStyle = 'rgba(217, 70, 239, 0.3)';
             ctx.lineWidth = 1;
-            ctx.strokeRect(g.vramX + 10, busVramY1, g.vramW - 20, busVramY2 - busVramY1);
+            ctx.strokeRect(g.vramX + 6, busVramY1, g.vramW - 12, busVramY2 - busVramY1);
+
+            // 16 Traces de données parallèles dans le bus large
+            const numTraces = isCompact ? 8 : 16;
+            for (let t = 0; t < numTraces; t++) {
+                const tx = g.vramX + 10 + (t + 0.5) * ((g.vramW - 20) / numTraces);
+                ctx.strokeStyle = 'rgba(217, 70, 239, 0.25)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(tx, busVramY1);
+                ctx.lineTo(tx, busVramY2);
+                ctx.stroke();
+            }
         }
 
-        // 2. Matrice de Streaming Multiprocessors (SM)
+        // 3. Matrice de Streaming Multiprocessors (SM)
         ctx.fillStyle = 'rgba(189, 0, 255, 0.05)';
         ctx.strokeStyle = 'rgba(217, 70, 239, 0.35)';
         ctx.lineWidth = 1;
@@ -693,47 +785,143 @@ class HardwareLabApp {
 
         ctx.fillStyle = '#e879f9';
         ctx.font = 'bold 9px ' + fontUi;
-        ctx.fillText('16 STREAMING MULTIPROCESSORS (SM)', g.gridX + 8, g.gridY + 4);
+        ctx.textAlign = 'left';
+        ctx.fillText('16 STREAMING MULTIPROCESSORS (256 CŒURS SIMT)', g.gridX + 8, g.gridY + 4);
 
-        // Rendu des SMs
+        // Progression de vague SIMT
+        const waveProg = this.gpuProgressInWave || 0;
+        const waveY = g.gridY + 16 + (g.gridH - 16) * waveProg;
+
+        // Rendu des 16 SMs
         for (let r = 0; r < g.smRows; r++) {
             for (let col = 0; col < g.smCols; col++) {
                 const smIndex = r * g.smCols + col;
                 const smX = g.gridX + g.padding + col * (g.smW + g.padding);
                 const smY = g.gridY + 16 + r * (g.smH + g.padding);
 
-                const state = this.gpu.smStates[smIndex]; // 0: idle, 1: busy, 2: stalled
+                if (this.workload === 'branch') {
+                    // MODE BRANCHE : WARP DIVERGENCE (Sérialisation flagrante)
+                    const isEven = (smIndex % 2 === 0);
+                    const isFirstBranch = waveProg < 0.5;
+                    const isActive = (isFirstBranch && isEven) || (!isFirstBranch && !isEven);
 
-                let strokeColor = 'rgba(189, 0, 255, 0.25)';
-                let fillColor = 'rgba(20, 10, 30, 0.7)';
+                    if (this.isRunning && this.gpu.completed < this.batchSize) {
+                        if (isActive) {
+                            ctx.strokeStyle = '#00ff88';
+                            ctx.fillStyle = 'rgba(0, 255, 136, 0.18)';
+                        } else {
+                            // SM Stalled : Orange divergence avec hachures
+                            ctx.strokeStyle = '#ffaa00';
+                            ctx.fillStyle = 'rgba(255, 170, 0, 0.12)';
+                        }
+                    } else {
+                        ctx.strokeStyle = 'rgba(189, 0, 255, 0.25)';
+                        ctx.fillStyle = 'rgba(20, 10, 30, 0.7)';
+                    }
 
-                if (state === 1) {
-                    strokeColor = '#00ff88';
-                    fillColor = 'rgba(0, 255, 136, 0.15)';
-                } else if (state === 2) {
-                    strokeColor = '#ffaa00';
-                    fillColor = 'rgba(255, 170, 0, 0.2)';
-                }
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(smX, smY, g.smW, g.smH);
+                    ctx.fillRect(smX, smY, g.smW, g.smH);
 
-                ctx.strokeStyle = strokeColor;
-                ctx.fillStyle = fillColor;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(smX, smY, g.smW, g.smH);
-                ctx.fillRect(smX, smY, g.smW, g.smH);
+                    // Si bloqué par divergence : hachures diagonales d'attente
+                    if (this.isRunning && this.gpu.completed < this.batchSize && !isActive) {
+                        ctx.strokeStyle = 'rgba(255, 170, 0, 0.25)';
+                        ctx.lineWidth = 1;
+                        for (let lx = -g.smH; lx < g.smW; lx += 8) {
+                            ctx.beginPath();
+                            ctx.moveTo(Math.max(smX, smX + lx), smY);
+                            ctx.lineTo(Math.min(smX + g.smW, smX + lx + g.smH), smY + g.smH);
+                            ctx.stroke();
+                        }
+                    }
 
-                // Dessin des micro-cœurs
-                const microW = Math.max(2, (g.smW - 8) / 4);
-                const microH = Math.max(2, (g.smH - 8) / 4);
+                    // Micro-cœurs
+                    const microW = Math.max(2, (g.smW - 8) / 4);
+                    const microH = Math.max(2, (g.smH - 8) / 4);
+                    for (let mr = 0; mr < 4; mr++) {
+                        for (let mc = 0; mc < 4; mc++) {
+                            const mX = smX + 1 + mc * (microW + 1);
+                            const mY = smY + 1 + mr * (microH + 1);
+                            ctx.fillStyle = (this.isRunning && isActive) ? '#00ff88' : ((this.isRunning && !isActive) ? '#ffaa00' : 'rgba(189, 0, 255, 0.25)');
+                            ctx.fillRect(mX, mY, microW, microH);
+                        }
+                    }
+                } else {
+                    // MODE PARALLÈLE MASSIF : GEMM & PIXEL (Front d'onde SIMT unifié)
+                    let strokeColor = 'rgba(189, 0, 255, 0.25)';
+                    let fillColor = 'rgba(20, 10, 30, 0.7)';
+                    let isWaveInside = false;
 
-                for (let mr = 0; mr < 4; mr++) {
-                    for (let mc = 0; mc < 4; mc++) {
-                        const mX = smX + 1 + mc * (microW + 1);
-                        const mY = smY + 1 + mr * (microH + 1);
+                    if (this.isRunning && this.gpu.completed < this.batchSize) {
+                        if (waveY >= smY && waveY <= smY + g.smH + 18) {
+                            // En plein calcul par le front d'onde
+                            isWaveInside = true;
+                            strokeColor = '#00ff88';
+                            fillColor = 'rgba(0, 255, 136, 0.25)';
+                        } else if (waveY > smY + g.smH + 18) {
+                            // Vague passée : actif prêt
+                            strokeColor = 'rgba(217, 70, 239, 0.5)';
+                            fillColor = 'rgba(189, 0, 255, 0.12)';
+                        } else {
+                            strokeColor = 'rgba(189, 0, 255, 0.25)';
+                            fillColor = 'rgba(20, 10, 30, 0.7)';
+                        }
+                    }
 
-                        ctx.fillStyle = (state === 1) ? '#00ff88' : (state === 2 ? '#ffaa00' : 'rgba(189, 0, 255, 0.3)');
-                        ctx.fillRect(mX, mY, microW, microH);
+                    ctx.strokeStyle = strokeColor;
+                    ctx.fillStyle = fillColor;
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(smX, smY, g.smW, g.smH);
+                    ctx.fillRect(smX, smY, g.smW, g.smH);
+
+                    // Dessin des 16 micro-cœurs
+                    const microW = Math.max(2, (g.smW - 8) / 4);
+                    const microH = Math.max(2, (g.smH - 8) / 4);
+                    for (let mr = 0; mr < 4; mr++) {
+                        for (let mc = 0; mc < 4; mc++) {
+                            const mX = smX + 1 + mc * (microW + 1);
+                            const mY = smY + 1 + mr * (microH + 1);
+                            ctx.fillStyle = isWaveInside ? '#00ff88' : (strokeColor === 'rgba(217, 70, 239, 0.5)' ? '#e879f9' : 'rgba(189, 0, 255, 0.3)');
+                            ctx.fillRect(mX, mY, microW, microH);
+                        }
                     }
                 }
+            }
+        }
+
+        // 4. Le Rayon du Front d'Onde SIMT (Balayage unifié des 256 threads)
+        if (this.isRunning && this.gpu.completed < this.batchSize) {
+            if (this.workload === 'gemm' || this.workload === 'pixel') {
+                // Faisceau lumineux horizontal traversant toute la largeur du GPU
+                const beamH = isCompact ? 16 : 24;
+                const waveGrad = ctx.createLinearGradient(0, waveY - beamH * 0.5, 0, waveY + beamH * 0.5);
+                waveGrad.addColorStop(0, 'rgba(0, 255, 136, 0)');
+                waveGrad.addColorStop(0.5, 'rgba(0, 255, 136, 0.45)');
+                waveGrad.addColorStop(1, 'rgba(0, 255, 136, 0)');
+
+                ctx.fillStyle = waveGrad;
+                ctx.fillRect(g.gridX + 2, waveY - beamH * 0.5, g.gridW - 4, beamH);
+
+                // Ligne laser de front d'onde
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(g.gridX + 4, waveY);
+                ctx.lineTo(g.gridX + g.gridW - 4, waveY);
+                ctx.stroke();
+
+                // Indicateur Front d'onde
+                ctx.fillStyle = '#00ff88';
+                ctx.font = 'bold 8px ' + fontMono;
+                ctx.textAlign = 'right';
+                ctx.fillText('◄ FRONT D\'ONDE SIMT : 256 THREADS ►', g.gridX + g.gridW - 6, Math.max(g.gridY + 14, waveY - 4));
+            } else {
+                // Indicateur Warp Divergence
+                ctx.fillStyle = '#ffaa00';
+                ctx.font = 'bold 8px ' + fontMono;
+                ctx.textAlign = 'right';
+                const branchActive = waveProg < 0.5 ? 'BRANCHE IF' : 'BRANCHE ELSE';
+                ctx.fillText(`⚠ WARP DIVERGENCE : ${branchActive} (50% STALL)`, g.gridX + g.gridW - 6, g.gridY + 12);
             }
         }
     }
