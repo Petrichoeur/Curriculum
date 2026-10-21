@@ -190,64 +190,40 @@
                 <div class="glass-panel hardware-panel">
                     <div class="hw-header">
                         <h1>Hardware Lab <span class="version-tag">CPU vs GPU</span></h1>
-                        <p class="cmd-text">Visualiser comment l'information circule : pourquoi l'IA s'exécute sur GPU (haut débit SIMT) plutôt que sur CPU (faible latence séquentielle).</p>
+                        <p class="cmd-text">Latence séquentielle (CPU) vs Parallélisme massif SIMT (GPU).</p>
                     </div>
 
-                    <!-- Analogie clé d'introduction -->
-                    <div class="hw-analogy-container">
-                        <div class="hw-analogy-box cpu-side">
-                            <div class="analogy-badge cpu-badge">CPU // Le Sprinter</div>
-                            <p class="analogy-text"><strong>Quelques gros cœurs ultra-rapides (4.5 GHz).</strong> Spécialisé pour traiter une suite complexe de calculs l'un après l'autre à vitesse maximale. Maître des décisions conditionnelles (if / else).</p>
-                        </div>
-                        <div class="hw-analogy-vs">VS</div>
-                        <div class="hw-analogy-box gpu-side">
-                            <div class="analogy-badge gpu-badge">GPU // L'Armée Synchronisée</div>
-                            <p class="analogy-text"><strong>Des milliers de micro-cœurs parallèles (1.8 GHz).</strong> Spécialisé pour appliquer la même opération mathématique sur une marée de données indépendantes (matrices, tenseurs d'IA, pixels).</p>
-                        </div>
+                    <div class="hw-summary-pills">
+                        <div class="hw-pill cpu-pill"><strong>CPU (Sprinter)</strong> : 4 cœurs @ 4.5 GHz · Logique &amp; if/else</div>
+                        <div class="hw-pill gpu-pill"><strong>GPU (Armée)</strong> : 256 cœurs @ 1.8 GHz · Matrices IA &amp; Pixels</div>
                     </div>
 
                     <div class="hw-layout">
                         <!-- Left Panel: Controls & Telemetry -->
                         <div class="hw-left-panel">
-                            <!-- Workload Selector -->
                             <div class="hw-panel-box">
-                                <h3>1. Type de charge de calcul</h3>
+                                <h3>Charge de calcul</h3>
                                 <div class="hw-workload-selector">
                                     <button class="hw-workload-btn active" data-workload="gemm">
-                                        <div class="btn-top-row">
-                                            <span class="btn-title">Calcul Matriciel (IA / GEMM)</span>
-                                            <span class="badge-favor tag-gpu">Atout GPU</span>
-                                        </div>
-                                        <span class="btn-sub">Multiplications de matrices géantes (LLM, Transformers)</span>
+                                        <span class="btn-title">Matrices IA (GEMM)</span>
+                                        <span class="badge-favor tag-gpu">Atout GPU</span>
                                     </button>
                                     <button class="hw-workload-btn" data-workload="pixel">
-                                        <div class="btn-top-row">
-                                            <span class="btn-title">Traitement d'Image (2D Pixels)</span>
-                                            <span class="badge-favor tag-gpu">Idéal GPU</span>
-                                        </div>
-                                        <span class="btn-sub">Filtrage indépendant de milliers de pixels à la fois</span>
+                                        <span class="btn-title">Pixels 2D (Shaders)</span>
+                                        <span class="badge-favor tag-gpu">Atout GPU</span>
                                     </button>
                                     <button class="hw-workload-btn" data-workload="branch">
-                                        <div class="btn-top-row">
-                                            <span class="btn-title">Logique & Branches (if/else)</span>
-                                            <span class="badge-favor tag-cpu">Atout CPU</span>
-                                        </div>
-                                        <span class="btn-sub">Conditions imprévisibles et arborescence de décision</span>
+                                        <span class="btn-title">Logique if / else</span>
+                                        <span class="badge-favor tag-cpu">Atout CPU</span>
                                     </button>
                                 </div>
-
-                                <!-- Guide Pédagogique Interactif -->
                                 <div class="hw-guide-banner" id="hw-workload-guide">
-                                    <span class="guide-label">À observer :</span> Le GPU traite 256 calculs en un seul cycle grâce à son architecture SIMT, là où le CPU doit les exécuter par paquets de 4.
+                                    256 calculs simultanés sur GPU contre 4 par 4 sur CPU.
                                 </div>
-                            </div>
 
-                            <!-- Parameters & Action -->
-                            <div class="hw-panel-box">
-                                <h3>2. Paramètres & Lancement</h3>
                                 <div class="hw-params-grid">
                                     <div class="input-group">
-                                        <label for="hw-batch-size">Volume : <span id="hw-batch-val" class="highlight-val">256</span> tâches</label>
+                                        <label for="hw-batch-size">Tâches : <span id="hw-batch-val" class="highlight-val">256</span></label>
                                         <input type="range" id="hw-batch-size" min="64" max="512" step="64" value="256">
                                     </div>
                                     <div class="input-group">
@@ -256,51 +232,38 @@
                                     </div>
                                 </div>
                                 <div class="hw-actions">
-                                    <button id="hw-start-btn" class="cyber-btn hw-run-btn">LANCER LE CALCUL</button>
-                                    <button id="hw-reset-btn" class="cyber-btn-small hw-reset-btn">RÉINITIALISER</button>
+                                    <button id="hw-start-btn" class="cyber-btn hw-run-btn">LANCER</button>
+                                    <button id="hw-reset-btn" class="cyber-btn-small hw-reset-btn">RESET</button>
                                 </div>
                             </div>
 
                             <!-- Live Telemetry Comparison -->
                             <div class="hw-panel-box hw-telemetry-box">
-                                <h3>3. Télémétrie en temps réel</h3>
-                                
+                                <h3>Télémétrie</h3>
                                 <div class="hw-score-cards">
-                                    <!-- CPU Card -->
                                     <div class="hw-score-card cpu-border">
                                         <div class="score-header">
-                                            <span class="score-title cpu-color">CPU (4 cœurs @ 4.5 GHz)</span>
-                                            <span id="hw-cpu-progress-val" class="score-percent">0%</span>
+                                            <span class="score-title cpu-color">CPU (4 cœurs)</span>
+                                            <span class="score-meta"><span id="hw-cpu-time">0.00s</span> · <strong id="hw-cpu-progress-val">0%</strong></span>
                                         </div>
                                         <div class="hw-progress-bar">
                                             <div id="hw-cpu-progress-fill" class="hw-progress-fill cpu-fill" style="width: 0%;"></div>
                                         </div>
-                                        <div class="score-stats">
-                                            <span>Temps : <strong id="hw-cpu-time">—</strong></span>
-                                            <span>File : <strong id="hw-cpu-queue">256</strong></span>
-                                        </div>
                                     </div>
 
-                                    <!-- GPU Card -->
                                     <div class="hw-score-card gpu-border">
                                         <div class="score-header">
-                                            <span class="score-title gpu-color">GPU (256 cœurs @ 1.8 GHz)</span>
-                                            <span id="hw-gpu-progress-val" class="score-percent">0%</span>
+                                            <span class="score-title gpu-color">GPU (256 cœurs)</span>
+                                            <span class="score-meta"><span id="hw-gpu-time">0.00s</span> · <strong id="hw-gpu-progress-val">0%</strong></span>
                                         </div>
                                         <div class="hw-progress-bar">
                                             <div id="hw-gpu-progress-fill" class="hw-progress-fill gpu-fill" style="width: 0%;"></div>
                                         </div>
-                                        <div class="score-stats">
-                                            <span>Temps : <strong id="hw-gpu-time">—</strong></span>
-                                            <span>Actifs : <strong id="hw-gpu-active">0 / 256</strong></span>
-                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Dynamic Verdict Banner -->
                                 <div class="hw-verdict-banner" id="hw-verdict-box">
-                                    <div class="verdict-label">Verdict architectural :</div>
-                                    <div id="hw-verdict" class="verdict-text">Sélectionnez une charge et lancez le calcul.</div>
+                                    <div id="hw-verdict" class="verdict-text">Prêt à lancer.</div>
                                 </div>
                             </div>
                         </div>
@@ -310,86 +273,54 @@
                             <div id="hw-tooltip" class="mlp-tooltip"></div>
                             
                             <div class="hw-panel-box viz-box">
-                                <div class="viz-header">
-                                    <div class="viz-controls-row">
-                                        <h3>Simulation du Flux de Données</h3>
-                                        <div class="hw-view-modes">
-                                            <button class="hw-view-btn active" data-view="split">Comparatif</button>
-                                            <button class="hw-view-btn" data-view="cpu">Focus CPU</button>
-                                            <button class="hw-view-btn" data-view="gpu">Focus GPU</button>
-                                        </div>
+                                <div class="viz-controls-row">
+                                    <h3>Architecture &amp; Flux</h3>
+                                    <div class="hw-view-modes">
+                                        <button class="hw-view-btn active" data-view="split">Comparatif</button>
+                                        <button class="hw-view-btn" data-view="cpu">CPU</button>
+                                        <button class="hw-view-btn" data-view="gpu">GPU</button>
                                     </div>
-                                    <div class="viz-legend">
-                                        <span class="legend-item cpu-legend">● CPU (Séquentiel / L3)</span>
-                                        <span class="legend-item gpu-legend">● GPU (SIMT / VRAM)</span>
-                                        <span class="legend-item stall-legend">● Divergence (Attente)</span>
-                                    </div>
+                                </div>
+                                <div class="viz-legend">
+                                    <span class="cpu-legend">● CPU (L3)</span>
+                                    <span class="gpu-legend">● GPU (SIMT)</span>
+                                    <span class="stall-legend">● Divergence</span>
                                 </div>
                                 <canvas id="hardware-canvas" class="responsive-canvas hw-canvas"></canvas>
                             </div>
 
-                            <!-- Educational Knowledge Tabs -->
+                            <!-- Concise Knowledge Tabs -->
                             <div class="hw-panel-box hw-theory-box">
                                 <div class="hw-tabs-nav">
-                                    <button class="hw-tab-btn active" data-tab="why-gpu">Pourquoi l'IA ?</button>
-                                    <button class="hw-tab-btn" data-tab="memory-wall">Bande Passante</button>
-                                    <button class="hw-tab-btn" data-tab="divergence">Piège if/else</button>
-                                    <button class="hw-tab-btn" data-tab="mlops">FinOps & MLOps</button>
+                                    <button class="hw-tab-btn active" data-tab="why-gpu">IA &amp; GEMM</button>
+                                    <button class="hw-tab-btn" data-tab="memory-wall">Memory Wall</button>
+                                    <button class="hw-tab-btn" data-tab="divergence">if / else</button>
+                                    <button class="hw-tab-btn" data-tab="mlops">MLOps</button>
                                 </div>
                                 <div class="hw-tabs-content">
-                                    <!-- TAB 1 -->
                                     <div id="tab-why-gpu" class="hw-tab-pane active">
-                                        <div class="theory-callout">
-                                            <strong>L'essentiel :</strong> Un réseau de neurones repose à 90% sur une seule formule : <code>Y = W * X + b</code>. Ce sont des milliards d'additions et de multiplications simples pouvant être résolues toutes en même temps.
-                                        </div>
-                                        <div class="theory-body">
-                                            <ul class="theory-list">
-                                                <li><strong>Architecture SIMT (Single Instruction, Multiple Threads) :</strong> Une seule instruction est envoyée à des centaines de cœurs qui l'appliquent simultanément à des millions de données.</li>
-                                                <li><strong>Tensor Cores :</strong> Des unités matérielles spécialisées conçues exclusivement pour multiplier des matrices 4x4 ou 16x16 en précision réduite (FP16, BF16, FP8) en un seul battement d'horloge.</li>
-                                                <li><strong>Comparaison pratique :</strong> Ce qu'un CPU haut de gamme traite en 10 minutes avec 16 threads, un GPU moderne (ex. H100) l'expédie en 2 secondes grâce à ses 16 000 cœurs CUDA.</li>
-                                            </ul>
-                                        </div>
+                                        <ul class="theory-list">
+                                            <li><strong>90% de l'IA = <code>Y = W * X + b</code> :</strong> Des milliards de multiplications indépendantes.</li>
+                                            <li><strong>SIMT &amp; Tensor Cores :</strong> Le GPU calcule des milliers de poids en 1 seul cycle d'horloge.</li>
+                                        </ul>
                                     </div>
-
-                                    <!-- TAB 2 -->
                                     <div id="tab-memory-wall" class="hw-tab-pane">
-                                        <div class="theory-callout">
-                                            <strong>L'essentiel :</strong> Des cœurs ultra-rapides ne servent à rien s'ils passent leur temps à attendre les données. C'est le mur de la mémoire (Memory Wall).
-                                        </div>
-                                        <div class="theory-body">
-                                            <ul class="theory-list">
-                                                <li><strong>RAM DDR5 classique :</strong> Bus mémoire étroit (64 ou 128-bit) délivrant environ <strong>60 à 90 Go/s</strong> de bande passante.</li>
-                                                <li><strong>VRAM HBM3 / GDDR6X :</strong> Puces mémoire empilées en 3D avec un bus de <strong>4096-bit</strong> délivrant plus de <strong>3000 Go/s (3 To/s)</strong>.</li>
-                                                <li><strong>Impact en LLM (Inférence) :</strong> Générer un token nécessite de charger tous les milliards de poids du modèle depuis la mémoire vers les cœurs. Le débit mémoire dicte la vitesse de réponse de l'IA (Memory-Bound).</li>
-                                            </ul>
-                                        </div>
+                                        <ul class="theory-list">
+                                            <li><strong>RAM DDR5 (CPU) :</strong> ~80 Go/s (bus 64-bit), optimisé pour la faible latence.</li>
+                                            <li><strong>VRAM HBM3 (GPU) :</strong> ~3000 Go/s (bus 4096-bit), vital pour charger les poids d'un LLM.</li>
+                                        </ul>
                                     </div>
-
-                                    <!-- TAB 3 -->
                                     <div id="tab-divergence" class="hw-tab-pane">
-                                        <div class="theory-callout">
-                                            <strong>L'essentiel :</strong> Le GPU n'est pas supérieur dans tous les domaines. Sur un code avec beaucoup de conditions <code>if / else</code> imprévisibles, le CPU écrase le GPU.
-                                        </div>
-                                        <div class="theory-body">
-                                            <ul class="theory-list">
-                                                <li><strong>Le piège de la Warp Divergence :</strong> Sur GPU, un groupe de 32 threads (un Warp) doit obligatoirement exécuter la même instruction. Si 16 threads prennent le <code>if</code> et 16 prennent le <code>else</code>, le GPU sérialise : il exécute la branche 1 pendant que l'autre attend, puis inversement.</li>
-                                                <li><strong>La force du CPU (Branch Predictor) :</strong> Le CPU dispose d'unités de prédiction de branchement atteignant plus de 95% de réussite, avec exécution spéculative et pipelines profonds sans aucune pénalité.</li>
-                                            </ul>
-                                        </div>
+                                        <ul class="theory-list">
+                                            <li><strong>Branch Predictor (CPU) :</strong> Anticipe les <code>if/else</code> à 96% sans perte de cycle.</li>
+                                            <li><strong>Warp Divergence (GPU) :</strong> Si un groupe de 32 threads diverge, les branches s'exécutent à tour de rôle (attente forcée).</li>
+                                        </ul>
                                     </div>
-
-                                    <!-- TAB 4 -->
                                     <div id="tab-mlops" class="hw-tab-pane">
-                                        <div class="theory-callout">
-                                            <strong>L'essentiel :</strong> Un cluster GPU coûte une fortune (30k€+ par GPU H100). En MLOps, laisser un GPU sous-utilisé à 20% est une catastrophe économique.
-                                        </div>
-                                        <div class="theory-body">
-                                            <ul class="theory-list">
-                                                <li><strong>MIG (Multi-Instance GPU) :</strong> Partitionnement matériel d'un gros GPU en 7 instances physiques isolées (mémoire, cœurs, bande passante) pour servir plusieurs modèles simultanément.</li>
-                                                <li><strong>Ordonnancement Kubernetes & Run:AI :</strong> Gestion dynamique des files d'attente, préemption des jobs d'entraînement au profit des requêtes d'inférence en direct.</li>
-                                                <li><strong>FinOps & Green IT :</strong> Mesure du coût par inférence et arrêt automatique (scale-to-zero) des instances GPU inactives.</li>
-                                            </ul>
-                                        </div>
+                                        <ul class="theory-list">
+                                            <li><strong>Nvidia MIG :</strong> Découpe 1 GPU physique (H100) en 7 instances isolées.</li>
+                                            <li><strong>Run:AI &amp; Kubernetes :</strong> Ordonnancement dynamique pour saturer les GPU et réduire les coûts FinOps.</li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>

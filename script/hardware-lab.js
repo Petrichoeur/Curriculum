@@ -75,15 +75,15 @@ class HardwareLabApp {
     resizeCanvas() {
         if (!this.canvas) return;
         const rect = this.canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        const w = rect.width || 800;
-        const h = rect.height || 420;
+        const targetW = Math.round(rect.width) || 320;
+        const targetH = Math.round(rect.height) || 320;
 
-        this.canvas.width = w * dpr;
-        this.canvas.height = h * dpr;
-        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        this.logicalWidth = w;
-        this.logicalHeight = h;
+        if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
+            this.canvas.width = targetW;
+            this.canvas.height = targetH;
+        }
+        this.logicalWidth = targetW;
+        this.logicalHeight = targetH;
     }
 
     setupUI() {
@@ -92,9 +92,9 @@ class HardwareLabApp {
         const guideBanner = document.getElementById('hw-workload-guide');
 
         const guides = {
-            gemm: "<span class='guide-label'>À observer :</span> Le GPU traite 256 calculs en un seul cycle grâce à son architecture SIMT, là où le CPU doit les exécuter par paquets de 4.",
-            pixel: "<span class='guide-label'>À observer :</span> Chaque pixel est filtré indépendamment et en parallèle sur les cœurs GPU (idéal pour shaders / vision).",
-            branch: "<span class='guide-label'>À observer :</span> Le CPU prend l'avantage ! Son Branch Predictor anticipe le résultat, alors que le GPU subit la Warp Divergence (attente obligatoire en orange)."
+            gemm: "256 calculs simultanés sur GPU contre 4 par 4 sur CPU.",
+            pixel: "Chaque pixel est filtré indépendamment en parallèle sur GPU.",
+            branch: "Le Branch Predictor CPU gagne ; le GPU bloque (Warp Divergence)."
         };
 
         workloadBtns.forEach(btn => {
@@ -103,7 +103,7 @@ class HardwareLabApp {
                 btn.classList.add('active');
                 this.workload = btn.dataset.workload;
                 if (guideBanner && guides[this.workload]) {
-                    guideBanner.innerHTML = guides[this.workload];
+                    guideBanner.textContent = guides[this.workload];
                 }
                 this.resetSimulation();
             });
@@ -147,10 +147,10 @@ class HardwareLabApp {
             startBtn.addEventListener('click', () => {
                 if (!this.isRunning) {
                     this.startSimulation();
-                    startBtn.textContent = 'METTRE EN PAUSE';
+                    startBtn.textContent = 'PAUSE';
                 } else if (this.isPaused) {
                     this.isPaused = false;
-                    startBtn.textContent = 'METTRE EN PAUSE';
+                    startBtn.textContent = 'PAUSE';
                 } else {
                     this.isPaused = true;
                     startBtn.textContent = 'REPRENDRE';
@@ -162,7 +162,7 @@ class HardwareLabApp {
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
                 this.resetSimulation();
-                if (startBtn) startBtn.textContent = 'LANCER LE CALCUL';
+                if (startBtn) startBtn.textContent = 'LANCER';
             });
         }
 
@@ -410,22 +410,22 @@ class HardwareLabApp {
             if (this.cpu.completed === this.batchSize && this.gpu.completed === this.batchSize) {
                 if (this.workload === 'gemm') {
                     const ratio = (this.cpu.timeMs / Math.max(1, this.gpu.timeMs)).toFixed(1);
-                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span><br><span style="font-weight:normal;color:#aaa;">Les 256 cœurs ont absorbé les calculs en un éclair. Le CPU a dû faire la queue sur 4 cœurs.</span>`;
+                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span> — 256 calculs simultanés.`;
                 } else if (this.workload === 'pixel') {
                     const ratio = (this.cpu.timeMs / Math.max(1, this.gpu.timeMs)).toFixed(1);
-                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span><br><span style="font-weight:normal;color:#aaa;">Traitement matriciel 2D parfait sans dépendance séquentielle.</span>`;
+                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span> — Shaders 2D en parallèle.`;
                 } else {
                     const ratio = (this.gpu.timeMs / Math.max(1, this.cpu.timeMs)).toFixed(1);
-                    verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">VAINQUEUR : CPU (${ratio}x plus rapide)</span><br><span style="font-weight:normal;color:#aaa;">Grâce à son Branch Predictor (4.5 GHz), le CPU n'a pas ralenti. Le GPU a été lourdement pénalisé par la Warp Divergence.</span>`;
+                    verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">VAINQUEUR : CPU (${ratio}x plus rapide)</span> — Branch Predictor vs Warp Divergence.`;
                 }
             } else if (this.cpu.completed === this.batchSize && this.gpu.completed < this.batchSize) {
-                verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">CPU A TERMINÉ EN PREMIER !</span><br><span style="font-weight:normal;color:#aaa;">Le GPU est encore bloqué par la divergence des branches de threads...</span>`;
+                verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">CPU TERMINE 1ER !</span> GPU ralenti (Warp Divergence)...`;
             } else if (this.gpu.completed === this.batchSize && this.cpu.completed < this.batchSize) {
-                verdictEl.innerHTML = `<span style="color:var(--neon-purple);">GPU A TERMINÉ EN PREMIER !</span><br><span style="font-weight:normal;color:#aaa;">Le CPU continue de vider séquentiellement sa file d'attente...</span>`;
+                verdictEl.innerHTML = `<span style="color:var(--neon-purple);">GPU TERMINE 1ER !</span> CPU vide sa file séquentielle...`;
             } else if (this.isRunning) {
-                verdictEl.textContent = "Calcul en cours d'exécution...";
+                verdictEl.textContent = "Calcul en cours...";
             } else {
-                verdictEl.textContent = "Sélectionnez une charge et lancez le calcul.";
+                verdictEl.textContent = "Prêt à lancer.";
             }
         }
     }
@@ -435,9 +435,7 @@ class HardwareLabApp {
             const section = document.getElementById('hardware-lab');
             const isVisible = section && section.classList.contains('active');
             if (isVisible) {
-                if (!this.logicalWidth || this.logicalWidth < 50) {
-                    this.resizeCanvas();
-                }
+                this.resizeCanvas();
                 this.update();
                 this.draw();
             }
