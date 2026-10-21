@@ -153,9 +153,16 @@ function sanitizeMessages(rawMessages, rawSystemPrompt) {
 }
 
 export default async function handler(req, res) {
-    // 1. Sécurité : On accepte uniquement les POST
+    const configuredModel = process.env.OPEN_ROUTER_MODEL || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+
+    // Permet au front de récupérer le modèle actif au chargement
+    if (req.method === 'GET') {
+        return res.status(200).json({ model: configuredModel });
+    }
+
+    // 1. Sécurité : On accepte uniquement les POST pour la complétion
     if (req.method !== 'POST') {
-        res.setHeader('Allow', 'POST');
+        res.setHeader('Allow', 'GET, POST');
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
@@ -239,7 +246,10 @@ export default async function handler(req, res) {
             return res.status(response.status).json(data);
         }
 
-        res.status(200).json(data);
+        res.status(200).json({
+            ...data,
+            model: data.model || model
+        });
     } catch (error) {
         console.error("Erreur serveur proxy:", error);
         res.status(500).json({ error: 'Erreur interne lors de l\'appel à OpenRouter' });

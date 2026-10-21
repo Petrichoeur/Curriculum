@@ -7,6 +7,7 @@ const DigitalTwin = {
     config: null,
     history: [],
     isLoading: false,
+    currentModel: 'openrouter/free',
 
     // Stockage des intervalles pour pouvoir les nettoyer proprement
     intervals: [],
@@ -34,6 +35,9 @@ const DigitalTwin = {
         // 1. Remplir la barre latérale (Profil + Tickers)
         this.renderProfile();
 
+        // Récupérer le modèle actif depuis le backend
+        this.fetchActiveModel();
+
         // Si c'est la première fois qu'on lance le module :
         if (!this.isInitialized) {
             // 2. Activer les écouteurs d'événements
@@ -49,6 +53,25 @@ const DigitalTwin = {
 
             this.isInitialized = true;
         }
+    },
+
+    fetchActiveModel: async function () {
+        try {
+            const res = await fetch('/api/chat');
+            if (res.ok) {
+                const info = await res.json();
+                if (info.model) this.updateModelDisplay(info.model);
+            }
+        } catch (e) {
+            // Fallback silencieux sur le modèle par défaut
+        }
+    },
+
+    updateModelDisplay: function (modelName) {
+        if (!modelName) return;
+        this.currentModel = modelName;
+        const el = document.getElementById('active-model-display');
+        if (el) el.textContent = modelName;
     },
 
     /* ==========================================
@@ -259,18 +282,40 @@ const DigitalTwin = {
      * @param {string} role
      * @param {string} text
      * @param {boolean} trusted
+     * @param {string|null} model
      */
-    addMessage: function (role, text, trusted = false) {
+    addMessage: function (role, text, trusted = false, model = null) {
         const chatWindow = document.getElementById('chat-window');
         if (!chatWindow) return;
 
         const div = document.createElement('div');
         div.className = `message ${role}-msg`;
 
-        if (trusted) {
-            div.innerHTML = text;
+        if (role === 'bot') {
+            const header = document.createElement('div');
+            header.className = 'msg-header';
+
+            const author = document.createElement('span');
+            author.className = 'msg-author';
+            author.textContent = 'FLORIAN (AI)';
+            header.appendChild(author);
+
+            const displayModel = model || this.currentModel;
+            if (displayModel) {
+                const badge = document.createElement('span');
+                badge.className = 'msg-model-badge';
+                badge.title = 'Modèle utilisé pour cette réponse';
+                badge.textContent = displayModel;
+                header.appendChild(badge);
+            }
+            div.appendChild(header);
+
+            const body = document.createElement('div');
+            body.className = 'msg-body';
+            body.innerHTML = trusted ? text : this.formatMarkdown(text);
+            div.appendChild(body);
         } else {
-            div.innerHTML = this.formatMarkdown(text);
+            div.innerHTML = trusted ? text : this.formatMarkdown(text);
         }
 
         chatWindow.appendChild(div);
@@ -384,9 +429,11 @@ const DigitalTwin = {
                         this.addMessage('system', "Données corrompues (Réponse vide).");
                         return;
                     }
+                    const usedModel = data.model || this.currentModel || 'openrouter/free';
+                    this.updateModelDisplay(usedModel);
                     this.history.push({ role: "user", content: userMessage });
                     this.history.push({ role: "assistant", content: botReply });
-                    this.addMessage('bot', botReply);
+                    this.addMessage('bot', botReply, false, usedModel);
                 } else {
                     this.addMessage('system', "Données corrompues (Réponse vide).");
                 }

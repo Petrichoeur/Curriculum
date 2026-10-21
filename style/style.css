@@ -433,6 +433,69 @@ body {
     overflow: hidden;
 }
 
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    background: rgba(12, 8, 22, 0.95);
+    border-bottom: 1px solid rgba(189, 0, 255, 0.25);
+    font-family: var(--font-tech);
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.chat-header-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--neon-cyan);
+    letter-spacing: 0.05em;
+    font-weight: bold;
+}
+
+.status-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 8px #00ff88;
+    animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.chat-header-model {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 243, 255, 0.08);
+    border: 1px solid rgba(0, 243, 255, 0.3);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    max-width: 60%;
+}
+
+.model-tag-label {
+    color: var(--neon-purple);
+    font-weight: bold;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+.model-tag-value {
+    color: var(--neon-cyan);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .chat-window {
     flex: 1;
     overflow-y: auto;
@@ -457,13 +520,37 @@ body {
     border: 1px solid rgba(0, 243, 255, 0.2);
 }
 
-.bot-msg::before {
-    content: 'FLORIAN (AI)';
-    display: block;
-    font-size: 0.7rem;
-    color: var(--neon-cyan);
+.msg-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin-bottom: 6px;
     font-family: var(--font-tech);
+}
+
+.msg-author {
+    font-size: 0.7rem;
+    color: var(--neon-cyan);
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
+
+.msg-model-badge {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.msg-body {
+    word-break: break-word;
 }
 
 .user-msg {
@@ -1482,8 +1569,32 @@ body {
     /* ---------- CHAT ---------- */
 
     .chat-wrapper {
-        height: calc(100dvh - 150px);
-        min-height: 360px;
+        height: calc(100dvh - 130px);
+        min-height: 380px;
+    }
+
+    .chat-header {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .chat-header-title {
+        font-size: 0.7rem;
+    }
+
+    .chat-header-model {
+        padding: 2px 6px;
+        font-size: 0.68rem;
+        max-width: 55%;
+    }
+
+    .model-tag-label {
+        font-size: 0.62rem;
+    }
+
+    .msg-model-badge {
+        max-width: 120px;
+        font-size: 0.6rem;
     }
 
     .chat-window {
@@ -1492,33 +1603,33 @@ body {
     }
 
     .message {
-        max-width: 92%;
+        max-width: 94%;
         font-size: 0.9rem;
         padding: 10px 14px;
         overflow-wrap: anywhere;
     }
 
-    .bot-msg::before {
-        font-size: 0.65rem;
-        margin-bottom: 4px;
-    }
-
     .input-area {
-        flex-wrap: wrap;
-        padding: 12px;
+        flex-wrap: nowrap;
+        padding: 10px;
+        gap: 8px;
     }
 
     #user-input {
-        width: 100%;
+        width: auto;
+        flex: 1;
         min-height: 44px;
         font-size: 16px;
+        padding: 10px 12px;
     }
 
     #send-btn {
-        width: 100%;
-        margin-top: 6px;
+        width: auto;
+        flex-shrink: 0;
+        margin-top: 0;
         min-height: 44px;
-        padding: 0 20px;
+        padding: 0 16px;
+        font-size: 0.85rem;
     }
 
     /* ---------- PROJETS ---------- */
