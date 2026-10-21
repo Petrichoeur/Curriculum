@@ -17,7 +17,7 @@
   {
     "id": "mlp",
     "title": "3. Multi-Layer Perceptron (DeepLearning)",
-    "content": "<h2>Multi-Layer Perceptron (MLP)</h2><p>Le MLP résout le problème du Perceptron simple en ajoutant des <strong>couches cachées</strong>.</p><p>C'est ici que la magie de la \"Backpropagation\" opère pour ajuster les poids à travers plusieurs couches.</p>",
+    "content": "<h2>Multi-Layer Perceptron (MLP)</h2><p>Le MLP résout le problème du Perceptron simple en ajoutant des <strong>couches cachées</strong>.</p><p>C'est ici que la magie de la \"Backpropagation\" opère pour ajuster les poids à travers plusieurs couches.</p><div class=\"studio-card\"><div class=\"studio-info\"><h4>SIMULATION INTERACTIVE DISPONIBLE</h4><p>Expérimentez l'approximation de fonctions en temps réel avec le réseau profond from scratch.</p></div><a href=\"#mlp-studio\" class=\"studio-btn\">OUVRIR MLP STUDIO_</a></div>",
     "colabLink": "https://colab.research.google.com/github/Petrichoeur/Neural_Net_from_scratch/blob/master/Neural_net_class/Simple_to_use_Neural_net.ipynb",
     "slides": []
   },

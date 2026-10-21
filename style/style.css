@@ -932,6 +932,73 @@ body {
     box-shadow: 0 0 15px #f9ab00;
 }
 
+/* --- STUDIO CARD (MLP Link) --- */
+.studio-card {
+    margin-top: 25px;
+    background: rgba(0, 243, 255, 0.05);
+    border: 1px solid var(--neon-cyan);
+    border-radius: 6px;
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.studio-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--neon-cyan);
+}
+
+.studio-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.25);
+}
+
+.studio-info h4 {
+    font-family: var(--font-tech);
+    color: var(--neon-cyan);
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+}
+
+.studio-info p {
+    font-size: 0.9rem !important;
+    color: #bbb !important;
+    margin-bottom: 0 !important;
+    line-height: 1.5 !important;
+}
+
+.studio-btn {
+    display: inline-block;
+    padding: 12px 20px;
+    background: var(--neon-cyan);
+    color: #05000a;
+    font-weight: bold;
+    font-family: var(--font-tech);
+    text-decoration: none;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.studio-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 15px var(--neon-cyan);
+    transform: scale(1.02);
+}
+
 /* --- SLIDESHOW (Full) --- */
 .slideshow-container {
     position: relative;
@@ -1718,6 +1785,21 @@ body {
         margin: 15px 0 0 0;
         width: 100%;
         min-height: 44px;
+    }
+
+    .studio-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .studio-btn {
+        width: 100%;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .slide-img {
