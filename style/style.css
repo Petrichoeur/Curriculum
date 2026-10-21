@@ -2518,10 +2518,11 @@ input[type="range"]::-moz-range-thumb {
 .hw-canvas {
     width: 100% !important;
     max-width: 100% !important;
-    height: 380px;
+    height: 400px;
     display: block;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(0, 243, 255, 0.03);
     box-sizing: border-box;
 }
 
@@ -2539,7 +2540,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 380px;
+        height: 390px;
     }
 }
 
@@ -2549,7 +2550,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 370px;
+        height: 380px;
     }
 }
 
