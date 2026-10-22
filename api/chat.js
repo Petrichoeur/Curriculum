@@ -472,7 +472,7 @@ export default async function handler(req, res) {
     try {
         // 5. Validation du body
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-        const { messages, temperature, maxTokens } = body || {};
+        const { messages, temperature, maxTokens, model: reqModel, reasoningEffort } = body || {};
 
         const sanitized = sanitizeMessages(messages, body?.systemPrompt);
         if (sanitized.error) {
@@ -486,15 +486,20 @@ export default async function handler(req, res) {
             2
         );
 
+        const targetModel = (typeof reqModel === 'string' && reqModel.endsWith(':free'))
+            ? reqModel
+            : model;
+        const effort = typeof reasoningEffort === 'string' ? reasoningEffort : 'none';
+
         const upstreamBody = {
-            model,
+            model: targetModel,
             messages: sanitized.messages,
             temperature: clampedTemperature,
             max_tokens: Math.min(
                 Math.max(requestedTokens, MIN_OUTPUT_TOKENS),
                 MAX_OUTPUT_TOKENS
             ),
-            reasoning: { effort: 'medium' },
+            reasoning: effort === 'none' ? { effort: 'none', exclude: true } : { effort },
             stream: false
         };
 
