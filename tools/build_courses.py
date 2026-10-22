@@ -924,7 +924,7 @@ def course_ensemble_ga():
     ga_fig = svg('0 0 520 138', g, 'Cycle d’évolution d’un algorithme génétique : population, fitness, croisement, mutation')
 
     return (
-        '<h2>Random Forest, Gradient Boosting et Algorithmes Génétiques</h2>'
+        '<h2>Machine Learning Old School (pas à la mode mais toujours aussi puissant)</h2>'
         '<p>Avant de sortir l’artillerie lourde du Deep Learning et des ' + course_link('LLM', IDX_LLM) + ', '
         'l’immense majorité des problèmes industriels sur données tabulaires (fraude bancaire, risque de crédit, '
         'prévision des ventes, maintenance prédictive) ainsi que les problèmes d’optimisation combinatoire '
@@ -989,6 +989,88 @@ def course_ensemble_ga():
     )
 
 
+# ============================================================ 20. Modèles System One (type Jev)
+def course_system_one():
+    # SVG 1 : LLM Classique (Génératif auto-régressif) vs System One Model (Jev - Décisionnel direct)
+    b = txt(260, 18, 'LLM classique (Système 2 / Génératif : lent et fragile pour du code)', 'ta')
+    b += box(12, 28, 108, 42, 'c', 5) + txt(66, 46, 'Contexte + Prompt', 'tc') + txt(66, 62, '« Réponds en JSON »', 'ts')
+    b += arrow(122, 49, 154, 49, 'a')
+    b += box(156, 28, 198, 42, 'a', 5) + txt(255, 46, 'Boucle Token par Token', 'ta') + txt(255, 62, '{" , "ur" , "gent" , ":" , ...', 'ts')
+    b += arrow(356, 49, 388, 49, 'a')
+    b += box(390, 28, 118, 42, 'p', 5) + txt(449, 46, 'Parsing JSON', 'tp') + txt(449, 62, 'Risque crash / coût', 'ts')
+
+    b += '<line x1="12" y1="86" x2="508" y2="86" class="l-w" stroke-dasharray="4 4"/>'
+
+    b += txt(260, 106, 'Modèle System One (type Jev : 1 seul passage parallèle, typé et calibré)', 'tg')
+    b += box(12, 118, 126, 56, 'c', 5) + txt(75, 140, 'État + Schéma typé', 'tc') + txt(75, 158, 'Noul / Choice / Score', 'ts')
+    b += arrow(140, 146, 178, 146, 'g')
+    b += box(180, 118, 148, 56, 'g', 5) + txt(254, 140, 'Modèle System One', 'tg') + txt(254, 158, '1 passe directe (RLCD)', 'ts')
+    b += arrow(330, 130, 368, 124, 'g')
+    b += arrow(330, 146, 368, 146, 'g')
+    b += arrow(330, 162, 368, 168, 'g')
+    b += box(370, 110, 138, 22, 'g', 4) + txt(439, 125, 'Noul : p(oui) = 0.94', 'tg')
+    b += box(370, 135, 138, 22, 'c', 4) + txt(439, 150, 'Choice : [Fraude: 0.88]', 'tc')
+    b += box(370, 160, 138, 22, 'p', 4) + txt(439, 175, 'Score : Critique (0.91)', 'tp')
+    s1_fig = svg('0 0 520 192', b, 'Comparaison entre un LLM génératif token par token et un modèle System One décisionnel comme Jev')
+
+    return (
+        '<h2>Les modèles « System One » (type Jev) face aux LLM classiques</h2>'
+        '<p>Aujourd’hui, les développeurs utilisent souvent des ' + course_link('LLM', IDX_LLM) + ' géants '
+        'au cœur de leurs logiciels pour prendre de simples décisions logiques : trier un ticket client, '
+        'router une requête (voir ' + course_link('les routeurs de LLM', IDX_ROUTER) + '), détecter une anomalie '
+        'ou filtrer un contenu. Pour cela, on écrit un long prompt qui supplie le modèle : '
+        '<em>« Réponds uniquement par un JSON valide avec une clé booléenne »</em>. '
+        'C’est lent, cher, et architecturalement absurde : on utilise un poète génératif pour appuyer sur un interrupteur.</p>'
+        '<p>C’est pour sortir de cette impasse qu’une nouvelle catégorie de modèles a vu le jour avec <strong>Jev</strong> '
+        '(introduit par TypeSafe AI) : les <strong>System One Models</strong> (modèles de Système 1).</p>'
+        '<h3>1. Système 1 contre Système 2 : l’inspiration cognitive</h3>'
+        + callout('La métaphore de Daniel Kahneman (Système 1 vs Système 2)',
+                  'Notre cerveau possède deux vitesses : le Système 2 est lent, analytique et verbal (résoudre 17 × 24 ou rédiger une dissertation). '
+                  'Le Système 1 est notre réflexe ultra-rapide, non verbal et immédiat (freiner devant un obstacle, jauger un danger en un éclair).')
+        + '<p>Alors que la course aux LLM « raisonneurs » cherche à imiter le <strong>Système 2</strong> '
+        'en générant des milliers de tokens de réflexion avant de répondre, un modèle <strong>System One</strong> comme <strong>Jev</strong> '
+        'fait exactement l’inverse : il <strong>ne génère jamais une seule phrase de texte</strong>. '
+        'Il est conçu exclusivement pour prendre des décisions logicielles structurées, typées et calibrées en quelques millisecondes.</p>'
+        '<h3>2. Pourquoi « Jev » ? Le paradoxe de Jevons appliqué à l’IA</h3>'
+        '<p>Le nom <strong>Jev</strong> rend hommage à l’économiste William Stanley Jevons : lorsque l’efficacité d’une ressource '
+        'augmente et que son coût s’effondre, sa consommation globale explose. En rendant chaque micro-décision IA '
+        '10 à 100 fois plus rapide et moins chère qu’un appel LLM, on peut désormais glisser de l’intelligence '
+        'dans chaque <code>if / else</code> d’un programme.</p>'
+        '<h3>3. Comment fonctionne un modèle System One (Jev) ?</h3>'
+        '<p>Au lieu d’auto-régression (prédire des mots un par un de gauche à droite, voir '
+        + course_link('l’illusion auto-régressive', IDX_CONSC) + '), vous envoyez au modèle un état (<code>state</code>) '
+        'et une liste de questions typées. Le modèle évalue toutes les questions <strong>en un seul passage parallèle</strong> '
+        'à travers trois primitives de décision natives :</p>'
+        '<ul><li><strong><code>Noul</code> (Oui / Non)</strong> : évalue une proposition binaire (ex. <em>« Ce message contient-il des données personnelles ? »</em>) '
+        'et renvoie une probabilité mathématique entre 0 et 1.</li>'
+        '<li><strong><code>Choice</code> (Choix multiple)</strong> : classe l’entrée parmi une liste fermée d’options définies par votre code, '
+        'avec la probabilité exacte de chaque option.</li>'
+        '<li><strong><code>Score</code> (Échelle ordonnée)</strong> : évalue un niveau sur une échelle graduée '
+        '(ex. <em>faible, moyen, critique</em>) avec sa distribution et son indice de confiance.</li></ul>'
+        + fig(s1_fig, 'Un LLM classique rédige laborieusement du texte JSON caractère par caractère ; un modèle System One (Jev) évalue directement des primitives typées en une seule passe.')
+        + '<h3>4. Le secret technique : des probabilités réellement calibrées (RLCD)</h3>'
+        '<p>Si vous demandez à un LLM classique <em>« Es-tu sûr de ta réponse de 0 à 100 % ? »</em>, il va inventer un chiffre '
+        'au hasard (souvent <code>95 %</code>, même quand il hallucine complètement). '
+        'À l’inverse, un modèle System One comme Jev est entraîné par <strong>RLCD</strong> '
+        '(<em>Reinforcement Learning for Calibrated Decisions</em>) : ses probabilités sont <strong>calibrées</strong>. '
+        'S’il annonce une probabilité de <code>0.80</code>, cela signifie statistiquement qu’il a raison 80 % du temps. '
+        'Votre code peut donc fixer des seuils fiables (par exemple : agir automatiquement au-dessus de <code>0.92</code>, '
+        'et demander l’avis d’un humain ou d’un gros LLM en dessous).</p>'
+        '<h3>5. Comparatif : Modèle System One (Jev) vs LLM Classique</h3>'
+        '<table class="edu-table"><thead><tr><th>Critère</th><th>LLM Classique (GPT, Claude, Llama)</th><th>Modèle System One (type Jev)</th></tr></thead><tbody>'
+        '<tr><td>Nature du modèle</td><td>Génératif auto-régressif (écrit du texte mot à mot)</td><td>Décisionnel discriminatif (évalue un schéma en 1 passe)</td></tr>'
+        '<tr><td>Sortie produite</td><td>Chaîne de caractères (prose, code, JSON fragile)</td><td>Primitives typées natives (<code>Noul</code>, <code>Choice</code>, <code>Score</code>)</td></tr>'
+        '<tr><td>Erreurs de syntaxe / typage</td><td>Fréquentes (JSON tronqué, balises markdown parasites)</td><td>Impossibles par construction</td></tr>'
+        '<tr><td>Confiance / Probabilités</td><td>Mal calibrée (le modèle « bluffe » dans son texte)</td><td>Probabilités mathématiquement calibrées (RLCD)</td></tr>'
+        '<tr><td>Latence</td><td>Seconds (liée au nombre de tokens générés)</td><td>Ultra-faible (&lt; 200 à 500 ms, plusieurs questions en parallèle)</td></tr>'
+        '<tr><td>Usage idéal</td><td>Rédaction, synthèse, génération de code, dialogue</td><td>Tri, routage, modération, garde-fous, logique <code>if/else</code> dans le code</td></tr>'
+        '</tbody></table>'
+        + callout('Complémentarité en production',
+                  'Les modèles System One ne remplacent pas les LLM qui rédigent ou codent : ils agissent comme leur système nerveux réflexe '
+                  'en amont et en aval (filtrer, router, vérifier et décider instantanément sans gaspiller de GPU à générer du bavardage).', 'g')
+    )
+
+
 COURSES = [
     ('cpu_gpu', '7. CPU vs GPU', course_cpu_gpu),
     ('rnn', '8. RNN et LSTM', course_rnn),
@@ -1002,7 +1084,8 @@ COURSES = [
     ('agentic', '16. L’IA agentique et les outils', course_agentic),
     ('mcp', '17. Le protocole MCP (et ses limites)', course_mcp),
     ('jepa_latent', '18. Modèles JEPA et espace latent', course_jepa),
-    ('ensemble_ga', '19. Random Forest, Boosting et Algos génétiques', course_ensemble_ga),
+    ('ensemble_ga', '19. Machine Learning Old School (pas à la mode mais toujours aussi puissant)', course_ensemble_ga),
+    ('system_one_jev', '20. Modèles System One (type Jev) vs LLM', course_system_one),
 ]
 
 
