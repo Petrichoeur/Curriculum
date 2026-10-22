@@ -180,28 +180,56 @@ class HardwareLabApp {
 
         // Boutons Start / Reset
         const startBtn = document.getElementById('hw-start-btn');
-        if (startBtn) {
-            startBtn.addEventListener('click', () => {
-                if (!this.isRunning) {
-                    this.startSimulation();
-                    startBtn.textContent = 'PAUSE';
-                } else if (this.isPaused) {
-                    this.isPaused = false;
-                    startBtn.textContent = 'PAUSE';
-                } else {
-                    this.isPaused = true;
-                    startBtn.textContent = 'REPRENDRE';
-                }
-            });
-        }
+        const canvasRunBtn = document.getElementById('hw-canvas-run-btn');
+
+        const onStartPause = (e) => {
+            if (e) e.preventDefault();
+            this.toggleStartPause();
+        };
+
+        if (startBtn) startBtn.addEventListener('click', onStartPause);
+        if (canvasRunBtn) canvasRunBtn.addEventListener('click', onStartPause);
 
         const resetBtn = document.getElementById('hw-reset-btn');
         if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
+            resetBtn.addEventListener('click', (e) => {
+                if (e) e.preventDefault();
                 this.resetSimulation();
-                if (startBtn) startBtn.textContent = 'LANCER';
             });
         }
+    }
+
+    toggleStartPause() {
+        if (!this.isRunning) {
+            this.startSimulation();
+        } else if (this.isPaused) {
+            this.isPaused = false;
+            this.updateStartButtons();
+        } else {
+            this.isPaused = true;
+            this.updateStartButtons();
+        }
+    }
+
+    updateStartButtons() {
+        const btns = [
+            document.getElementById('hw-start-btn'),
+            document.getElementById('hw-canvas-run-btn')
+        ];
+        btns.forEach(btn => {
+            if (!btn) return;
+            if (!this.isRunning) {
+                if (this.cpu.completed >= this.batchSize && this.gpu.completed >= this.batchSize) {
+                    btn.textContent = 'RELANCER';
+                } else {
+                    btn.textContent = 'LANCER';
+                }
+            } else if (this.isPaused) {
+                btn.textContent = 'REPRENDRE';
+            } else {
+                btn.textContent = 'PAUSE';
+            }
+        });
     }
 
     updateWorkloadUI() {
@@ -254,6 +282,7 @@ class HardwareLabApp {
         this.gpuProgressFloat = 0;
         this.gpuProgressInWave = 0;
 
+        this.updateStartButtons();
         this.updateTelemetry();
         this.draw();
     }
@@ -264,6 +293,7 @@ class HardwareLabApp {
         this.isPaused = false;
         this.gpu.isTransferringPcie = true;
         this.gpu.pcieProgress = 0;
+        this.updateStartButtons();
     }
 
     update(dt) {
@@ -277,8 +307,8 @@ class HardwareLabApp {
             this.cpu.timeMs += simDt * 1000;
 
             // Durée de simulation totale du CPU (en secondes réelles à 1.0x)
-            // GEMM : 3.0s | Pixel : 2.8s | Branch : 1.3s (victoire CPU grâce au Branch Predictor à 96%)
-            const cpuTotalDuration = this.workload === 'branch' ? 1.3 : (this.workload === 'pixel' ? 2.8 : 3.0);
+            // GEMM : 7.5s | Pixel : 7.2s | Branch : 3.2s (victoire CPU grâce au Branch Predictor à 96%)
+            const cpuTotalDuration = this.workload === 'branch' ? 3.2 : (this.workload === 'pixel' ? 7.2 : 7.5);
             const cpuRate = this.batchSize / cpuTotalDuration;
             this.cpuProgressFloat = (this.cpuProgressFloat || 0) + cpuRate * simDt;
             this.cpu.completed = Math.min(this.batchSize, Math.floor(this.cpuProgressFloat));
@@ -299,8 +329,8 @@ class HardwareLabApp {
             this.gpu.timeMs += simDt * 1000;
 
             // Phase 1 : Transfert initial Host-to-Device via PCIe 5.0 (32 Go/s)
-            // Matérialise le goulot d'étranglement : VRAM en cours de chargement depuis la RAM
-            const pcieDuration = 0.45; // 450ms de transfert initial
+            // Durée calibrée pour observer nettement les paquets dorés transiter (1.2s)
+            const pcieDuration = this.workload === 'pixel' ? 1.0 : 1.2;
             if (this.gpu.pcieProgress < 1) {
                 this.gpu.isTransferringPcie = true;
                 this.gpu.pcieProgress = Math.min(1, this.gpu.pcieProgress + (simDt / pcieDuration));
@@ -309,22 +339,23 @@ class HardwareLabApp {
                 this.gpu.isTransferringPcie = false;
 
                 if (this.workload === 'gemm' || this.workload === 'pixel') {
-                    // Parallélisme massif SIMT : calcul rapide en 0.75s à 0.85s (Total GPU = 1.2s à 1.3s)
-                    const gpuComputeDuration = this.workload === 'gemm' ? 0.75 : 0.85;
+                    // Parallélisme massif SIMT : calcul en 2.8s (Total GPU = 3.8s à 4.0s)
+                    // Permet de contempler les 16 SMs et 256 micro-cœurs illuminés en vert émeraude
+                    const gpuComputeDuration = 2.8;
                     const gpuRate = this.batchSize / gpuComputeDuration;
                     this.gpuProgressFloat = (this.gpuProgressFloat || 0) + gpuRate * simDt;
                     this.gpu.completed = Math.min(this.batchSize, Math.floor(this.gpuProgressFloat));
 
                     this.gpu.smStates.fill(1);
-                    this.gpuProgressInWave = (this.animTime * 4) % 1.0;
+                    this.gpuProgressInWave = (this.animTime * 3.5) % 1.0;
                 } else {
-                    // Warp Divergence : calcul ralenti à 2.5s (Total GPU = ~2.95s, CPU gagne en 1.3s)
-                    const gpuComputeDuration = 2.5;
+                    // Warp Divergence : calcul ralenti à 5.2s (Total GPU = 6.4s, CPU termine en 3.2s)
+                    const gpuComputeDuration = 5.2;
                     const gpuRate = this.batchSize / gpuComputeDuration;
                     this.gpuProgressFloat = (this.gpuProgressFloat || 0) + gpuRate * simDt;
                     this.gpu.completed = Math.min(this.batchSize, Math.floor(this.gpuProgressFloat));
 
-                    this.gpuProgressInWave = (this.animTime * 2.5) % 1.0;
+                    this.gpuProgressInWave = (this.animTime * 2.2) % 1.0;
                     const isFirstBranch = this.gpuProgressInWave < 0.5;
                     for (let i = 0; i < this.gpu.numSMs; i++) {
                         const isEven = (i % 2 === 0);
@@ -346,8 +377,8 @@ class HardwareLabApp {
         // Fin de simulation
         if (this.cpu.completed >= this.batchSize && this.gpu.completed >= this.batchSize) {
             this.isRunning = false;
-            const startBtn = document.getElementById('hw-start-btn');
-            if (startBtn) startBtn.textContent = 'RELANCER';
+            this.isPaused = false;
+            this.updateStartButtons();
         }
     }
 
@@ -497,7 +528,7 @@ class HardwareLabApp {
                 x: 15, y: 12, w: w - 30, h: 232,
                 ram: { x: cx - 50, y: 40, r: 13 },
                 l3: { x: cx + 50, y: 40, r: 14 },
-                busY: 62,
+                busY: 66,
                 cores: cores
             };
         }
@@ -873,7 +904,8 @@ class HardwareLabApp {
             ctx.fillStyle = '#00ffaa';
             ctx.textAlign = 'center';
             const branchPredTxt = this.logicalWidth < 400 ? 'PRED: 96% HIT' : 'BRANCH PREDICTOR : 96% HIT (0 BULLE)';
-            ctx.fillText(branchPredTxt, c.l3.x, c.l3.y + c.l3.r + 8);
+            const predY = this.isStacked() ? (c.l3.y - c.l3.r - 4) : (c.l3.y + c.l3.r + 8);
+            ctx.fillText(branchPredTxt, c.l3.x, predY);
         }
     }
 

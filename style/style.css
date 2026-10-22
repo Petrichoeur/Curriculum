@@ -2318,6 +2318,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
     margin-bottom: 6px;
     padding-bottom: 5px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -2553,6 +2555,33 @@ input[type="range"]::-moz-range-thumb {
     margin: 0;
 }
 
+.hw-canvas-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.hw-canvas-play-btn {
+    background: rgba(0, 243, 255, 0.12) !important;
+    border: 1px solid var(--neon-cyan) !important;
+    color: var(--neon-cyan) !important;
+    font-family: var(--font-tech);
+    font-size: 0.68rem;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    box-shadow: 0 0 6px rgba(0, 243, 255, 0.2);
+}
+
+.hw-canvas-play-btn:hover {
+    background: rgba(0, 243, 255, 0.25) !important;
+    box-shadow: 0 0 12px rgba(0, 243, 255, 0.4);
+}
+
 .hw-view-modes {
     display: flex;
     background: rgba(0, 0, 0, 0.4);
@@ -2615,8 +2644,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-summary-pills {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 6px;
+        display: none;
     }
 
     .hw-canvas {
