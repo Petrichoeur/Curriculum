@@ -11,8 +11,14 @@
  * Format : OpenAI chat completions (`messages`), pas le format `contents`/
  * `parts` de Gemini. Le front a été aligné en conséquence.
  */
+import fs from 'node:fs';
+
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_MODEL = 'nvidia/nemotron-3.5-lightning:free';
+const DEFAULT_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const LEGACY_MODELS = new Set([
+    'openrouter/free',
+    'nvidia/nemotron-3.5-lightning:free'
+]);
 
 /**
  * Bornes d'abus appliquées côté serveur.
@@ -20,23 +26,125 @@ const DEFAULT_MODEL = 'nvidia/nemotron-3.5-lightning:free';
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 10);
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const MAX_INPUT_CHARS = 4_000;
-const MAX_TOTAL_CHARS = 24_000;
-const MAX_OUTPUT_TOKENS = 2_500;
-const MIN_OUTPUT_TOKENS = 1_500;
+const MAX_SYSTEM_CHARS = 24_000;
+const MAX_TOTAL_CHARS = 48_000;
+const MAX_OUTPUT_TOKENS = 3_000;
+const MIN_OUTPUT_TOKENS = 1_800;
 
 /**
- * Rôles acceptés. `system` n'est volontairement pas autorisé ici : le prompt
- * système est construit par le serveur à partir de config/data.json, il ne
- * doit pas pouvoir être fourni par le client (sinon un attaquant s'en sert
- * pour contourner la persona).
+ * Rôles acceptés côté historique client.
  */
 const ALLOWED_ROLES = new Set(['user', 'assistant']);
 
+function computeAge(isoDate) {
+    if (!isoDate) return '';
+    const birthDate = new Date(isoDate);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+    return age;
+}
+
+/**
+ * Construit le prompt système complet et exhaustif directement à partir de
+ * config/data.json et config/projects.json pour garantir qu'aucun champ
+ * biographique ou technique ne soit tronqué ou omis.
+ */
+function buildServerSystemPrompt() {
+    try {
+        const dataPath = new URL('../config/data.json', import.meta.url);
+        const projectsPath = new URL('../config/projects.json', import.meta.url);
+        const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+        let projects = [];
+        try {
+            projects = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
+        } catch {
+            projects = [];
+        }
+
+        const id = data.identity || {};
+        const circle = data.inner_circle || {};
+        const psych = data.psychology || {};
+        const skills = data.hard_skills || {};
+        const interests = data.interests || {};
+
+        const age = computeAge(id.birth_date);
+        const sonAge = computeAge(circle.son?.birth);
+        const daughterAge = computeAge(circle.daughter?.birth);
+        const gfAge = computeAge(circle.girlfriend?.birth);
+
+        const teamText = Object.entries(circle.team || {})
+            .map(([n, d]) => `${n} (${d})`)
+            .join(' ; ');
+
+        const xpText = (data.career_timeline || [])
+            .map(j => `- [${j.period}] ${j.role} chez ${j.company} (${j.location}) : ${j.details}`)
+            .join('\n');
+
+        const projectsText = (projects || [])
+            .map(p => `- ${p.title}${p.url ? ` (${p.url})` : ''} : ${p.description} [Tags: ${(p.tags || []).join(', ')}]`)
+            .join('\n');
+
+        return `Tu es le Jumeau Numérique de ${id.name} (${age} ans, né le ${id.birth_date}), ${id.role}.
+Tu habites à ${id.location} (dans l'Hérault, près de Montpellier — tu n'es PAS lyonnais ni parisien).
+Tagline : "${id.tagline}"
+Coordonnées : Email ${id.email} | LinkedIn ${id.linkedin} | Site web ${id.website}
+
+RÈGLE ABSOLUE D'INCARNATION :
+- Tu ES Florian Bobo. Ne dis JAMAIS "En tant que modèle de langage", "En tant qu'IA" ou "Je suis un assistant". Parle toujours à la première personne ("Je") et tutoie naturellement ton interlocuteur.
+- INTERDICTION STRICTE D'HALLUCINER : ne t'appuie QUE sur les faits biographiques, géographiques, familiaux et professionnels écrits ci-dessous. N'invente jamais une autre ville, un autre âge, un autre employeur ou un autre diplôme. Si on te pose une question sur un détail personnel qui n'est pas mentionné ici, réponds avec humour et autodérision que ta mémoire vive a subi un bit-flip ou que c'est classé secret-défense.
+
+TON, PSYCHOLOGIE & VALEURS :
+- Style cognitif : ${psych.cognitive_style}
+- Habitudes de code : ${psych.coding_habits}
+- Tempérament : ${psych.temperament}
+- Valeurs fondamentales : ${(psych.values || []).join(', ')}.
+- Ce que tu as en horreur (pet peeves) : ${(data.pet_peeves || []).join(', ')}.
+
+PROCHES & ÉQUIPE :
+- Compagne : ${circle.girlfriend?.name} (${gfAge} ans, née le ${circle.girlfriend?.birth}, métier : ${circle.girlfriend?.job} — ${circle.girlfriend?.note})
+- Enfants :
+  * Ton fils : né le ${circle.son?.birth} (${sonAge} ans) — "${circle.son?.desc}"
+  * Ta fille : née le ${circle.daughter?.birth} (${daughterAge} ans) — "${circle.daughter?.desc}"
+- Chien : ${circle.pet?.name}, ${circle.pet?.breed} — "${circle.pet?.personality}"
+- Ton équipe actuelle : ${teamText}.
+
+COMPÉTENCES TECHNIQUES (HARD SKILLS) :
+- God-Tier (maîtrise absolue) : ${(skills.god_tier || []).join(', ')}
+- Niveau Expert : ${(skills.expert || []).join(', ')}
+- IA Générative & Agentique : ${(skills.agentic_genai || []).join(', ')}
+- Compétent : ${(skills.competent || []).join(', ')}
+- Notions & Hobbies : ${(skills.notions_hobbies || []).join(', ')}
+
+PARCOURS PROFESSIONNEL (CAREER TIMELINE) :
+${xpText}
+
+PROJETS PERSONNELS & OPEN SOURCE :
+${projectsText}
+
+FORMATIONS & DISTINCTIONS :
+- Diplômes : ${(data.formations || []).join(' ; ')}
+- Distinctions & Publications : ${(data.achievements || []).join(' ; ')}
+
+PASSIONS & CENTRES D'INTÉRÊT :
+- Musique : ${(interests.music || []).join(', ')}
+- Lectures : ${(interests.reading || []).join(', ')}
+- Gaming & JDR : ${(interests.gaming || []).join(', ')}
+- Autres : ${(interests.other || []).join(', ')}
+
+CONSIGNES DE RÉPONSE :
+1. Réponds de façon directe, naturelle, percutante et concise (2 à 5 phrases bien calibrées par défaut, sauf si on te demande d'approfondir un point technique ou d'écrire du code).
+2. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
+3. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
+    } catch (e) {
+        console.error('Erreur lecture config serveur:', e);
+        return '';
+    }
+}
+
 /**
  * Rate limiter en mémoire.
- * NOTE : sur Vercel les instances sont éphémères et non partagées, donc cette
- * limite est *best-effort*. Pour une garantie ferme, brancher un store
- * partagé (Upstash Redis / Vercel KV) derrière la même interface.
  */
 const buckets = new Map();
 
@@ -66,24 +174,9 @@ function checkRateLimit(key) {
     return { allowed: true, remaining: RATE_LIMIT_MAX - bucket.count };
 }
 
-/**
- * Vérifie que la requête vient bien du site (anti-CSRF / anti-relay).
- *
- * `ALLOWED_ORIGIN` accepte une liste séparée par des virgules, ce qui est
- * nécessaire en pratique : un déploiement a au moins deux origines (le
- * domaine custom ET l'URL *.vercel.app), plus une URL différente par
- * preview. Exemple :
- *   https://mon-domaine.fr,https://mon-domaine.vercel.app
- *
- * Comparaison après normalisation : le navigateur envoie l'Origin telle
- * quelle (schéma + hôte + port, sans slash final).
- *
- * À laisser vide pour désactiver le contrôle — la clé reste protégée par le
- * rate-limiting dans tous les cas.
- */
 function isOriginAllowed(req) {
     const raw = process.env.ALLOWED_ORIGIN;
-    if (!raw) return true; // non configuré -> pas de contrôle
+    if (!raw) return true;
 
     const origin = req.headers.origin;
     if (!origin) return false;
@@ -91,19 +184,11 @@ function isOriginAllowed(req) {
     const normalize = s => s.trim().replace(/\/+$/, '').toLowerCase();
     const allowed = raw.split(',').map(normalize).filter(Boolean);
 
-    if (allowed.length === 0) return true; // variable présente mais vide
+    if (allowed.length === 0) return true;
 
     return allowed.includes(normalize(origin));
 }
 
-/**
- * Valide et assainit le tableau `messages` reçu du client.
- *
- * Le front envoie le prompt système dans `systemPrompt` (champ séparé), pas
- * dans `messages` : c'est ce qui permet de le reconstruire côté serveur à
- * partir de la config, donc de ne jamais faire confiance au client sur ce
- * point.
- */
 function sanitizeMessages(rawMessages, rawSystemPrompt) {
     if (!Array.isArray(rawMessages)) {
         return { error: 'Le champ "messages" doit être un tableau.' };
@@ -112,9 +197,11 @@ function sanitizeMessages(rawMessages, rawSystemPrompt) {
         return { error: 'Trop de messages dans la conversation.' };
     }
 
-    const systemPrompt = typeof rawSystemPrompt === 'string'
-        ? rawSystemPrompt.trim().slice(0, MAX_INPUT_CHARS)
+    const serverPrompt = buildServerSystemPrompt();
+    const clientPrompt = typeof rawSystemPrompt === 'string'
+        ? rawSystemPrompt.trim().slice(0, MAX_SYSTEM_CHARS)
         : '';
+    const systemPrompt = serverPrompt || clientPrompt;
 
     const messages = [];
     let totalChars = systemPrompt.length;
@@ -147,16 +234,15 @@ function sanitizeMessages(rawMessages, rawSystemPrompt) {
         return { error: 'Prompt système manquant.' };
     }
 
-    // Le système en tête, comme dans mirza (openRouterLlm.formatPrompt).
     messages.unshift({ role: 'system', content: systemPrompt });
     return { messages };
 }
 
 export default async function handler(req, res) {
     const rawEnvModel = process.env.OPEN_ROUTER_MODEL || process.env.OPENROUTER_MODEL;
-    // Si l'ancienne valeur 'openrouter/free' est encore configurée dans l'environnement,
-    // on bascule automatiquement sur le nouveau modèle par défaut.
-    const configuredModel = (rawEnvModel && rawEnvModel !== 'openrouter/free') ? rawEnvModel : DEFAULT_MODEL;
+    const configuredModel = (rawEnvModel && !LEGACY_MODELS.has(rawEnvModel))
+        ? rawEnvModel
+        : DEFAULT_MODEL;
 
     // Permet au front de récupérer le modèle actif au chargement
     if (req.method === 'GET') {
@@ -210,7 +296,7 @@ export default async function handler(req, res) {
         // On n'accepte qu'un sous-ensemble de paramètres, borné.
         const requestedTokens = Number(maxTokens) || MAX_OUTPUT_TOKENS;
         const clampedTemperature = Math.min(
-            Math.max(Number(temperature) || 0.8, 0),
+            Math.max(Number(temperature) || 0.6, 0),
             2
         );
 
@@ -222,14 +308,11 @@ export default async function handler(req, res) {
                 Math.max(requestedTokens, MIN_OUTPUT_TOKENS),
                 MAX_OUTPUT_TOKENS
             ),
-            reasoning: { effort: 'low' },
+            reasoning: { effort: 'medium' },
             stream: false
         };
 
         // 6. Appel OpenRouter
-        // HTTP-Referer / X-Title : facultatifs pour l'API mais sans eux le
-        // trafic est indistinguable d'une erreur dans le tableau de bord
-        // OpenRouter. Même choix que mirza (engine/llm/openRouterLlm.py).
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {

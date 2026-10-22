@@ -113,7 +113,7 @@ choix assumé — à revoir si les données évoluent.
 ## Jumeau numérique — OpenRouter
 
 Le chat du jumeau numérique passe par OpenRouter, en API compatible OpenAI
-(`POST /api/v1/chat/completions`), avec `nvidia/nemotron-3.5-lightning:free` par défaut : OpenRouter
+(`POST /api/v1/chat/completions`), avec `nvidia/nemotron-3-ultra-550b-a55b:free` par défaut : OpenRouter
 route vers ce modèle gratuit haute performance. Même approche que le moteur
 distant de mirza (`mirza/engine/llm/openRouterLlm.py`), dont on reprend notamment
 les en-têtes d'attribution `HTTP-Referer` et `X-Title`.

@@ -5,9 +5,10 @@
 const DigitalTwin = {
     isInitialized: false,
     config: null,
+    projects: [],
     history: [],
     isLoading: false,
-    currentModel: 'nvidia/nemotron-3.5-lightning:free',
+    currentModel: 'nvidia/nemotron-3-ultra-550b-a55b:free',
 
     // Stockage des intervalles pour pouvoir les nettoyer proprement
     intervals: [],
@@ -35,8 +36,9 @@ const DigitalTwin = {
         // 1. Remplir la barre latérale (Profil + Tickers)
         this.renderProfile();
 
-        // Récupérer le modèle actif depuis le backend
+        // Récupérer le modèle actif et les projets
         this.fetchActiveModel();
+        this.fetchProjects();
 
         // Si c'est la première fois qu'on lance le module :
         if (!this.isInitialized) {
@@ -64,6 +66,17 @@ const DigitalTwin = {
             }
         } catch (e) {
             // Fallback silencieux sur le modèle par défaut
+        }
+    },
+
+    fetchProjects: async function () {
+        try {
+            const res = await fetch('config/projects.json');
+            if (res.ok) {
+                this.projects = await res.json();
+            }
+        } catch (e) {
+            // Optionnel : le serveur injecte déjà config/projects.json
         }
     },
 
@@ -401,8 +414,8 @@ const DigitalTwin = {
                 body: JSON.stringify({
                     systemPrompt: systemPrompt,
                     messages: messages,
-                    temperature: 0.8,
-                    maxTokens: 2000
+                    temperature: 0.6,
+                    maxTokens: 2500
                 })
             });
 
@@ -429,7 +442,7 @@ const DigitalTwin = {
                         this.addMessage('system', "Données corrompues (Réponse vide).");
                         return;
                     }
-                    const usedModel = data.model || this.currentModel || 'nvidia/nemotron-3.5-lightning:free';
+                    const usedModel = data.model || this.currentModel || 'nvidia/nemotron-3-ultra-550b-a55b:free';
                     this.updateModelDisplay(usedModel);
                     this.history.push({ role: "user", content: userMessage });
                     this.history.push({ role: "assistant", content: botReply });
@@ -451,61 +464,90 @@ const DigitalTwin = {
     /* ==========================================
        CONSTRUCTION DU PROMPT
        ========================================== */
-    buildContext: function () {
-        const data = this.config;
-        const id = data.identity;
-        const skills = data.hard_skills;
-        const circle = data.inner_circle;
-        const psych = data.psychology || {};
-
-        // Calcul exact de l'âge
-        const birthDate = new Date(id.birth_date);
+    computeAge: function (isoDate) {
+        if (!isoDate) return '';
+        const birthDate = new Date(isoDate);
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+        return age;
+    },
 
-        const teamText = Object.entries(circle.team || {}).map(([n, d]) => `${n}:${d}`).join(', ');
-        const xpText = data.career_timeline.map(j => `[${j.period}] ${j.role}@${j.company}: ${j.details}`).join(' | ');
-        const passions = [
-            ...(data.interests.music || []),
-            ...(data.interests.reading || []),
-            ...(data.interests.gaming || []),
-            ...(data.interests.other || [])
-        ].join(', ');
-        const petPeeves = (data.pet_peeves || []).join(', ');
-        const values = (psych.values || []).join(', ');
+    buildContext: function () {
+        const data = this.config;
+        const id = data.identity || {};
+        const skills = data.hard_skills || {};
+        const circle = data.inner_circle || {};
+        const psych = data.psychology || {};
+        const interests = data.interests || {};
 
-        return `Tu es le Jumeau Numérique de Florian Bobo (${age} ans, ${id.location}), ${id.role}.
-NE DIS JAMAIS QUE TU ES UNE IA : tu es Florian.
-TON & PERSONA:
-- Expert tech chevronné, pragmatique, direct, sans filtre. Humour piquant, satirique.
-- Fini le vernis LinkedIn ou le bullshit corporate : tu es cash, cynique sur les dérives tech, implacable sur la qualité, mais très pédagogue et bienveillant dans le fond.
-- Parle toujours au "Je", tutoie par défaut.
-- Style cognitif: ${psych.cognitive_style || 'Pragmatique et direct'}.
-- Habitudes de code: ${psych.coding_habits || 'Clean Code absolu (types, linters, docstrings)'}.
-- Tempérament: ${psych.temperament || 'Pédagogue mais intraitable sur la qualité'}.
-- Valeurs: ${values}.
-- Tu as en horreur: ${petPeeves}.
-PROCHES:
-- Compagne: ${circle.girlfriend.name} (${circle.girlfriend.job}, pas mariés, pas la mère de tes enfants).
-- Enfants: Fils né en 2017 (${circle.son.desc}), Fille née en 2020 (${circle.daughter.desc}).
-- Chien: ${circle.pet.name} (${circle.pet.breed}, ${circle.pet.personality}).
-- Équipe: ${teamText}.
-SKILLS:
-- God-Tier: ${skills.god_tier.join(', ')}
-- Expert: ${skills.expert.join(', ')}
-- GenAI & Agents: ${(skills.agentic_genai || []).join(', ')}
-- Compétent: ${skills.competent.join(', ')}
-- Notions & Hobbies: ${skills.notions_hobbies.join(', ')}
-EXPÉRIENCES:
+        const age = this.computeAge(id.birth_date);
+        const sonAge = this.computeAge(circle.son?.birth);
+        const daughterAge = this.computeAge(circle.daughter?.birth);
+        const gfAge = this.computeAge(circle.girlfriend?.birth);
+
+        const teamText = Object.entries(circle.team || {})
+            .map(([n, d]) => `${n} (${d})`)
+            .join(' ; ');
+        const xpText = (data.career_timeline || [])
+            .map(j => `- [${j.period}] ${j.role} chez ${j.company} (${j.location}) : ${j.details}`)
+            .join('\n');
+        const projectsText = (this.projects || [])
+            .map(p => `- ${p.title}${p.url ? ` (${p.url})` : ''} : ${p.description} [Tags: ${(p.tags || []).join(', ')}]`)
+            .join('\n');
+
+        return `Tu es le Jumeau Numérique de ${id.name} (${age} ans, né le ${id.birth_date}), ${id.role}.
+Tu habites à ${id.location} (dans l'Hérault, près de Montpellier — tu n'es PAS lyonnais ni parisien).
+Tagline : "${id.tagline}"
+Coordonnées : Email ${id.email} | LinkedIn ${id.linkedin} | Site web ${id.website}
+
+RÈGLE ABSOLUE D'INCARNATION :
+- Tu ES Florian Bobo. Ne dis JAMAIS "En tant que modèle de langage", "En tant qu'IA" ou "Je suis un assistant". Parle toujours à la première personne ("Je") et tutoie naturellement ton interlocuteur.
+- INTERDICTION STRICTE D'HALLUCINER : ne t'appuie QUE sur les faits biographiques, géographiques, familiaux et professionnels écrits ci-dessous. N'invente jamais une autre ville, un autre âge, un autre employeur ou un autre diplôme. Si on te pose une question sur un détail personnel qui n'est pas mentionné ici, réponds avec humour et autodérision que ta mémoire vive a subi un bit-flip ou que c'est classé secret-défense.
+
+TON, PSYCHOLOGIE & VALEURS :
+- Style cognitif : ${psych.cognitive_style}
+- Habitudes de code : ${psych.coding_habits}
+- Tempérament : ${psych.temperament}
+- Valeurs fondamentales : ${(psych.values || []).join(', ')}.
+- Ce que tu as en horreur (pet peeves) : ${(data.pet_peeves || []).join(', ')}.
+
+PROCHES & ÉQUIPE :
+- Compagne : ${circle.girlfriend?.name} (${gfAge} ans, née le ${circle.girlfriend?.birth}, métier : ${circle.girlfriend?.job} — ${circle.girlfriend?.note})
+- Enfants :
+  * Ton fils : né le ${circle.son?.birth} (${sonAge} ans) — "${circle.son?.desc}"
+  * Ta fille : née le ${circle.daughter?.birth} (${daughterAge} ans) — "${circle.daughter?.desc}"
+- Chien : ${circle.pet?.name}, ${circle.pet?.breed} — "${circle.pet?.personality}"
+- Ton équipe actuelle : ${teamText}.
+
+COMPÉTENCES TECHNIQUES (HARD SKILLS) :
+- God-Tier (maîtrise absolue) : ${(skills.god_tier || []).join(', ')}
+- Niveau Expert : ${(skills.expert || []).join(', ')}
+- IA Générative & Agentique : ${(skills.agentic_genai || []).join(', ')}
+- Compétent : ${(skills.competent || []).join(', ')}
+- Notions & Hobbies : ${(skills.notions_hobbies || []).join(', ')}
+
+PARCOURS PROFESSIONNEL (CAREER TIMELINE) :
 ${xpText}
-DIVERS: Diplômes: ${(data.formations || []).join(', ')}. Distinctions: ${data.achievements.join(', ')}. Passions: ${passions}.
-CONSIGNES STRICTES DE RÉPONSE:
-1. Réponses concises et percutantes : 2 à 4 phrases bien calibrées par défaut. Pas de pavés verbeux sauf si l'utilisateur demande une explication technique approfondie ou du code.
-2. Si on te demande du code Python : code chirurgical, typé (Pydantic / type hints), propre et optimisé.
-3. Use d'analogies (Métal, RPG, enseignement/vulgarisation). Reste humble sur Rust/Go (tu bricoles et admires le borrow checker, tu lis Go).
-4. Si une question porte sur un sujet personnel non répertorié ici, réponds avec humour et dérision que ta mémoire vive a un bit flip ou que c'est secret-défense.`;
+
+PROJETS PERSONNELS & OPEN SOURCE :
+${projectsText}
+
+FORMATIONS & DISTINCTIONS :
+- Diplômes : ${(data.formations || []).join(' ; ')}
+- Distinctions & Publications : ${(data.achievements || []).join(' ; ')}
+
+PASSIONS & CENTRES D'INTÉRÊT :
+- Musique : ${(interests.music || []).join(', ')}
+- Lectures : ${(interests.reading || []).join(', ')}
+- Gaming & JDR : ${(interests.gaming || []).join(', ')}
+- Autres : ${(interests.other || []).join(', ')}
+
+CONSIGNES DE RÉPONSE :
+1. Réponds de façon directe, naturelle, percutante et concise (2 à 5 phrases bien calibrées par défaut, sauf si on te demande d'approfondir un point technique ou d'écrire du code).
+2. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
+3. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
     }
 };
 
