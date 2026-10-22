@@ -66,13 +66,17 @@ IDX_RNN = 7
 IDX_EMB = 8
 IDX_TRF = 9
 IDX_LLM = 10
-IDX_CONSC = 11
-IDX_DISTIL = 12
-IDX_KVCACHE = 13
-IDX_ROUTER = 14
-IDX_AGENT = 15
-IDX_MCP = 16
-IDX_JEPA = 17
+IDX_TRAIN = 11
+IDX_INFER = 12
+IDX_CONSC = 13
+IDX_DISTIL = 14
+IDX_KVCACHE = 15
+IDX_ROUTER = 16
+IDX_AGENT = 17
+IDX_MCP = 18
+IDX_JEPA = 19
+IDX_OLDML = 20
+IDX_SYSONE = 21
 
 
 # ============================================================ 7. CPU vs GPU
@@ -1071,21 +1075,194 @@ def course_system_one():
     )
 
 
+# ============================================================ 12. L’entraînement d’un modèle IA / LLM
+def course_training():
+    # SVG 1 : Boucle d'entraînement (Forward -> Loss -> Backprop -> Optimizer) + Allocation VRAM
+    b = txt(260, 18, 'Boucle d’entraînement d’un réseau de neurones (répétée des millions de fois)', 'tc')
+    steps = [
+        (10, 32, 112, 50, 'c', '1. Forward Pass', 'Prédiction y_hat'),
+        (142, 32, 112, 50, 'a', '2. Loss (Erreur)', 'Écart vs réalité y'),
+        (274, 32, 112, 50, 'p', '3. Backprop', 'Calcul des gradients'),
+        (406, 32, 104, 50, 'g', '4. Optimiseur', 'Mise à jour poids W'),
+    ]
+    for idx, (x, y, w, h, col, t1, t2) in enumerate(steps):
+        b += box(x, y, w, h, col, 6) + txt(x + w // 2, y + 22, t1, 't' + col) + txt(x + w // 2, y + 40, t2, 'ts')
+        if idx < 3:
+            b += arrow(x + w + 2, y + 25, steps[idx + 1][0] - 2, y + 25, 'w')
+    b += '<path d="M458 84 C458 118 66 118 66 84" class="l-g" fill="none" marker-end="url(#ah-g)"/>'
+    b += txt(260, 110, 'Lot (batch) suivant : les poids W s’affinent pas à pas', 'tg')
+
+    # Barre de répartition VRAM pendant l'entraînement d'un modèle 7B en FP16/FP32
+    b += txt(260, 140, 'Pourquoi entraîner demande 4× à 6× plus de VRAM que l’inférence :', 'ta')
+    b += box(12, 150, 82, 32, 'c', 4) + txt(53, 170, 'Poids (14 Go)', 'tc')
+    b += box(98, 150, 94, 32, 'p', 4) + txt(145, 170, 'Gradients (14 Go)', 'tp')
+    b += box(196, 150, 184, 32, 'a', 4) + txt(288, 170, 'États Optimiseur Adam (56 Go)', 'ta')
+    b += box(384, 150, 124, 32, 'g', 4) + txt(446, 170, 'Activations', 'tg')
+    train_fig = svg('0 0 520 192', b, 'Boucle d’entraînement et répartition de la mémoire VRAM entre poids, gradients, optimiseur et activations')
+
+    # SVG 2 : LoRA (Low-Rank Adaptation)
+    l = txt(260, 18, 'Fine-tuning LoRA : geler le géant et n’entraîner qu’un mini-détour', 'tc')
+    l += box(36, 40, 180, 90, 'c', 8) + txt(126, 76, 'Poids originaux W', 'tc') + txt(126, 96, 'GELÉS (99 % des poids)', 'ts') + txt(126, 114, '0 gradient stocké', 'ts')
+    l += box(284, 40, 96, 36, 'a', 6) + txt(332, 63, 'Matrice A (r=16)', 'ta')
+    l += arrow(332, 78, 332, 92, 'a')
+    l += box(284, 94, 96, 36, 'a', 6) + txt(332, 117, 'Matrice B (r=16)', 'ta')
+    l += txt(448, 76, 'Adaptateur LoRA', 'tg') + txt(448, 96, '&lt; 1 % des poids', 'ts') + txt(448, 114, 'Seul entraîné !', 'tg')
+    lora_fig = svg('0 0 520 144', l, 'Principe de LoRA : les poids du modèle restent gelés tandis que deux petites matrices de rang faible sont entraînées')
+
+    return (
+        '<h2>L’entraînement : comment un modèle apprend (et pourquoi ça coûte une fortune)</h2>'
+        '<p>Utiliser un ' + course_link('LLM', IDX_LLM) + ' déjà entraîné s’appelle l’<strong>inférence</strong> '
+        '(voir le cours suivant sur ' + course_link('l’inférence et les serveurs d’inférence', IDX_INFER) + '). '
+        'Mais avant de pouvoir répondre à la moindre question, le modèle naît avec des milliards de poids '
+        'totalement aléatoires : il ne sait sortir que du charabia. '
+        'L’<strong>entraînement</strong> est le processus industriel qui sculpte ces milliards de paramètres.</p>'
+        '<h3>1. Le moteur mathématique : Forward, Loss, Backprop, Optimiseur</h3>'
+        '<p>Que l’on entraîne un petit réseau ou un LLM géant, la mécanique repose toujours sur une boucle en 4 temps :</p>'
+        '<ol><li><strong>Passe avant (Forward Pass)</strong> : on montre au modèle un texte tronqué '
+        '(<em>« Le chat chasse la… »</em>) et il prédit les probabilités du mot suivant.</li>'
+        '<li><strong>Fonction de coût (Loss / Cross-Entropy)</strong> : on mesure mathématiquement son erreur par rapport '
+        'au vrai mot du texte d’origine (<em>« souris »</em>).</li>'
+        '<li><strong>Rétropropagation (Backpropagation)</strong> : en remontant le réseau couche par couche depuis la fin '
+        '(règle de dérivation en chaîne), on calcule le <strong>gradient</strong> de chaque poids : '
+        'dans quel sens et de combien faut-il tourner chaque bouton pour réduire l’erreur ?</li>'
+        '<li><strong>Optimiseur (AdamW)</strong> : il met effectivement à jour tous les poids d’un minuscule pas '
+        '(le <em>learning rate</em>) en tenant compte de l’élan accumulé (<em>momentum</em>).</li></ol>'
+        + fig(train_fig, 'Les 4 étapes d’un pas d’entraînement et l’explosion de la mémoire VRAM nécessaire.')
+        + '<h3>2. Pourquoi entraîner consomme 4 à 6 fois plus de VRAM que l’inférence ?</h3>'
+        '<p>En inférence, il suffit de charger les poids du modèle en mémoire (environ 14 Go en FP16 pour un modèle de 7 milliards '
+        'de paramètres). Mais pendant l’entraînement, la ' + course_link('VRAM du GPU', IDX_CPUGPU) + ' doit stocker simultanément :</p>'
+        '<ul><li><strong>Les poids du modèle</strong> (14 Go).</li>'
+        '<li><strong>Les gradients</strong> : un nombre par poids pour savoir comment le modifier (14 Go).</li>'
+        '<li><strong>Les états de l’optimiseur Adam</strong> : l’historique de la moyenne et de la variance de chaque poids en haute précision FP32 (jusqu’à 56 Go !).</li>'
+        '<li><strong>Les activations intermédiaires</strong> : tous les résultats de toutes les couches de la passe avant, qu’il faut garder en mémoire en attendant la passe arrière.</li></ul>'
+        '<p>C’est pour cela qu’un modèle qui tourne sur un seul GPU grand public en inférence exige toute une grappe '
+        'de serveurs (parallélisme de données, Tensor Parallelism, DeepSpeed ZeRO / FSDP) pour être entraîné de zéro.</p>'
+        '<h3>3. Les 3 grandes phases de la vie d’un LLM</h3>'
+        '<table class="edu-table"><thead><tr><th>Phase</th><th>Données utilisées</th><th>Coût &amp; Durée</th><th>Résultat obtenu</th></tr></thead><tbody>'
+        '<tr><td><strong>1. Pré-entraînement</strong> (Pre-training)</td><td>Des milliers de milliards de mots bruts (web, livres, code)</td>'
+        '<td>Des milliers de GPU pendant des mois (millions d’euros)</td><td>Un « modèle de base » qui complète du texte mais ne sait pas dialoguer</td></tr>'
+        '<tr><td><strong>2. Fine-tuning supervisé</strong> (SFT)</td><td>10 000 à 100 000 exemples de dialogues (Question → Réponse idéale)</td>'
+        '<td>Quelques GPU pendant quelques heures ou jours</td><td>Un assistant qui comprend les consignes et adopte le bon format</td></tr>'
+        '<tr><td><strong>3. Alignement</strong> (RLHF, DPO, GRPO)</td><td>Paires de réponses (Préférée vs Rejetée) ou récompenses vérifiables</td>'
+        '<td>Modéré (heures à jours)</td><td>Un modèle précis, aligné et entraîné au raisonnement</td></tr>'
+        '</tbody></table>'
+        '<h3>4. L’astuce MLOps : le Fine-Tuning léger avec LoRA et QLoRA</h3>'
+        + callout('Principe de LoRA (Low-Rank Adaptation)',
+                  'Au lieu de réécrire les 70 milliards de poids d’un modèle pour lui apprendre le jargon bancaire ou médical, '
+                  'on gèle 100 % du modèle d’origine et on branche sur le côté deux toutes petites matrices A et B (moins de 1 % des poids).')
+        + fig(lora_fig, 'Avec LoRA / QLoRA, seuls les petits adaptateurs orange sont modifiés : plus besoin de stocker les gradients ni l’optimiseur du modèle géant.')
+        + '<p>Avec <strong>QLoRA</strong>, on compresse même le modèle gelé en 4 bits tout en entraînant l’adaptateur LoRA en 16 bits : '
+        'cela permet de spécialiser un grand modèle sur une seule carte graphique, et d’interchanger plusieurs petits adaptateurs '
+        '(quelques dizaines de mégaoctets) à la volée sur le même serveur.</p>'
+    )
+
+
+# ============================================================ 13. Inférence, Serveurs d’inférence & Continuous Batching
+def course_inference_servers():
+    # SVG 1 : Les 2 phases de l'inférence (Prefill = Compute-bound vs Decode = Memory-bound)
+    p = txt(260, 18, 'Les deux régimes physiques de l’inférence LLM sur GPU', 'tc')
+    p += box(12, 30, 232, 86, 'c', 6) + txt(128, 52, 'Phase 1 : PREFILL (Lecture prompt)', 'tc')
+    p += txt(128, 72, 'Tous les tokens lus en parallèle', 'ts')
+    p += txt(128, 90, 'Multiplication Matrice × Matrice', 'ts')
+    p += txt(128, 108, 'Limité par le CALCUL (Compute-bound)', 'tg')
+    p += arrow(246, 73, 274, 73, 'w')
+    p += box(276, 30, 232, 86, 'p', 6) + txt(392, 52, 'Phase 2 : DECODE (Génération)', 'tp')
+    p += txt(392, 72, '1 seul token produit à la fois', 'ts')
+    p += txt(392, 90, 'Il faut relire 100 % des poids en VRAM', 'ts')
+    p += txt(392, 108, 'Limité par la MÉMOIRE (Memory-bound)', 'ta')
+    phases_fig = svg('0 0 520 128', p, 'Comparaison entre la phase Prefill limitée par le calcul et la phase Decode limitée par la bande passante mémoire')
+
+    # SVG 2 : Static Batching (trous d'attente) vs Continuous Batching (flux continu)
+    b = txt(260, 18, 'Batching Statique : le GPU attend que la réponse la plus longue finisse', 'ta')
+    # Static batching rows
+    b += txt(38, 40, 'Req 1', 'ts') + box(68, 28, 120, 16, 'c', 3) + box(190, 28, 230, 16, 'a', 3) + txt(305, 40, 'GPU inactif (attente Req 2)', 'ta')
+    b += txt(38, 60, 'Req 2', 'ts') + box(68, 48, 352, 16, 'c', 3) + txt(244, 60, 'Réponse très longue...', 'tc')
+    b += txt(38, 80, 'Req 3', 'ts') + box(68, 68, 180, 16, 'c', 3) + box(250, 68, 170, 16, 'a', 3) + txt(335, 80, 'GPU inactif', 'ta')
+    b += box(430, 28, 78, 56, 'a', 4) + txt(469, 53, 'Req 4 & 5', 'ta') + txt(469, 69, 'bloquées', 'ts')
+
+    b += '<line x1="12" y1="98" x2="508" y2="98" class="l-w" stroke-dasharray="4 4"/>'
+
+    b += txt(260, 118, 'Continuous Batching (vLLM / TGI) : insertion immédiate à chaque token fini', 'tg')
+    b += txt(38, 140, 'Slot 1', 'ts') + box(68, 128, 120, 16, 'c', 3) + txt(128, 140, 'Req 1', 'tc')
+    b += box(192, 128, 170, 16, 'g', 3) + txt(277, 140, 'Req 4 insérée aussitôt !', 'tg')
+    b += box(366, 128, 134, 16, 'p', 3) + txt(433, 140, 'Req 6', 'tp')
+
+    b += txt(38, 160, 'Slot 2', 'ts') + box(68, 148, 352, 16, 'c', 3) + txt(244, 160, 'Req 2 (longue)', 'tc') + box(424, 148, 76, 16, 'g', 3) + txt(462, 160, 'Req 7', 'tg')
+    b += txt(38, 180, 'Slot 3', 'ts') + box(68, 168, 180, 16, 'c', 3) + txt(158, 180, 'Req 3', 'tc') + box(252, 168, 248, 16, 'g', 3) + txt(376, 180, 'Req 5 insérée aussitôt !', 'tg')
+    cb_fig = svg('0 0 520 196', b, 'Comparaison entre le batching statique qui gaspille du GPU et le continuous batching qui insère de nouvelles requêtes à la volée')
+
+    return (
+        '<h2>Inférence, Serveurs d’inférence et Continuous Batching</h2>'
+        '<p>Une fois ' + course_link('l’entraînement', IDX_TRAIN) + ' terminé, les poids du modèle sont figés. '
+        'Faire tourner ce modèle en production pour répondre aux utilisateurs s’appelle l’<strong>inférence</strong>. '
+        'Or, si vous servez un LLM avec une simple boucle Python (<code>model.generate()</code> dans un serveur Flask ou FastAPI), '
+        'votre ' + course_link('GPU', IDX_CPUGPU) + ' sera sous-utilisé à 90 % et s’écroulera dès que 5 utilisateurs '
+        'poseront une question en même temps. Voici pourquoi — et comment les <strong>serveurs d’inférence</strong> '
+        '(vLLM, TensorRT-LLM, SGLang, TGI, llama.cpp) résolvent ce défi.</p>'
+        '<h3>1. Les deux phases de l’inférence : Prefill contre Decode</h3>'
+        '<p>Quand vous envoyez un message à un LLM, l’inférence se déroule en deux phases aux propriétés physiques opposées :</p>'
+        + fig(phases_fig, 'La phase Prefill sature les unités de calcul du GPU ; la phase Decode sature la bande passante de la mémoire VRAM.')
+        + '<ul><li><strong>Phase 1 — Le Prefill (lecture du prompt)</strong> : le modèle ingère tous les mots de votre question '
+        'd’un seul coup en parallèle et remplit son ' + course_link('KV Cache', IDX_KVCACHE) + '. '
+        'Les cœurs du GPU tournent à plein régime. Cette phase détermine le <strong>TTFT</strong> '
+        '(<em>Time To First Token</em> : le délai avant que le premier mot n’apparaisse).</li>'
+        '<li><strong>Phase 2 — Le Decode (génération mot à mot)</strong> : le modèle génère la réponse <strong>un seul token à la fois</strong> '
+        '(auto-régression). Or, pour produire ce minuscule mot, le GPU doit transférer <strong>100 % des milliards de poids du modèle</strong> '
+        'depuis sa mémoire VRAM vers ses unités de calcul ! Les cœurs de calcul passent alors 95 % du temps à attendre que la mémoire livre les poids.</li></ul>'
+        + callout('La clé du problème : mutualiser la lecture des poids',
+                  'Puisqu’il faut de toute façon lire les 14 Go de poids du modèle depuis la VRAM pour générer 1 token d’un utilisateur, '
+                  'autant utiliser cette même lecture pour calculer en même temps le token suivant de 30 utilisateurs différents !')
+        + '<h3>2. Le piège du Batching Statique (Static Batching)</h3>'
+        '<p>La première idée consiste à regrouper par exemple 4 requêtes d’utilisateurs dans un lot (<em>batch</em>) et à les faire '
+        'avancer ensemble. Problème : l’utilisateur 1 demande une réponse en 10 mots (« Oui ou non ? »), tandis que '
+        'l’utilisateur 2 demande un roman de 800 mots. '
+        'Avec un <strong>batching statique</strong>, aucun nouvel utilisateur ne peut entrer tant que l’utilisateur 2 n’a pas terminé '
+        'son 800<sup>e</sup> mot ! Les places 1 et 3 du lot tournent à vide en générant du remplissage inutile (<em>padding</em>).</p>'
+        '<h3>3. La révolution du Continuous Batching (In-flight Batching)</h3>'
+        '<p>Inventé pour les moteurs d’inférence modernes (Orca, <strong>vLLM</strong>, TensorRT-LLM), le '
+        '<strong>Continuous Batching</strong> planifie le travail non plus à l’échelle de la requête entière, '
+        'mais <strong>à chaque itération (token par token)</strong> :</p>'
+        + fig(cb_fig, 'En Continuous Batching, dès qu’une requête émet son token de fin (EOS), sa place est libérée à la milliseconde suivante pour un nouvel arrivant.')
+        + '<ol><li>À chaque pas de génération (toutes les 20 millisecondes), l’ordonnanceur vérifie si l’une des requêtes en cours vient de produire son token de fin (<code>EOS</code>).</li>'
+        '<li>Dès qu’une requête finit, elle sort immédiatement du lot et est renvoyée au client.</li>'
+        '<li>Sans attendre la fin des autres réponses longues, le serveur injecte aussitôt une nouvelle requête en attente dans l’emplacement libéré.</li></ol>'
+        '<p>Résultat : le débit global (<em>throughput</em> en tokens/seconde) d’un même GPU est multiplié par <strong>10× à 20×</strong>.</p>'
+        '<h3>4. Que fait un vrai serveur d’inférence en plus du Continuous Batching ?</h3>'
+        '<p>Un serveur d’inférence spécialisé combine quatre optimisations critiques :</p>'
+        '<ul><li><strong>Continuous Batching + Chunked Prefill</strong> : découpe les très longs prompts en morceaux pour qu’un nouveau gros prompt ne fasse pas bégayer les générations en cours.</li>'
+        '<li><strong>PagedAttention</strong> : gère la mémoire du ' + course_link('KV Cache', IDX_KVCACHE) + ' par petits blocs non contigus '
+        '(comme la mémoire virtuelle d’un OS), éliminant 95 % du gaspillage de VRAM.</li>'
+        '<li><strong>Quantification matérielle (FP8, AWQ, GGUF)</strong> : réduit les poids de 16 bits à 8 ou 4 bits. '
+        'Comme la phase Decode est limitée par la bande passante mémoire, diviser par 2 la taille des poids double presque la vitesse de génération !</li>'
+        '<li><strong>Speculative Decoding</strong> : un minuscule modèle ultra-rapide « brouillonne » 5 tokens d’avance, '
+        'et le gros modèle les vérifie tous les 5 d’un seul coup en parallèle.</li></ul>'
+        '<h3>5. Panorama des serveurs d’inférence en production</h3>'
+        '<table class="edu-table"><thead><tr><th>Moteur</th><th>Points forts</th><th>Cas d’usage privilégié</th></tr></thead><tbody>'
+        '<tr><td><strong>vLLM</strong></td><td>Standard open source MLOps, PagedAttention, très large support de modèles</td><td>Production multi-utilisateurs sur GPU (Kubernetes / OpenShift)</td></tr>'
+        '<tr><td><strong>SGLang</strong></td><td>RadixAttention (partage automatique du cache de préfixe), ultra-rapide sur JSON structuré</td><td>Agents IA complexes, prompts systèmes partagés</td></tr>'
+        '<tr><td><strong>TensorRT-LLM</strong> (Nvidia)</td><td>Compilation C++/CUDA sur mesure pour l’architecture exacte du GPU Nvidia</td><td>Performance maximale absolue sur clusters H100 / Blackwell</td></tr>'
+        '<tr><td><strong>llama.cpp / MLX</strong></td><td>Zéro dépendance lourde, quantification GGUF, tourne sur CPU et Apple Silicon (Metal)</td><td>Inférence locale / Edge (ex. projet Mirza sur Mac Mini)</td></tr>'
+        '</tbody></table>'
+    )
+
+
 COURSES = [
     ('cpu_gpu', '7. CPU vs GPU', course_cpu_gpu),
     ('rnn', '8. RNN et LSTM', course_rnn),
     ('embedding', '9. Embeddings', course_embedding),
     ('transformer', '10. Architecture Transformer', course_transformer),
     ('llm', '11. Les LLM', course_llm),
-    ('illusion_conscience', '12. Illusion de conscience (LLM)', course_illusion),
-    ('distillation', '13. Distillation', course_distillation),
-    ('kv_cache', '14. Le KV Cache', course_kv_cache),
-    ('llm_router', '15. Les routeurs de LLM', course_llm_router),
-    ('agentic', '16. L’IA agentique et les outils', course_agentic),
-    ('mcp', '17. Le protocole MCP (et ses limites)', course_mcp),
-    ('jepa_latent', '18. Modèles JEPA et espace latent', course_jepa),
-    ('ensemble_ga', '19. Machine Learning Old School (pas à la mode mais toujours aussi puissant)', course_ensemble_ga),
-    ('system_one_jev', '20. Modèles System One (type Jev) vs LLM', course_system_one),
+    ('training', '12. L’entraînement d’un modèle IA', course_training),
+    ('inference_servers', '13. Inférence, Serveurs et Continuous Batching', course_inference_servers),
+    ('illusion_conscience', '14. Illusion de conscience (LLM)', course_illusion),
+    ('distillation', '15. Distillation', course_distillation),
+    ('kv_cache', '16. Le KV Cache', course_kv_cache),
+    ('llm_router', '17. Les routeurs de LLM', course_llm_router),
+    ('agentic', '18. L’IA agentique et les outils', course_agentic),
+    ('mcp', '19. Le protocole MCP (et ses limites)', course_mcp),
+    ('jepa_latent', '20. Modèles JEPA et espace latent', course_jepa),
+    ('ensemble_ga', '21. Machine Learning Old School (pas à la mode mais toujours aussi puissant)', course_ensemble_ga),
+    ('system_one_jev', '22. Modèles System One (type Jev) vs LLM', course_system_one),
 ]
 
 
