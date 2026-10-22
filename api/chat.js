@@ -21,8 +21,8 @@ const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 10);
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const MAX_INPUT_CHARS = 4_000;
 const MAX_TOTAL_CHARS = 24_000;
-const MAX_OUTPUT_TOKENS = 1_000;
-const MIN_OUTPUT_TOKENS = 16;
+const MAX_OUTPUT_TOKENS = 2_500;
+const MIN_OUTPUT_TOKENS = 1_500;
 
 /**
  * Rôles acceptés. `system` n'est volontairement pas autorisé ici : le prompt
@@ -222,6 +222,7 @@ export default async function handler(req, res) {
                 Math.max(requestedTokens, MIN_OUTPUT_TOKENS),
                 MAX_OUTPUT_TOKENS
             ),
+            reasoning: { effort: 'low' },
             stream: false
         };
 

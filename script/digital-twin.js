@@ -402,7 +402,7 @@ const DigitalTwin = {
                     systemPrompt: systemPrompt,
                     messages: messages,
                     temperature: 0.8,
-                    maxTokens: 500
+                    maxTokens: 2000
                 })
             });
 
