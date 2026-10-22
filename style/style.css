@@ -2740,15 +2740,16 @@ input[type="range"]::-moz-range-thumb {
 
 /* Styles des elements SVG */
 .edu-figure text {
-    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     fill: #e8e8e8;
-    font-size: 12px;
+    font-size: 11px;
+    letter-spacing: -0.1px;
 }
-.edu-figure .ts { font-size: 10.5px; fill: #9a9aa8; }
-.edu-figure .tc { fill: #00f3ff; font-weight: bold; }
-.edu-figure .tp { fill: #e879f9; font-weight: bold; }
-.edu-figure .tg { fill: #00ffaa; font-weight: bold; }
-.edu-figure .ta { fill: #ffaa00; font-weight: bold; }
+.edu-figure .ts { font-size: 9.8px; fill: #a4a4b5; font-weight: 400; }
+.edu-figure .tc { fill: #00f3ff; font-weight: 600; }
+.edu-figure .tp { fill: #e879f9; font-weight: 600; }
+.edu-figure .tg { fill: #00ffaa; font-weight: 600; }
+.edu-figure .ta { fill: #ffaa00; font-weight: 600; }
 
 .edu-figure .b-c { fill: rgba(0, 243, 255, 0.08); stroke: #00f3ff; stroke-width: 1.4; }
 .edu-figure .b-p { fill: rgba(232, 121, 249, 0.12); stroke: #e879f9; stroke-width: 1.2; }

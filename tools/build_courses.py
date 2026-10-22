@@ -563,15 +563,15 @@ def course_kv_cache():
     b += txt(395, 160, 'Seul K4 V4 (vert) est calculé', 'tg')
     kv_fig = svg('0 0 520 175', b, 'Comparaison de la génération avec et sans KV Cache')
 
-    p = box(8, 20, 236, 96, 'p', 8) + txt(126, 44, '1. Prefill (lecture du prompt)', 'tp')
+    p = box(8, 20, 236, 96, 'p', 8) + txt(126, 44, '1. Prefill (lecture prompt)', 'tp')
     p += txt(126, 66, 'Tous les tokens en parallèle', 'ts')
     p += txt(126, 84, 'Remplit le KV Cache initial', 'ts')
     p += txt(126, 102, 'Limité par le calcul GPU', 'ta')
     p += arrow(246, 68, 274, 68, 'w')
     p += box(276, 20, 236, 96, 'g', 8) + txt(394, 44, '2. Decode (génération)', 'tg')
     p += txt(394, 66, 'Un seul token généré à la fois', 'ts')
-    p += txt(394, 84, 'Relit tout le KV Cache à chaque pas', 'ts')
-    p += txt(394, 102, 'Limité par le débit de la VRAM', 'tc')
+    p += txt(394, 84, 'Relit le KV Cache à chaque pas', 'ts')
+    p += txt(394, 102, 'Limité par le débit VRAM', 'tc')
     phases_fig = svg('0 0 520 130', p, 'Les deux phases de l’inférence : Prefill et Decode')
 
     return (
@@ -623,11 +623,11 @@ def course_llm_router():
     targets = [
         (14, 'g', 'Petit modèle rapide', 'Salutations, tri, résumé'),
         (76, 'c', 'Modèle spécialisé', 'Code, SQL, extraction JSON'),
-        (138, 'p', 'Gros modèle (Raisonnement)', 'Maths, architecture complexe'),
+        (138, 'p', 'Modèle Raisonnement', 'Maths, architecture complexe'),
     ]
     for y, c, title, sub in targets:
-        b += arrow(266, 100, 302, y + 24, c)
-        b += box(304, y, 208, 48, c) + txt(408, y + 20, title, 't' + c) + txt(408, y + 38, sub, 'ts')
+        b += arrow(266, 100, 300, y + 24, c)
+        b += box(302, y, 210, 48, c) + txt(407, y + 20, title, 't' + c) + txt(407, y + 38, sub, 'ts')
     router_fig = svg('0 0 520 200', b, 'Schéma d’un routeur de LLM orientant la requête vers le modèle adapté')
 
     return (
@@ -671,17 +671,17 @@ def course_llm_router():
 # ============================================================ 16. IA Agentique
 def course_agentic():
     b = box(8, 76, 98, 52, 'c') + txt(57, 98, 'Objectif', 'tc') + txt(57, 116, 'Utilisateur', 'ts')
-    b += arrow(108, 102, 142, 52, 'w')
-    b += box(144, 16, 216, 56, 'p', 8) + txt(252, 38, '1. LLM : Réflexion (Thought)', 'tp')
-    b += txt(252, 58, '« Je dois vérifier les fichiers »', 'ts')
-    b += arrow(362, 44, 410, 76, 'a')
+    b += arrow(108, 102, 138, 52, 'w')
+    b += box(140, 16, 228, 56, 'p', 8) + txt(254, 38, '1. LLM : Réflexion (Thought)', 'tp')
+    b += txt(254, 58, '« Vérifions les fichiers »', 'ts')
+    b += arrow(370, 44, 410, 76, 'a')
     b += box(304, 78, 208, 52, 'a', 8) + txt(408, 100, '2. Appel d’outil (Action)', 'ta')
     b += txt(408, 118, 'JSON : run_tests()', 'ts')
-    b += arrow(408, 132, 364, 168, 'g')
-    b += box(144, 146, 216, 52, 'g', 8) + txt(252, 168, '3. Exécution réelle (Système)', 'tg')
-    b += txt(252, 186, 'Terminal, API, Base de données', 'ts')
-    b += '<path d="M144 172 C114 172 114 44 142 44" class="l-c" fill="none" marker-end="url(#ah-c)"/>'
-    b += txt(76, 162, '4. Observation', 'tc') + txt(76, 178, '(résultat)', 'ts')
+    b += arrow(408, 132, 368, 168, 'g')
+    b += box(140, 146, 228, 52, 'g', 8) + txt(254, 168, '3. Exécution (Système)', 'tg')
+    b += txt(254, 186, 'Terminal, API, Base SQL', 'ts')
+    b += '<path d="M140 172 C112 172 112 44 138 44" class="l-c" fill="none" marker-end="url(#ah-c)"/>'
+    b += txt(74, 162, '4. Observation', 'tc') + txt(74, 178, '(résultat)', 'ts')
     react_fig = svg('0 0 520 210', b, 'Boucle ReAct d’un agent IA : Réflexion, Action, Exécution, Observation')
 
     return (
@@ -748,10 +748,10 @@ def course_mcp():
     mcp_fig = svg('0 0 520 170', b, 'Le protocole MCP remplace le maillage M fois N par un standard universel')
 
     c = txt(260, 18, 'Occupation de la fenêtre de contexte avec 5 serveurs MCP branchés', 'tc')
-    c += box(10, 30, 264, 36, 'a', 4) + txt(142, 53, 'Schémas de 80 outils (~40k tokens)', 'ta')
-    c += box(278, 30, 134, 36, 'p', 4) + txt(345, 53, 'Sorties JSON', 'tp')
-    c += box(416, 30, 94, 36, 'g', 4) + txt(463, 53, 'Votre tâche', 'tg')
-    c += txt(260, 88, 'Plus il y a d’outils chargés d’office, plus le modèle est lent, cher et confus', 'ts')
+    c += box(10, 30, 268, 36, 'a', 4) + txt(144, 53, '80 schémas d’outils (~40k tok)', 'ta')
+    c += box(282, 30, 126, 36, 'p', 4) + txt(345, 53, 'Sorties JSON', 'tp')
+    c += box(412, 30, 98, 36, 'g', 4) + txt(461, 53, 'Votre tâche', 'tg')
+    c += txt(260, 88, 'Trop d’outils chargés = contexte saturé, modèle lent et confus', 'ts')
     bloat_fig = svg('0 0 520 102', c, 'Saturation de la fenêtre de contexte par les définitions d’outils MCP')
 
     return (
@@ -808,34 +808,34 @@ def course_mcp():
 
 # ============================================================ 18. JEPA & Latent
 def course_jepa():
-    b = box(6, 24, 224, 120, 'a', 8) + txt(118, 46, 'Espace des pixels / mots', 'ta')
-    b += txt(118, 70, '• Chaque feuille qui bouge', 'ts')
-    b += txt(118, 88, '• Reflets exacts sur l’eau', 'ts')
-    b += txt(118, 106, '• Grain et bruit du capteur', 'ts')
-    b += txt(118, 130, 'Imprévisible et coûteux', 'ta')
-    b += arrow(232, 84, 288, 84, 'g') + txt(260, 74, 'Encodeur', 'tg')
-    b += box(290, 24, 224, 120, 'g', 8) + txt(402, 46, 'Espace latent (abstrait)', 'tg')
-    b += txt(402, 70, '• Position et vitesse des objets', 'ts')
-    b += txt(402, 88, '• Trajectoire du piéton', 'ts')
-    b += txt(402, 106, '• Relations physiques utiles', 'ts')
-    b += txt(402, 130, 'Compact et très prévisible', 'tg')
+    b = box(8, 20, 218, 124, 'a', 8) + txt(117, 42, 'Espace des pixels / mots', 'ta')
+    b += txt(117, 66, '• Chaque feuille qui bouge', 'ts')
+    b += txt(117, 84, '• Reflets exacts sur l’eau', 'ts')
+    b += txt(117, 102, '• Grain et bruit capteur', 'ts')
+    b += txt(117, 126, 'Imprévisible et coûteux', 'ta')
+    b += arrow(228, 84, 292, 84, 'g') + txt(260, 72, 'Encodeur', 'tg')
+    b += box(294, 20, 218, 124, 'g', 8) + txt(403, 42, 'Espace latent (abstrait)', 'tg')
+    b += txt(403, 66, '• Position et vitesse objets', 'ts')
+    b += txt(403, 84, '• Trajectoire du piéton', 'ts')
+    b += txt(403, 102, '• Relations physiques utiles', 'ts')
+    b += txt(403, 126, 'Compact et prévisible', 'tg')
     latent_fig = svg('0 0 520 158', b, 'Passage de l’espace des données brutes à l’espace latent abstrait')
 
-    j = box(20, 144, 134, 42, 'c') + txt(87, 162, 'Contexte observé x', 'tc') + txt(87, 178, 'Début de vidéo', 'ts')
+    j = box(14, 144, 146, 42, 'c') + txt(87, 162, 'Contexte observé x', 'tc') + txt(87, 178, 'Début de vidéo', 'ts')
     j += arrow(87, 142, 87, 118, 'c')
-    j += box(20, 80, 134, 36, 'c') + txt(87, 103, 'Encodeur contexte', 'tc')
+    j += box(14, 80, 146, 36, 'c') + txt(87, 103, 'Encodeur contexte', 'tc')
     j += arrow(87, 78, 87, 56, 'g')
-    j += box(20, 18, 134, 36, 'g') + txt(87, 41, 'État latent s_x', 'tg')
-    j += arrow(156, 36, 192, 36, 'a')
-    j += box(194, 18, 132, 36, 'a') + txt(260, 41, 'Prédicteur latent', 'ta')
-    j += box(198, 82, 124, 32, 'w') + txt(260, 103, 'Variable z (aléa)', 'ts')
+    j += box(14, 18, 146, 36, 'g') + txt(87, 41, 'État latent s_x', 'tg')
+    j += arrow(162, 36, 188, 36, 'a')
+    j += box(190, 18, 140, 36, 'a') + txt(260, 41, 'Prédicteur latent', 'ta')
+    j += box(194, 82, 132, 32, 'w') + txt(260, 103, 'Variable z (aléa)', 'ts')
     j += arrow(260, 80, 260, 56, 'w')
-    j += arrow(328, 36, 364, 36, 'a')
-    j += box(366, 18, 134, 36, 'g') + txt(433, 41, 'État cible s_y', 'tg')
+    j += arrow(332, 36, 358, 36, 'a')
+    j += box(360, 18, 146, 36, 'g') + txt(433, 41, 'État cible s_y', 'tg')
     j += arrow(433, 78, 433, 56, 'p')
-    j += box(366, 80, 134, 36, 'p') + txt(433, 103, 'Encodeur cible', 'tp')
+    j += box(360, 80, 146, 36, 'p') + txt(433, 103, 'Encodeur cible', 'tp')
     j += arrow(433, 142, 433, 118, 'p')
-    j += box(366, 144, 134, 42, 'p') + txt(433, 162, 'Cible future y', 'tp') + txt(433, 178, 'Suite de la vidéo', 'ts')
+    j += box(360, 144, 146, 42, 'p') + txt(433, 162, 'Cible future y', 'tp') + txt(433, 178, 'Suite de la vidéo', 'ts')
     j += txt(260, 204, 'Prédiction dans l’espace latent : aucun pixel de y n’est généré', 'ts')
     jepa_fig = svg('0 0 520 215', j, 'Architecture JEPA : prédiction dans l’espace latent')
 
@@ -885,47 +885,48 @@ def course_jepa():
     )
 
 
-# ============================================================ 19. Arbres, Boosting & Algos génétiques
+# ============================================================ 21. Arbres, Boosting & Algos génétiques
 def course_ensemble_ga():
-    # SVG 1 : Bagging (Random Forest) vs Boosting (Gradient Boosting)
-    b = txt(130, 18, 'Random Forest (Bagging : en parallèle)', 'tc')
-    b += txt(390, 18, 'Gradient Boosting (en série : erreurs)', 'tp')
+    # SVG 1 : Empilement vertical (Haut = Random Forest en parallèle / Bas = Gradient Boosting en série)
+    b = txt(260, 18, 'Random Forest (Bagging) : arbres indépendants en parallèle', 'tc')
+    for i, x in enumerate((90, 260, 430)):
+        b += box(x - 66, 28, 132, 42, 'c', 6)
+        b += txt(x, 46, f'Arbre {i + 1}', 'tc') + txt(x, 63, 'Tirage aléatoire', 'ts')
+        b += arrow(x, 72, 260, 96, 'c')
+    b += box(140, 98, 240, 28, 'g', 6) + txt(260, 117, 'Vote majoritaire / Moyenne', 'tg')
 
-    # Gauche : 3 arbres indépendants qui votent
-    for i, x in enumerate((42, 130, 218)):
-        b += box(x - 34, 32, 68, 42, 'c', 5) + txt(x, 50, f'Arbre {i + 1}', 'tc') + txt(x, 66, 'Tirage aléa.', 'ts')
-        b += arrow(x, 76, 130, 112, 'c')
-    b += box(54, 114, 152, 34, 'g', 6) + txt(130, 136, 'Vote majoritaire / Moyenne', 'tg')
+    b += '<line x1="16" y1="140" x2="504" y2="140" class="l-w" stroke-dasharray="4 4"/>'
 
-    # Droite : chaîne d'arbres corrigeant les erreurs
+    b += txt(260, 160, 'Gradient Boosting : arbres en série qui corrigent les erreurs', 'tp')
     steps = [
-        (296, 'Arbre 1', 'Prédiction brute', 'c'),
-        (390, 'Arbre 2', 'Corrige erreur 1', 'a'),
-        (484, 'Arbre 3', 'Corrige erreur 2', 'p'),
+        (90, '1. Arbre 1', 'Prédiction brute', 'c'),
+        (260, '2. Arbre 2', 'Corrige erreur 1', 'a'),
+        (430, '3. Arbre 3', 'Corrige erreur 2', 'p'),
     ]
     for idx, (x, title, sub, col) in enumerate(steps):
-        b += box(x - 36, 32, 72, 42, col, 5) + txt(x, 50, title, 't' + col) + txt(x, 66, sub, 'ts')
+        b += box(x - 68, 170, 136, 42, col, 6)
+        b += txt(x, 188, title, 't' + col) + txt(x, 205, sub, 'ts')
         if idx < 2:
-            b += arrow(x + 38, 53, steps[idx + 1][0] - 38, 53, 'a')
-        b += arrow(x, 76, 390, 112, col)
-    b += box(306, 114, 168, 34, 'g', 6) + txt(390, 136, 'Somme pondérée ultra-précise', 'tg')
-    trees_fig = svg('0 0 524 160', b, 'Comparaison entre Random Forest en parallèle et Gradient Boosting en série')
+            b += arrow(x + 70, 191, steps[idx + 1][0] - 70, 191, 'a')
+        b += arrow(x, 214, 260, 238, col)
+    b += box(130, 240, 260, 28, 'g', 6) + txt(260, 259, 'Somme pondérée haute précision', 'tg')
+    trees_fig = svg('0 0 520 276', b, 'Comparaison entre Random Forest en parallèle et Gradient Boosting en série')
 
     # SVG 2 : Cycle d'un algorithme génétique
     g = ''
     ga_steps = [
-        (12, 34, 108, 54, 'c', '1. Population', 'N candidats au hasard'),
-        (144, 34, 108, 54, 'g', '2. Fitness', 'Score de survie'),
-        (276, 34, 108, 54, 'p', '3. Croisement', 'Mix des meilleurs'),
-        (408, 34, 104, 54, 'a', '4. Mutation', 'Aléa créatif (1 %)'),
+        (8, 28, 116, 54, 'c', '1. Population', 'N individus'),
+        (138, 28, 116, 54, 'g', '2. Fitness', 'Score survie'),
+        (268, 28, 116, 54, 'p', '3. Croisement', 'Mix parents'),
+        (398, 28, 114, 54, 'a', '4. Mutation', 'Aléa (1-5 %)'),
     ]
     for idx, (x, y, w, h, col, t1, t2) in enumerate(ga_steps):
         g += box(x, y, w, h, col, 6) + txt(x + w // 2, y + 23, t1, 't' + col) + txt(x + w // 2, y + 42, t2, 'ts')
         if idx < 3:
             g += arrow(x + w + 2, y + 27, ga_steps[idx + 1][0] - 2, y + 27, 'w')
-    g += '<path d="M460 90 C460 128 66 128 66 90" class="l-g" fill="none" marker-end="url(#ah-g)"/>'
-    g += txt(260, 120, 'Nouvelle génération (répété sur des centaines de cycles)', 'tg')
-    ga_fig = svg('0 0 520 138', g, 'Cycle d’évolution d’un algorithme génétique : population, fitness, croisement, mutation')
+    g += '<path d="M455 84 C455 122 66 122 66 84" class="l-g" fill="none" marker-end="url(#ah-g)"/>'
+    g += txt(260, 115, 'Nouvelle génération (répété sur des centaines de cycles)', 'tg')
+    ga_fig = svg('0 0 520 132', g, 'Cycle d’évolution d’un algorithme génétique : population, fitness, croisement, mutation')
 
     return (
         '<h2>Machine Learning Old School (pas à la mode mais toujours aussi puissant)</h2>'
@@ -993,28 +994,28 @@ def course_ensemble_ga():
     )
 
 
-# ============================================================ 20. Modèles System One (type Jev)
+# ============================================================ 22. Modèles System One (type Jev)
 def course_system_one():
     # SVG 1 : LLM Classique (Génératif auto-régressif) vs System One Model (Jev - Décisionnel direct)
-    b = txt(260, 18, 'LLM classique (Système 2 / Génératif : lent et fragile pour du code)', 'ta')
-    b += box(12, 28, 108, 42, 'c', 5) + txt(66, 46, 'Contexte + Prompt', 'tc') + txt(66, 62, '« Réponds en JSON »', 'ts')
-    b += arrow(122, 49, 154, 49, 'a')
-    b += box(156, 28, 198, 42, 'a', 5) + txt(255, 46, 'Boucle Token par Token', 'ta') + txt(255, 62, '{" , "ur" , "gent" , ":" , ...', 'ts')
-    b += arrow(356, 49, 388, 49, 'a')
-    b += box(390, 28, 118, 42, 'p', 5) + txt(449, 46, 'Parsing JSON', 'tp') + txt(449, 62, 'Risque crash / coût', 'ts')
+    b = txt(260, 18, 'LLM classique (Génératif : lent et fragile pour du code)', 'ta')
+    b += box(8, 28, 128, 42, 'c', 5) + txt(72, 46, 'Prompt texte', 'tc') + txt(72, 62, '« Réponds JSON »', 'ts')
+    b += arrow(138, 49, 158, 49, 'a')
+    b += box(160, 28, 196, 42, 'a', 5) + txt(258, 46, 'Boucle Token par Token', 'ta') + txt(258, 62, '{" , "ur" , "gent" ...', 'ts')
+    b += arrow(358, 49, 378, 49, 'a')
+    b += box(380, 28, 132, 42, 'p', 5) + txt(446, 46, 'Parsing JSON', 'tp') + txt(446, 62, 'Crash / latence', 'ts')
 
     b += '<line x1="12" y1="86" x2="508" y2="86" class="l-w" stroke-dasharray="4 4"/>'
 
-    b += txt(260, 106, 'Modèle System One (type Jev : 1 seul passage parallèle, typé et calibré)', 'tg')
-    b += box(12, 118, 126, 56, 'c', 5) + txt(75, 140, 'État + Schéma typé', 'tc') + txt(75, 158, 'Noul / Choice / Score', 'ts')
-    b += arrow(140, 146, 178, 146, 'g')
-    b += box(180, 118, 148, 56, 'g', 5) + txt(254, 140, 'Modèle System One', 'tg') + txt(254, 158, '1 passe directe (RLCD)', 'ts')
-    b += arrow(330, 130, 368, 124, 'g')
-    b += arrow(330, 146, 368, 146, 'g')
-    b += arrow(330, 162, 368, 168, 'g')
-    b += box(370, 110, 138, 22, 'g', 4) + txt(439, 125, 'Noul : p(oui) = 0.94', 'tg')
-    b += box(370, 135, 138, 22, 'c', 4) + txt(439, 150, 'Choice : [Fraude: 0.88]', 'tc')
-    b += box(370, 160, 138, 22, 'p', 4) + txt(439, 175, 'Score : Critique (0.91)', 'tp')
+    b += txt(260, 106, 'Modèle System One (type Jev : 1 passe parallèle, typé et calibré)', 'tg')
+    b += box(8, 118, 144, 56, 'c', 5) + txt(80, 140, 'État + Schéma', 'tc') + txt(80, 158, 'Questions typées', 'ts')
+    b += arrow(154, 146, 174, 146, 'g')
+    b += box(176, 118, 146, 56, 'g', 5) + txt(249, 140, 'Modèle System One', 'tg') + txt(249, 158, '1 passe (RLCD)', 'ts')
+    b += arrow(324, 130, 346, 122, 'g')
+    b += arrow(324, 146, 346, 146, 'g')
+    b += arrow(324, 162, 346, 170, 'g')
+    b += box(348, 110, 164, 22, 'g', 4) + txt(430, 125, 'Noul : p(oui)=0.94', 'tg')
+    b += box(348, 135, 164, 22, 'c', 4) + txt(430, 150, 'Choice : Fraude 0.88', 'tc')
+    b += box(348, 160, 164, 22, 'p', 4) + txt(430, 175, 'Score : Critique 0.91', 'tp')
     s1_fig = svg('0 0 520 192', b, 'Comparaison entre un LLM génératif token par token et un modèle System One décisionnel comme Jev')
 
     return (
@@ -1078,35 +1079,35 @@ def course_system_one():
 # ============================================================ 12. L’entraînement d’un modèle IA / LLM
 def course_training():
     # SVG 1 : Boucle d'entraînement (Forward -> Loss -> Backprop -> Optimizer) + Allocation VRAM
-    b = txt(260, 18, 'Boucle d’entraînement d’un réseau de neurones (répétée des millions de fois)', 'tc')
+    b = txt(260, 18, 'Boucle d’entraînement d’un réseau de neurones', 'tc')
     steps = [
-        (10, 32, 112, 50, 'c', '1. Forward Pass', 'Prédiction y_hat'),
-        (142, 32, 112, 50, 'a', '2. Loss (Erreur)', 'Écart vs réalité y'),
-        (274, 32, 112, 50, 'p', '3. Backprop', 'Calcul des gradients'),
-        (406, 32, 104, 50, 'g', '4. Optimiseur', 'Mise à jour poids W'),
+        (8, 30, 116, 50, 'c', '1. Forward', 'Prédiction y'),
+        (138, 30, 116, 50, 'a', '2. Loss', 'Calcul erreur'),
+        (268, 30, 116, 50, 'p', '3. Backprop', 'Gradients'),
+        (398, 30, 114, 50, 'g', '4. Optimiseur', 'Maj poids W'),
     ]
     for idx, (x, y, w, h, col, t1, t2) in enumerate(steps):
         b += box(x, y, w, h, col, 6) + txt(x + w // 2, y + 22, t1, 't' + col) + txt(x + w // 2, y + 40, t2, 'ts')
         if idx < 3:
             b += arrow(x + w + 2, y + 25, steps[idx + 1][0] - 2, y + 25, 'w')
-    b += '<path d="M458 84 C458 118 66 118 66 84" class="l-g" fill="none" marker-end="url(#ah-g)"/>'
-    b += txt(260, 110, 'Lot (batch) suivant : les poids W s’affinent pas à pas', 'tg')
+    b += '<path d="M455 82 C455 116 66 116 66 82" class="l-g" fill="none" marker-end="url(#ah-g)"/>'
+    b += txt(260, 108, 'Lot (batch) suivant : les poids W s’affinent pas à pas', 'tg')
 
     # Barre de répartition VRAM pendant l'entraînement d'un modèle 7B en FP16/FP32
-    b += txt(260, 140, 'Pourquoi entraîner demande 4× à 6× plus de VRAM que l’inférence :', 'ta')
-    b += box(12, 150, 82, 32, 'c', 4) + txt(53, 170, 'Poids (14 Go)', 'tc')
-    b += box(98, 150, 94, 32, 'p', 4) + txt(145, 170, 'Gradients (14 Go)', 'tp')
-    b += box(196, 150, 184, 32, 'a', 4) + txt(288, 170, 'États Optimiseur Adam (56 Go)', 'ta')
-    b += box(384, 150, 124, 32, 'g', 4) + txt(446, 170, 'Activations', 'tg')
+    b += txt(260, 138, 'Répartition VRAM en entraînement (4× à 6× plus que l’inférence) :', 'ta')
+    b += box(10, 148, 92, 34, 'c', 4) + txt(56, 169, 'Poids 14G', 'tc')
+    b += box(106, 148, 102, 34, 'p', 4) + txt(157, 169, 'Grad. 14G', 'tp')
+    b += box(212, 148, 188, 34, 'a', 4) + txt(306, 169, 'Optimiseur Adam 56G', 'ta')
+    b += box(404, 148, 106, 34, 'g', 4) + txt(457, 169, 'Activations', 'tg')
     train_fig = svg('0 0 520 192', b, 'Boucle d’entraînement et répartition de la mémoire VRAM entre poids, gradients, optimiseur et activations')
 
     # SVG 2 : LoRA (Low-Rank Adaptation)
-    l = txt(260, 18, 'Fine-tuning LoRA : geler le géant et n’entraîner qu’un mini-détour', 'tc')
-    l += box(36, 40, 180, 90, 'c', 8) + txt(126, 76, 'Poids originaux W', 'tc') + txt(126, 96, 'GELÉS (99 % des poids)', 'ts') + txt(126, 114, '0 gradient stocké', 'ts')
-    l += box(284, 40, 96, 36, 'a', 6) + txt(332, 63, 'Matrice A (r=16)', 'ta')
-    l += arrow(332, 78, 332, 92, 'a')
-    l += box(284, 94, 96, 36, 'a', 6) + txt(332, 117, 'Matrice B (r=16)', 'ta')
-    l += txt(448, 76, 'Adaptateur LoRA', 'tg') + txt(448, 96, '&lt; 1 % des poids', 'ts') + txt(448, 114, 'Seul entraîné !', 'tg')
+    l = txt(260, 18, 'Fine-tuning LoRA : geler le modèle et entraîner un mini-détour', 'tc')
+    l += box(24, 38, 188, 90, 'c', 8) + txt(118, 72, 'Poids originaux W', 'tc') + txt(118, 92, 'GELÉS (99 % des poids)', 'ts') + txt(118, 110, '0 gradient stocké', 'ts')
+    l += box(236, 38, 128, 36, 'a', 6) + txt(300, 61, 'Matrice A (r=16)', 'ta')
+    l += arrow(300, 76, 300, 90, 'a')
+    l += box(236, 92, 128, 36, 'a', 6) + txt(300, 115, 'Matrice B (r=16)', 'ta')
+    l += txt(444, 72, 'Adaptateur LoRA', 'tg') + txt(444, 92, '&lt; 1 % des poids', 'ts') + txt(444, 110, 'Seul entraîné !', 'tg')
     lora_fig = svg('0 0 520 144', l, 'Principe de LoRA : les poids du modèle restent gelés tandis que deux petites matrices de rang faible sont entraînées')
 
     return (
@@ -1161,34 +1162,33 @@ def course_training():
 def course_inference_servers():
     # SVG 1 : Les 2 phases de l'inférence (Prefill = Compute-bound vs Decode = Memory-bound)
     p = txt(260, 18, 'Les deux régimes physiques de l’inférence LLM sur GPU', 'tc')
-    p += box(12, 30, 232, 86, 'c', 6) + txt(128, 52, 'Phase 1 : PREFILL (Lecture prompt)', 'tc')
-    p += txt(128, 72, 'Tous les tokens lus en parallèle', 'ts')
-    p += txt(128, 90, 'Multiplication Matrice × Matrice', 'ts')
-    p += txt(128, 108, 'Limité par le CALCUL (Compute-bound)', 'tg')
-    p += arrow(246, 73, 274, 73, 'w')
-    p += box(276, 30, 232, 86, 'p', 6) + txt(392, 52, 'Phase 2 : DECODE (Génération)', 'tp')
+    p += box(10, 30, 236, 86, 'c', 6) + txt(128, 52, '1. PREFILL (Lecture prompt)', 'tc')
+    p += txt(128, 72, 'Tokens lus en parallèle', 'ts')
+    p += txt(128, 90, 'Calcul Matrice × Matrice', 'ts')
+    p += txt(128, 108, 'Limité par le CALCUL GPU', 'tg')
+    p += arrow(248, 73, 272, 73, 'w')
+    p += box(274, 30, 236, 86, 'p', 6) + txt(392, 52, '2. DECODE (Génération)', 'tp')
     p += txt(392, 72, '1 seul token produit à la fois', 'ts')
-    p += txt(392, 90, 'Il faut relire 100 % des poids en VRAM', 'ts')
-    p += txt(392, 108, 'Limité par la MÉMOIRE (Memory-bound)', 'ta')
+    p += txt(392, 90, 'Relit 100 % des poids en VRAM', 'ts')
+    p += txt(392, 108, 'Limité par le DÉBIT MÉMOIRE', 'ta')
     phases_fig = svg('0 0 520 128', p, 'Comparaison entre la phase Prefill limitée par le calcul et la phase Decode limitée par la bande passante mémoire')
 
     # SVG 2 : Static Batching (trous d'attente) vs Continuous Batching (flux continu)
-    b = txt(260, 18, 'Batching Statique : le GPU attend que la réponse la plus longue finisse', 'ta')
-    # Static batching rows
-    b += txt(38, 40, 'Req 1', 'ts') + box(68, 28, 120, 16, 'c', 3) + box(190, 28, 230, 16, 'a', 3) + txt(305, 40, 'GPU inactif (attente Req 2)', 'ta')
-    b += txt(38, 60, 'Req 2', 'ts') + box(68, 48, 352, 16, 'c', 3) + txt(244, 60, 'Réponse très longue...', 'tc')
-    b += txt(38, 80, 'Req 3', 'ts') + box(68, 68, 180, 16, 'c', 3) + box(250, 68, 170, 16, 'a', 3) + txt(335, 80, 'GPU inactif', 'ta')
-    b += box(430, 28, 78, 56, 'a', 4) + txt(469, 53, 'Req 4 & 5', 'ta') + txt(469, 69, 'bloquées', 'ts')
+    b = txt(260, 18, 'Batching Statique : le GPU attend la réponse la plus longue', 'ta')
+    b += txt(36, 40, 'Req 1', 'ts') + box(68, 28, 116, 16, 'c', 3) + box(186, 28, 226, 16, 'a', 3) + txt(299, 40, 'GPU inactif (attend Req 2)', 'ta')
+    b += txt(36, 60, 'Req 2', 'ts') + box(68, 48, 344, 16, 'c', 3) + txt(240, 60, 'Réponse très longue...', 'tc')
+    b += txt(36, 80, 'Req 3', 'ts') + box(68, 68, 174, 16, 'c', 3) + box(244, 68, 168, 16, 'a', 3) + txt(328, 80, 'GPU inactif', 'ta')
+    b += box(420, 28, 90, 56, 'a', 4) + txt(465, 52, 'Req 4 & 5', 'ta') + txt(465, 69, 'bloquées', 'ts')
 
     b += '<line x1="12" y1="98" x2="508" y2="98" class="l-w" stroke-dasharray="4 4"/>'
 
-    b += txt(260, 118, 'Continuous Batching (vLLM / TGI) : insertion immédiate à chaque token fini', 'tg')
-    b += txt(38, 140, 'Slot 1', 'ts') + box(68, 128, 120, 16, 'c', 3) + txt(128, 140, 'Req 1', 'tc')
-    b += box(192, 128, 170, 16, 'g', 3) + txt(277, 140, 'Req 4 insérée aussitôt !', 'tg')
-    b += box(366, 128, 134, 16, 'p', 3) + txt(433, 140, 'Req 6', 'tp')
+    b += txt(260, 118, 'Continuous Batching (vLLM) : insertion dès qu’un token finit', 'tg')
+    b += txt(36, 140, 'Slot 1', 'ts') + box(68, 128, 116, 16, 'c', 3) + txt(126, 140, 'Req 1', 'tc')
+    b += box(188, 128, 180, 16, 'g', 3) + txt(278, 140, 'Req 4 insérée direct', 'tg')
+    b += box(372, 128, 136, 16, 'p', 3) + txt(440, 140, 'Req 6', 'tp')
 
-    b += txt(38, 160, 'Slot 2', 'ts') + box(68, 148, 352, 16, 'c', 3) + txt(244, 160, 'Req 2 (longue)', 'tc') + box(424, 148, 76, 16, 'g', 3) + txt(462, 160, 'Req 7', 'tg')
-    b += txt(38, 180, 'Slot 3', 'ts') + box(68, 168, 180, 16, 'c', 3) + txt(158, 180, 'Req 3', 'tc') + box(252, 168, 248, 16, 'g', 3) + txt(376, 180, 'Req 5 insérée aussitôt !', 'tg')
+    b += txt(36, 160, 'Slot 2', 'ts') + box(68, 148, 344, 16, 'c', 3) + txt(240, 160, 'Req 2 (longue)', 'tc') + box(416, 148, 92, 16, 'g', 3) + txt(462, 160, 'Req 7', 'tg')
+    b += txt(36, 180, 'Slot 3', 'ts') + box(68, 168, 174, 16, 'c', 3) + txt(155, 180, 'Req 3', 'tc') + box(246, 168, 262, 16, 'g', 3) + txt(377, 180, 'Req 5 insérée direct', 'tg')
     cb_fig = svg('0 0 520 196', b, 'Comparaison entre le batching statique qui gaspille du GPU et le continuous batching qui insère de nouvelles requêtes à la volée')
 
     return (
