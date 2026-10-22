@@ -188,6 +188,7 @@ function initNeuralNetwork() {
         const isMobile = window.innerWidth < 768;
         const activeTab = document.querySelector('.tab-content.active');
         if (isMobile && activeTab && (activeTab.id === 'hardware-lab' || activeTab.id === 'mlp-studio')) {
+            ctx.clearRect(0, 0, width, height);
             rafId = requestAnimationFrame(animate);
             return;
         }

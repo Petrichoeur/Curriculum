@@ -2209,8 +2209,12 @@ body {
     max-width: 100%;
 }
 
+#hardware-lab .glass-panel {
+    background: rgba(8, 6, 16, 0.96);
+}
+
 .hw-panel-box {
-    background: rgba(10, 10, 15, 0.45);
+    background: rgba(10, 8, 20, 0.94);
     border: 1px solid var(--glass-border);
     border-radius: 8px;
     padding: 14px;
@@ -2601,6 +2605,11 @@ input[type="range"]::-moz-range-thumb {
    RESPONSIVE DESIGN // BREAKPOINTS
    ========================================== */
 @media (max-width: 980px) {
+    #hardware-lab .glass-panel {
+        background: #080610;
+        backdrop-filter: none;
+    }
+
     .hw-layout {
         grid-template-columns: minmax(0, 1fr);
     }
