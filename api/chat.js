@@ -11,8 +11,6 @@
  * Format : OpenAI chat completions (`messages`), pas le format `contents`/
  * `parts` de Gemini. Le front a été aligné en conséquence.
  */
-import fs from 'node:fs';
-
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
 const LEGACY_MODELS = new Set([
@@ -36,6 +34,207 @@ const MIN_OUTPUT_TOKENS = 1_800;
  */
 const ALLOWED_ROLES = new Set(['user', 'assistant']);
 
+/**
+ * Données de référence de Florian (synchronisées avec config/data.json et config/projects.json)
+ * embarquées directement dans la fonction serverless Vercel.
+ */
+const PROFILE_DATA = {
+    identity: {
+        name: "Florian Bobo",
+        birth_date: "1992-07-01",
+        location: "Pérols, Montpellier, France",
+        role: "Tech Lead IA & MLOps",
+        tagline: "Ingénieur passionné. Allergique au bullshit linkedin, obsédé par le Clean Code et la rentabilité des algos.",
+        email: "florian.bobo34@gmail.com",
+        linkedin: "linkedin.com/in/fb66",
+        website: "iaops.fr"
+    },
+    inner_circle: {
+        son: {
+            birth: "2017-02-02",
+            desc: "Curieux et structurant, me force à vulgariser le monde."
+        },
+        daughter: {
+            birth: "2020-12-09",
+            desc: "Pile électrique sans bouton off."
+        },
+        pet: {
+            name: "Gojo",
+            breed: "Croisé Labrador/Malinois",
+            personality: "Tornade d'amour et de bêtises — mon miroir animal."
+        },
+        girlfriend: {
+            name: "Angélique",
+            birth: "1994-04-26",
+            job: "Dev C#",
+            note: "Ma compagne, pas mariés, pas la mère de mes enfants."
+        },
+        team: {
+            Maxime: "Squad-lead, commercial dans l'âme",
+            Tony: "Expert DevOps du tonnerre",
+            Michel: "Couteau-suisse de l'infra",
+            Mina: "Cheffe de projet qui a réponse à tout",
+            Imad: "Nouvel arrivant, passionné d'architectures IA complexes"
+        }
+    },
+    psychology: {
+        cognitive_style: "Pragmatique, direct et sans filtre. Pensée en arborescence, allergique aux réunions qui auraient pu être un email.",
+        coding_habits: "Clean Code absolu : Type Hinting, Docstrings, Linters. Je structure pour calmer le chaos de mon esprit.",
+        temperament: "Humour satirique et piquant. Pédagogue dans l'âme (ex-prof) mais implacable sur la qualité technique.",
+        values: ["Green IT", "InnerSource", "Partage de connaissance", "Efficacité radicale", "Transparence"]
+    },
+    hard_skills: {
+        god_tier: [
+            "Python (Expert)",
+            "Cython (optimisation bas niveau, wrapping C)",
+            "Architecture MLOps (design patterns, scalabilité)",
+            "Pydantic & FastAPI",
+            "Mathématiques / Statistiques",
+            "Nvidia Run:AI"
+        ],
+        expert: [
+            "Kubernetes (admin cluster, GPU sharing, operators)",
+            "OpenShift (SA, certificats, multi-tenant)",
+            "Docker (multi-stage builds)",
+            "Gitlab-CI (AutoDevOps, pipelines complexes)",
+            "Kestra (flows, subflows, CI/CD, IaC)",
+            "Ansible",
+            "MLFlow",
+            "BentoML",
+            "Kubeflow",
+            "Linux (Bash avancé, RHEL/Debian)",
+            "IA Générative (vLLM, RAG, Fine-tuning, Transformers, GAN)",
+            "Machine Learning (MLP, NLP, SVM, GBM, LightGBM, RF, K-means, DBSCAN)",
+            "Statistiques (bayésien, séries temporelles, plan d'expérience)",
+            "Data Visualisation (D3.js, sémiologie graphique)",
+            "Data Engineering (ETL, Elasticsearch, Dataiku, Pandas, Parquet, Spark, Kafka)"
+        ],
+        agentic_genai: ["LangChain", "MCP", "n8n", "Mistral AI", "HuggingFace", "PyTorch"],
+        competent: [
+            "ELK Stack",
+            "Prometheus / Grafana",
+            "Dynatrace",
+            "Helm & Kustomize",
+            "Jenkins",
+            "Concourse CI",
+            "SQL (PostgreSQL, Oracle)",
+            "KSQL / MQL / Query DSL"
+        ],
+        notions_hobbies: [
+            "Rust (j'admire le Borrow Checker, je bricole)",
+            "Go (je sais lire et modifier)",
+            "JS / Node.js / D3.js",
+            "C (mes racines, gestion mémoire)",
+            "C++ (lecture de libs)"
+        ]
+    },
+    formations: [
+        "Master MIASHS — Informatique & Mathématiques",
+        "Maîtrise Enseignement, Éducation et Formation"
+    ],
+    pet_peeves: [
+        "Notebooks Jupyter en production",
+        "Code Python non typé",
+        "Gaspillage de ressources Cloud",
+        "Jargon pour masquer l'incompétence",
+        "Poseurs LinkedIn",
+        "Réunions interminables"
+    ],
+    career_timeline: [
+        {
+            period: "Jan 2023 - Présent",
+            company: "Crédit Agricole Group Infrastructure Platform (CA-GIP)",
+            role: "Tech Lead IA & MLOps",
+            location: "Montpellier/Remote",
+            details: "Industrialisation de l'IA à l'échelle bancaire. Stack: K8s, Openshift, Nvidia, Minio, Run:AI, Ansible. Projet phare : Design et déploiement d'une plateforme GPU-as-a-Service multi-tenant (2025). Support expert sur l'IA Générative (RAG, Fine-tuning LLM). Obsession : Infra-as-Code, accompagnement métier, métrologie et optimisation des coûts (FinOps/GreenIT)."
+        },
+        {
+            period: "Sept 2020 - Jan 2023",
+            company: "DSI Pôle Emploi (France Travail)",
+            role: "Data Scientist & MLOps Engineer",
+            location: "Montpellier",
+            details: "Passage de la Data Science artisanale à l'industriel. Création d'un framework AutoDevOps standardisé (Gitlab→Docker→K8s→Concourse) pour réduire le Time-to-Market des modèles. Projets : Prédiction de consommation énergétique de Data Center (AIOps), Prédiction de saturation de base Oracle, Analyse de logs Jenkins."
+        },
+        {
+            period: "Sept 2019 - Août 2020",
+            company: "Axens",
+            role: "Junior Data Scientist (Industrie 4.0)",
+            location: "Salindres",
+            details: "Immersion industrielle. Optimisation de procédés chimiques, maintenance prédictive sur capteurs IoT, digitalisation d'usine. Simulation de procédés complexes. Stack : Python, Time-series analysis."
+        },
+        {
+            period: "2016 - 2019",
+            company: "Éducation Nationale",
+            role: "Professeur de Mathématiques",
+            location: "Collège/Lycée (STMG) et BTS",
+            details: "Ma fondation pédagogique. J'ai appris à expliquer des concepts abstraits à des publics variés. A forgé ma capacité à vulgariser la Tech aujourd'hui (Mentorat, Tech Lead)."
+        }
+    ],
+    achievements: [
+        "Gagnant Marathon du Web 2020",
+        "Choix du Jury — Hackathon EnergiaTech 2021",
+        "Finaliste — Hackathon ActInSpace 2021",
+        "Publication HAL 2022 (séquençage phonétique)"
+    ],
+    interests: {
+        music: [
+            "Metal (Metallica, Slayer, Pantera, Dream Theater, Linkin Park)",
+            "Synthwave (BO de coding)",
+            "Guitare & Piano (autodidacte)"
+        ],
+        reading: [
+            "Terry Pratchett",
+            "Eiji Yoshikawa (Musashi)",
+            "Lian Hearn (Clan des Otori)",
+            "Veille Arxiv"
+        ],
+        gaming: [
+            "RPG Tabletop (Shadowrun 5th, BloodLust, WH40K Dark Heresy)",
+            "Rogue-like (difficulté & rejouabilité)"
+        ],
+        other: ["Moto", "Bricolage", "Science-Fiction & Fantaisie"]
+    }
+};
+
+const PROJECTS_DATA = [
+    {
+        title: "Mirza — Assistant vocal agentique",
+        url: "https://mirz-ai.com",
+        description: "Assistant vocal agentique 100% local pour Apple Silicon : ASR Nemotron 3.5 (< 200 ms), LLM Qwen 3.8 9B quantifié via MTPLX Turbo (28-34 tok/s) et TTS Edge/Kokoro, en ~9 Go de VRAM. Protocole bi-canal séparant la voix du code dense, mémoire RAG et agent smolagents. 14 800 lignes de Python, 446 tests.",
+        tags: ["Python", "Apple Silicon", "MLX", "ASR", "LLM", "TTS", "WebSocket", "RAG", "React"]
+    },
+    {
+        title: "Mirza.local — Station d'inférence IA",
+        url: "https://github.com/Petrichoeur/mirza.local",
+        description: "Transformer un Mac Mini en serveur d'inférence IA headless, piloté à distance depuis un client Linux. CLI de 16 commandes, WebUI complète, stack Grafana + Prometheus et API compatible OpenAI servie par llama-cpp-python sur Metal. Aucun cloud, aucune clé API, aucun écran requis.",
+        tags: ["MLOps", "Apple Silicon", "llama.cpp", "Metal", "FastAPI", "Grafana", "Linux", "OpenSource"]
+    },
+    {
+        title: "Flop-o-Matic",
+        url: "https://github.com/Petrichoeur/Flop-o-Matic",
+        description: "Calculateur web pour estimer les besoins GPU d'un modèle d'apprentissage profond, en croisant taille du modèle, quantification et longueur de contexte.",
+        tags: ["GPU", "LLM", "Quantification", "MLOps"]
+    },
+    {
+        title: "Neural Net from scratch",
+        url: "https://github.com/Petrichoeur/Neural_Net_from_scratch",
+        description: "Parcours d'implémentation pas à pas des réseaux de neurones, du perceptron à la rétropropagation, entièrement en notebooks Jupyter et sans framework. Le socle des ateliers de pédagogie dispensés sur ce site.",
+        tags: ["Python", "Numpy", "Jupyter", "Pédagogie", "OpenSource"]
+    },
+    {
+        title: "GreenGen Academy",
+        url: "https://greengen-academy.iaops.fr",
+        description: "Module éducatif à destination du grand public pour s'évaluer face aux challenges du Green IT dans l'I.A.",
+        tags: ["Green IT", "IA", "Pédagogie"]
+    },
+    {
+        title: "Hydra.sh",
+        url: "https://github.com/orurmedon/hydra.sh",
+        description: "Gestionnaire SSH Web nouvelle génération avec 'mémoire photographique'. Capture l'intégralité des sessions et utilise l'IA pour l'analyse et la recherche avancée dans l'historique des commandes.",
+        tags: ["Shell", "SSH", "IA", "OpenSource"]
+    }
+];
+
 function computeAge(isoDate) {
     if (!isoDate) return '';
     const birthDate = new Date(isoDate);
@@ -46,23 +245,10 @@ function computeAge(isoDate) {
     return age;
 }
 
-/**
- * Construit le prompt système complet et exhaustif directement à partir de
- * config/data.json et config/projects.json pour garantir qu'aucun champ
- * biographique ou technique ne soit tronqué ou omis.
- */
 function buildServerSystemPrompt() {
     try {
-        const dataPath = new URL('../config/data.json', import.meta.url);
-        const projectsPath = new URL('../config/projects.json', import.meta.url);
-        const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-        let projects = [];
-        try {
-            projects = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
-        } catch {
-            projects = [];
-        }
-
+        const data = PROFILE_DATA;
+        const projects = PROJECTS_DATA;
         const id = data.identity || {};
         const circle = data.inner_circle || {};
         const psych = data.psychology || {};
