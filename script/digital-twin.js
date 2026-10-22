@@ -420,7 +420,7 @@ const DigitalTwin = {
                 body: JSON.stringify({
                     messages: messages,
                     temperature: 0.25,
-                    maxTokens: 180,
+                    maxTokens: 350,
                     stream: true
                 })
             });

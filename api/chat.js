@@ -27,7 +27,7 @@ const MAX_SYSTEM_CHARS = 24_000;
 const MAX_TOTAL_CHARS = 48_000;
 const MAX_OUTPUT_TOKENS = 350;
 const MIN_OUTPUT_TOKENS = 60;
-const DEFAULT_OUTPUT_TOKENS = 180;
+const DEFAULT_OUTPUT_TOKENS = 350;
 
 /**
  * Rôles acceptés côté historique client.
