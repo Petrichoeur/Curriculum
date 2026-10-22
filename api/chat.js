@@ -12,10 +12,9 @@
  * `parts` de Gemini. Le front a été aligné en conséquence.
  */
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const DEFAULT_MODEL = 'nvidia/nemotron-3.5-lightning:free';
 const LEGACY_MODELS = new Set([
-    'openrouter/free',
-    'nvidia/nemotron-3.5-lightning:free'
+    'openrouter/free'
 ]);
 
 /**
@@ -26,9 +25,9 @@ const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const MAX_INPUT_CHARS = 4_000;
 const MAX_SYSTEM_CHARS = 24_000;
 const MAX_TOTAL_CHARS = 48_000;
-const MAX_OUTPUT_TOKENS = 1_200;
-const MIN_OUTPUT_TOKENS = 200;
-const DEFAULT_OUTPUT_TOKENS = 600;
+const MAX_OUTPUT_TOKENS = 500;
+const MIN_OUTPUT_TOKENS = 80;
+const DEFAULT_OUTPUT_TOKENS = 250;
 
 /**
  * Rôles acceptés côté historique client.
@@ -321,7 +320,7 @@ PASSIONS & CENTRES D'INTÉRÊT :
 - Autres : ${(interests.other || []).join(', ')}
 
 CONSIGNES DE RÉPONSE :
-1. Réponds de façon directe, naturelle, percutante et concise (2 à 5 phrases bien calibrées par défaut, sauf si on te demande d'approfondir un point technique ou d'écrire du code).
+1. Réponds de façon ULTRA-CONCISE, percutante et directe : 2 à 3 phrases courtes maximum par défaut. Va droit au but sans bavardage ni politesse à rallonge. Ne liste pas tous tes projets ou technos sauf si c'est expressément demandé.
 2. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
 3. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
     } catch (e) {

@@ -8,7 +8,7 @@ const DigitalTwin = {
     projects: [],
     history: [],
     isLoading: false,
-    currentModel: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+    currentModel: 'nvidia/nemotron-3.5-lightning:free',
 
     // Stockage des intervalles pour pouvoir les nettoyer proprement
     intervals: [],
@@ -420,7 +420,7 @@ const DigitalTwin = {
                 body: JSON.stringify({
                     messages: messages,
                     temperature: 0.35,
-                    maxTokens: 600,
+                    maxTokens: 250,
                     stream: true
                 })
             });
@@ -444,7 +444,7 @@ const DigitalTwin = {
                     this.addMessage('system', "Données corrompues (Réponse vide).", true);
                     return;
                 }
-                const usedModel = data.model || this.currentModel || 'nvidia/nemotron-3-ultra-550b-a55b:free';
+                const usedModel = data.model || this.currentModel || 'nvidia/nemotron-3.5-lightning:free';
                 this.updateModelDisplay(usedModel);
                 this.history.push({ role: "user", content: userMessage });
                 this.history.push({ role: "assistant", content: botReply });
@@ -453,7 +453,7 @@ const DigitalTwin = {
             }
 
             // 5. Lecture du flux SSE token par token
-            const usedModel = response.headers.get('X-Model-Used') || this.currentModel || 'nvidia/nemotron-3-ultra-550b-a55b:free';
+            const usedModel = response.headers.get('X-Model-Used') || this.currentModel || 'nvidia/nemotron-3.5-lightning:free';
             this.updateModelDisplay(usedModel);
 
             const reader = response.body.getReader();
@@ -603,7 +603,7 @@ PASSIONS & CENTRES D'INTÉRÊT :
 - Autres : ${(interests.other || []).join(', ')}
 
 CONSIGNES DE RÉPONSE :
-1. Réponds de façon directe, naturelle, percutante et concise (2 à 5 phrases bien calibrées par défaut, sauf si on te demande d'approfondir un point technique ou d'écrire du code).
+1. Réponds de façon ULTRA-CONCISE, percutante et directe : 2 à 3 phrases courtes maximum par défaut. Va droit au but sans bavardage ni politesse à rallonge. Ne liste pas tous tes projets ou technos sauf si c'est expressément demandé.
 2. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
 3. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
     }
