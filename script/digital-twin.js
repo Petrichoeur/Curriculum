@@ -7,7 +7,7 @@ const DigitalTwin = {
     config: null,
     history: [],
     isLoading: false,
-    currentModel: 'openrouter/free',
+    currentModel: 'nvidia/nemotron-3.5-lightning:free',
 
     // Stockage des intervalles pour pouvoir les nettoyer proprement
     intervals: [],
@@ -429,7 +429,7 @@ const DigitalTwin = {
                         this.addMessage('system', "Données corrompues (Réponse vide).");
                         return;
                     }
-                    const usedModel = data.model || this.currentModel || 'openrouter/free';
+                    const usedModel = data.model || this.currentModel || 'nvidia/nemotron-3.5-lightning:free';
                     this.updateModelDisplay(usedModel);
                     this.history.push({ role: "user", content: userMessage });
                     this.history.push({ role: "assistant", content: botReply });

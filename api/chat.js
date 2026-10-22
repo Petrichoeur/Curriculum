@@ -12,7 +12,7 @@
  * `parts` de Gemini. Le front a été aligné en conséquence.
  */
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_MODEL = 'openrouter/free';
+const DEFAULT_MODEL = 'nvidia/nemotron-3.5-lightning:free';
 
 /**
  * Bornes d'abus appliquées côté serveur.
@@ -153,7 +153,10 @@ function sanitizeMessages(rawMessages, rawSystemPrompt) {
 }
 
 export default async function handler(req, res) {
-    const configuredModel = process.env.OPEN_ROUTER_MODEL || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+    const rawEnvModel = process.env.OPEN_ROUTER_MODEL || process.env.OPENROUTER_MODEL;
+    // Si l'ancienne valeur 'openrouter/free' est encore configurée dans l'environnement,
+    // on bascule automatiquement sur le nouveau modèle par défaut.
+    const configuredModel = (rawEnvModel && rawEnvModel !== 'openrouter/free') ? rawEnvModel : DEFAULT_MODEL;
 
     // Permet au front de récupérer le modèle actif au chargement
     if (req.method === 'GET') {
@@ -191,7 +194,7 @@ export default async function handler(req, res) {
 
     const baseUrl = (process.env.OPEN_ROUTER_BASE_URL || process.env.OPENROUTER_BASE_URL || DEFAULT_BASE_URL)
         .trim().replace(/\/+$/, '');
-    const model = process.env.OPEN_ROUTER_MODEL || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+    const model = configuredModel;
     const apiUrl = `${baseUrl}/chat/completions`;
 
     try {
