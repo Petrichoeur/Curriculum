@@ -2671,3 +2671,184 @@ input[type="range"]::-moz-range-thumb {
 }
 
 
+
+/* ==========================================
+   PEDAGOGIE // SCHEMAS ET BLOCS EXPLICATIFS
+   ========================================== */
+.pedagogy-viewer h3 {
+    color: var(--neon-cyan);
+    font-family: var(--font-tech);
+    font-size: 1.05rem;
+    margin: 28px 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pedagogy-viewer ul,
+.pedagogy-viewer ol {
+    margin: 0 0 20px 22px;
+}
+
+.pedagogy-viewer li {
+    line-height: 1.7;
+    margin-bottom: 8px;
+    color: #ddd;
+}
+
+.pedagogy-viewer code {
+    background: rgba(0, 243, 255, 0.08);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: var(--font-tech);
+    color: var(--neon-cyan);
+    font-size: 0.92rem;
+}
+
+.edu-figure {
+    margin: 22px 0;
+    padding: 14px;
+    background: rgba(8, 6, 16, 0.85);
+    border: 1px solid rgba(189, 0, 255, 0.25);
+    border-radius: 8px;
+}
+
+.edu-figure svg {
+    display: block;
+    width: 100%;
+    max-width: 620px;
+    height: auto;
+    margin: 0 auto;
+}
+
+.edu-figure figcaption {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #999;
+    font-style: italic;
+}
+
+/* Styles des elements SVG */
+.edu-figure text {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    fill: #e8e8e8;
+    font-size: 12px;
+}
+.edu-figure .ts { font-size: 10.5px; fill: #9a9aa8; }
+.edu-figure .tc { fill: #00f3ff; font-weight: bold; }
+.edu-figure .tp { fill: #e879f9; font-weight: bold; }
+.edu-figure .tg { fill: #00ffaa; font-weight: bold; }
+.edu-figure .ta { fill: #ffaa00; font-weight: bold; }
+
+.edu-figure .b-c { fill: rgba(0, 243, 255, 0.08); stroke: #00f3ff; stroke-width: 1.4; }
+.edu-figure .b-p { fill: rgba(232, 121, 249, 0.12); stroke: #e879f9; stroke-width: 1.2; }
+.edu-figure .b-g { fill: rgba(0, 255, 170, 0.18); stroke: #00ffaa; stroke-width: 1.2; }
+.edu-figure .b-a { fill: rgba(255, 170, 0, 0.12); stroke: #ffaa00; stroke-width: 1.4; }
+.edu-figure .b-w { fill: rgba(255, 255, 255, 0.05); stroke: #888; stroke-width: 1.2; }
+
+.edu-figure .l-c { stroke: #00f3ff; stroke-width: 1.8; }
+.edu-figure .l-p { stroke: #e879f9; stroke-width: 1.8; }
+.edu-figure .l-g { stroke: #00ffaa; stroke-width: 1.8; }
+.edu-figure .l-a { stroke: #ffaa00; stroke-width: 1.8; }
+.edu-figure .l-w { stroke: #bbbbbb; stroke-width: 1.6; }
+
+.edu-figure .d-c { fill: #00f3ff; }
+.edu-figure .d-p { fill: #e879f9; }
+.edu-figure .d-g { fill: #00ffaa; }
+.edu-figure .d-a { fill: #ffaa00; }
+
+.edu-callout {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 20px 0;
+    padding: 14px 16px;
+    border-left: 3px solid var(--neon-cyan);
+    background: rgba(0, 243, 255, 0.06);
+    border-radius: 0 6px 6px 0;
+    line-height: 1.6;
+    color: #ddd;
+}
+
+.edu-callout strong {
+    font-family: var(--font-tech);
+    color: var(--neon-cyan);
+    text-transform: uppercase;
+    font-size: 0.82rem;
+    letter-spacing: 0.5px;
+}
+
+.edu-callout.edu-g { border-left-color: #00ffaa; background: rgba(0, 255, 170, 0.06); }
+.edu-callout.edu-g strong { color: #00ffaa; }
+.edu-callout.edu-a { border-left-color: #ffaa00; background: rgba(255, 170, 0, 0.07); }
+.edu-callout.edu-a strong { color: #ffaa00; }
+
+.edu-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 24px;
+    font-size: 0.92rem;
+}
+
+.edu-table th,
+.edu-table td {
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    line-height: 1.5;
+}
+
+.edu-table th {
+    font-family: var(--font-tech);
+    color: var(--neon-purple);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(189, 0, 255, 0.4);
+}
+
+.edu-table .win-gpu { color: #e879f9; font-weight: bold; }
+.edu-table .win-cpu { color: #00f3ff; font-weight: bold; }
+
+.edu-formula {
+    text-align: center;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px dashed rgba(0, 243, 255, 0.35);
+    border-radius: 6px;
+    font-family: var(--font-tech);
+    color: var(--neon-cyan);
+    font-size: 0.98rem !important;
+    overflow-x: auto;
+}
+
+.edu-inline-link {
+    color: var(--neon-cyan);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.edu-inline-link:hover {
+    color: #fff;
+}
+
+.edu-link-btn {
+    display: inline-block;
+}
+
+@media (max-width: 980px) {
+    .edu-figure {
+        padding: 8px;
+        margin: 16px -4px;
+    }
+
+    .edu-table {
+        display: block;
+        overflow-x: auto;
+        font-size: 0.82rem;
+    }
+}
