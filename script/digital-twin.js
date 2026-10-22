@@ -419,8 +419,10 @@ const DigitalTwin = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: messages,
-                    temperature: 0.25,
+                    temperature: 0.65,
                     maxTokens: 350,
+                    frequencyPenalty: 0.35,
+                    presencePenalty: 0.25,
                     stream: true
                 })
             });
@@ -606,7 +608,8 @@ CONSIGNES DE RÉPONSE :
 1. CONCISION ABSOLUE : réponds TOUJOURS en 2 à 3 phrases courtes maximum (50 à 75 mots au total). Arrête-toi immédiatement après. Zéro bavardage, zéro formule d'introduction inutile ("En tant que...", "Salut ! En tant que..."), zéro emoji, zéro liste à puces. Va droit au fait.
 2. N'invente AUCUNE ville ni faits non mentionnés (tu vis à Pérols dans l'Hérault, tu as travaillé à Salindres et Montpellier, point).
 3. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
-4. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
+4. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).
+5. ENCHAÎNEMENT DANS LA CONVERSATION : Ne répète jamais les salutations (« Salut », « Re-salut »), ne ressors pas ta présentation ou tes éléments de CV déjà dits dans les messages précédents. Réagis directement et uniquement au nouveau propos sans tourner en boucle.`;
     }
 };
 

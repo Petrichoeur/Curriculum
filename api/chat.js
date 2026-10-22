@@ -323,7 +323,8 @@ CONSIGNES DE RÉPONSE :
 1. CONCISION ABSOLUE : réponds TOUJOURS en 2 à 3 phrases courtes maximum (50 à 75 mots au total). Arrête-toi immédiatement après. Zéro bavardage, zéro formule d'introduction inutile ("En tant que...", "Salut ! En tant que..."), zéro emoji, zéro liste à puces. Va droit au fait.
 2. N'invente AUCUNE ville ni faits non mentionnés (tu vis à Pérols dans l'Hérault, tu as travaillé à Salindres et Montpellier, point).
 3. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
-4. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
+4. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).
+5. ENCHAÎNEMENT DANS LA CONVERSATION : Ne répète jamais les salutations (« Salut », « Re-salut »), ne ressors pas ta présentation ou tes éléments de CV déjà dits dans les messages précédents. Réagis directement et uniquement au nouveau propos sans tourner en boucle.`;
     } catch (e) {
         console.error('Erreur lecture config serveur:', e);
         return '';
@@ -482,10 +483,17 @@ export default async function handler(req, res) {
 
         // On n'accepte qu'un sous-ensemble de paramètres, borné.
         const requestedTokens = Number(maxTokens) || DEFAULT_OUTPUT_TOKENS;
-        const clampedTemperature = Math.min(
-            Math.max(Number(temperature) || 0.35, 0),
-            2
-        );
+        const clampedTemperature = Number.isFinite(Number(temperature))
+            ? Math.min(Math.max(Number(temperature), 0), 2)
+            : 0.65;
+        const requestedFreqPenalty = Number(body?.frequencyPenalty ?? body?.frequency_penalty);
+        const frequencyPenalty = Number.isFinite(requestedFreqPenalty)
+            ? Math.min(Math.max(requestedFreqPenalty, -2), 2)
+            : 0.35;
+        const requestedPresPenalty = Number(body?.presencePenalty ?? body?.presence_penalty);
+        const presencePenalty = Number.isFinite(requestedPresPenalty)
+            ? Math.min(Math.max(requestedPresPenalty, -2), 2)
+            : 0.25;
         const isStreaming = Boolean(wantStream);
 
         const upstreamBody = {
@@ -496,6 +504,8 @@ export default async function handler(req, res) {
                 Math.max(requestedTokens, MIN_OUTPUT_TOKENS),
                 MAX_OUTPUT_TOKENS
             ),
+            frequency_penalty: frequencyPenalty,
+            presence_penalty: presencePenalty,
             reasoning: { effort: 'none', exclude: true },
             stream: isStreaming
         };
