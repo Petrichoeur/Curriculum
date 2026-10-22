@@ -2155,7 +2155,7 @@ body {
 /* Pastilles d'introduction compactes */
 .hw-summary-pills {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.25fr);
     gap: 10px;
     margin-bottom: 16px;
 }
@@ -2164,7 +2164,7 @@ body {
     background: rgba(12, 10, 20, 0.7);
     border-radius: 6px;
     padding: 8px 12px;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: #ccc;
     line-height: 1.35;
 }
@@ -2183,6 +2183,14 @@ body {
 
 .gpu-pill strong {
     color: var(--neon-purple);
+}
+
+.pcie-pill {
+    border-left: 3px solid #ffaa00;
+}
+
+.pcie-pill strong {
+    color: #ffaa00;
 }
 
 /* Layout Principal (avec minmax(0, 1fr) contre le débordement) */

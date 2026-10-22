@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Florian Bobo - IA & MLOps</title>
-    <link rel="stylesheet" href="style/style.css?v=2.4">
+    <link rel="stylesheet" href="style/style.css?v=2.8">
 </head>
 
 <body>
@@ -194,8 +194,9 @@
                     </div>
 
                     <div class="hw-summary-pills">
-                        <div class="hw-pill cpu-pill"><strong>CPU (Sprinter)</strong> : 4 cœurs @ 4.5 GHz · Logique &amp; if/else</div>
-                        <div class="hw-pill gpu-pill"><strong>GPU (Armée)</strong> : 256 cœurs @ 1.8 GHz · Matrices IA &amp; Pixels</div>
+                        <div class="hw-pill cpu-pill"><strong>CPU (Sprinter)</strong> : 4 cœurs @ 4.5 GHz · Accès direct RAM 80 Go/s</div>
+                        <div class="hw-pill gpu-pill"><strong>GPU (Armée)</strong> : 256 cœurs @ 1.8 GHz · VRAM interne 3000 Go/s</div>
+                        <div class="hw-pill pcie-pill"><strong>Goulot PCIe 5.0 (32 Go/s)</strong> : Tout calcul GPU exige de copier d'abord les données de la RAM vers la VRAM</div>
                     </div>
 
                     <div class="hw-layout">
@@ -216,6 +217,7 @@
                                         <span class="btn-title">Logique if / else</span>
                                         <span class="badge-favor tag-cpu">Atout CPU</span>
                                     </button>
+                                </div>
                                 <div class="hw-why-box" id="hw-why-box">
                                     <div class="why-header">
                                         <span class="why-badge tag-gpu" id="hw-why-badge">Vainqueur : GPU (Parallélisme massif SIMT)</span>
@@ -329,12 +331,12 @@
         <div id="modal-caption"></div>
     </div>
 
-    <script src="script/digital-twin.js?v=2.6"></script>
-    <script src="script/projects.js?v=2.6"></script>
-    <script src="script/educational.js?v=2.6"></script>
-    <script src="script/hardware-lab.js?v=2.6"></script>
-    <script type="module" src="script/mlp/app.js?v=2.6"></script>
-    <script src="script/main.js?v=2.6"></script>
+    <script src="script/digital-twin.js?v=2.8"></script>
+    <script src="script/projects.js?v=2.8"></script>
+    <script src="script/educational.js?v=2.8"></script>
+    <script src="script/hardware-lab.js?v=2.8"></script>
+    <script type="module" src="script/mlp/app.js?v=2.8"></script>
+    <script src="script/main.js?v=2.8"></script>
 </body>
 
 </html>

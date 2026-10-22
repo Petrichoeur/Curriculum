@@ -39,6 +39,8 @@ class HardwareLabApp {
             completed: 0,
             activeWarps: [],
             smStates: new Array(16).fill(0), // 0: idle, 1: busy, 2: stalled (divergence)
+            pcieProgress: 0, // 0..1 Progression du transfert initial Host-to-Device via PCIe
+            isTransferringPcie: false,
             divergenceRate: 0,
             timeMs: 0
         };
@@ -103,21 +105,21 @@ class HardwareLabApp {
                 speedup: '~8x à 10x plus rapide',
                 badgeClass: 'tag-gpu',
                 reason: "La multiplication matricielle (C = A × B) est un cas idéal de parallélisme massif : chaque coefficient est le produit scalaire indépendant de lignes et colonnes.",
-                architecture: "Le GPU mobilise 256 cœurs SIMT (16 SMs × 16 ALUs) alimentés à 3000 Go/s par sa VRAM HBM3. Le CPU, avec 4 cœurs et 80 Go/s de RAM, doit empiler des boucles séquentielles lentes."
+                architecture: "Le GPU mobilise 256 cœurs SIMT alimentés à 3000 Go/s par sa VRAM HBM3. Attention au goulot PCIe (32 Go/s) : les matrices doivent d'abord être transférées de la RAM vers la VRAM, d'où l'obligation de regrouper en gros batchs."
             },
             pixel: {
                 winner: 'Vainqueur : GPU (Indépendance spatiale)',
                 speedup: '~6x à 8x plus rapide',
                 badgeClass: 'tag-gpu',
                 reason: "Chaque pixel d'une image ou fragment de shader est calculé indépendamment de ses voisins (filtrage 2D, seuillage, convolutions, ray tracing).",
-                architecture: "Le GPU traite la grille de pixels en une seule passe globale sur ses 256 cœurs SIMT. Le CPU, même avec AVX, traite les pixels par petits paquets et sature ses pipelines."
+                architecture: "Les textures sont copiées de la RAM vers la VRAM via le bus PCIe 5.0 (32 Go/s). Une fois chargées, les 256 cœurs appliquent le shader en parallèle sans jamais re-solliciter la mémoire centrale."
             },
             branch: {
                 winner: 'Vainqueur : CPU (Latence & Spéculation)',
                 speedup: '~3x à 4x plus rapide',
                 badgeClass: 'tag-cpu',
                 reason: "Le code décisionnel avec embranchements conditionnels imprévisibles (if / else) casse l'exécution synchrone du GPU et provoque de la 'Warp Divergence'.",
-                architecture: "Le CPU dispose d'un Branch Predictor (96% de réussite) et d'un cache L3 (10ns) qui exécutent les instructions sans arrêt à 4.5 GHz. Le GPU ne pouvant avoir deux pointeurs d'instruction par Warp, il gèle 50% de ses cœurs pour exécuter le IF, puis gèle l'autre moitié pour le ELSE."
+                architecture: "Le CPU opère directement en RAM (80 Go/s) et L3 (10ns) sans aucun transfert PCIe et anticipe les tests à 96%. Le GPU subit la double peine : latence du transfert PCIe + sérialisation SIMT (50% de cœurs gelés)."
             }
         };
 
@@ -237,6 +239,8 @@ class HardwareLabApp {
         this.gpu.completed = 0;
         this.gpu.activeWarps = [];
         this.gpu.smStates.fill(0);
+        this.gpu.pcieProgress = 0;
+        this.gpu.isTransferringPcie = false;
         this.gpu.timeMs = 0;
 
         this.updateTelemetry();
@@ -250,6 +254,8 @@ class HardwareLabApp {
 
         this.remainingCpuTasks = this.batchSize;
         this.remainingGpuTasks = this.batchSize;
+        this.gpu.pcieProgress = 0;
+        this.gpu.isTransferringPcie = true;
     }
 
     update() {
@@ -260,8 +266,6 @@ class HardwareLabApp {
         // 1. CPU Update (Séquentiel / 4 Cœurs rapides à 4.5 GHz)
         if (this.cpu.completed < this.batchSize) {
             this.cpu.timeMs += 16 * speed;
-            // En branchements : Branch Predictor très véloce
-            // En GEMM/Pixel : chaque cœur traite 1 tâche scalaire
             const taskDuration = this.workload === 'branch' ? 8 : (this.workload === 'pixel' ? 14 : 16);
 
             for (let c = 0; c < this.cpu.cores; c++) {
@@ -284,43 +288,56 @@ class HardwareLabApp {
         if (this.gpu.completed < this.batchSize) {
             this.gpu.timeMs += 16 * speed;
 
-            if (this.workload === 'gemm' || this.workload === 'pixel') {
-                // Parallélisme massif : Le GPU traite 64 calculs par vague de balayage SIMT
-                const waveDuration = this.workload === 'gemm' ? 42 : 46;
-                for (let i = 0; i < this.gpu.numSMs; i++) {
-                    this.gpu.smStates[i] = 1; // Actif (vert)
-                }
-
-                this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
-
-                if (this.gpuProgressInWave >= 1) {
-                    this.gpuProgressInWave = 0;
-                    const processed = Math.min(64, this.batchSize - this.gpu.completed);
-                    this.gpu.completed += processed;
-
-                    if (this.gpu.completed >= this.batchSize) {
-                        this.gpu.smStates.fill(0);
-                    }
-                }
+            // Phase 1 : Transfert initial Host-to-Device via PCIe 5.0 (32 Go/s)
+            // Matérialise le goulot d'étranglement : VRAM en cours de chargement depuis la RAM
+            if (this.gpu.pcieProgress < 1) {
+                this.gpu.isTransferringPcie = true;
+                const pcieTransferDuration = 22;
+                this.gpu.pcieProgress += (1 / pcieTransferDuration) * speed;
+                this.gpu.smStates.fill(0);
             } else {
-                // Branchements conditionnels : WARP DIVERGENCE & SÉRIALISATION FORCÉE
-                const waveDuration = 65;
-                for (let i = 0; i < this.gpu.numSMs; i++) {
-                    this.gpu.smStates[i] = (i % 2 === 0) ? 1 : 2; // 2 = Stalled
-                }
+                this.gpu.isTransferringPcie = false;
 
-                this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
+                if (this.workload === 'gemm' || this.workload === 'pixel') {
+                    // Parallélisme massif : Le GPU traite 64 calculs par vague de balayage SIMT
+                    const waveDuration = this.workload === 'gemm' ? 42 : 46;
+                    for (let i = 0; i < this.gpu.numSMs; i++) {
+                        this.gpu.smStates[i] = 1; // Actif (vert)
+                    }
 
-                if (this.gpuProgressInWave >= 1) {
-                    this.gpuProgressInWave = 0;
-                    const processed = Math.min(16, this.batchSize - this.gpu.completed);
-                    this.gpu.completed += processed;
+                    this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
 
-                    if (this.gpu.completed >= this.batchSize) {
-                        this.gpu.smStates.fill(0);
+                    if (this.gpuProgressInWave >= 1) {
+                        this.gpuProgressInWave = 0;
+                        const processed = Math.min(64, this.batchSize - this.gpu.completed);
+                        this.gpu.completed += processed;
+
+                        if (this.gpu.completed >= this.batchSize) {
+                            this.gpu.smStates.fill(0);
+                        }
+                    }
+                } else {
+                    // Branchements conditionnels : WARP DIVERGENCE & SÉRIALISATION FORCÉE
+                    const waveDuration = 65;
+                    for (let i = 0; i < this.gpu.numSMs; i++) {
+                        this.gpu.smStates[i] = (i % 2 === 0) ? 1 : 2; // 2 = Stalled
+                    }
+
+                    this.gpuProgressInWave = (this.gpuProgressInWave || 0) + (1 / waveDuration) * speed;
+
+                    if (this.gpuProgressInWave >= 1) {
+                        this.gpuProgressInWave = 0;
+                        const processed = Math.min(16, this.batchSize - this.gpu.completed);
+                        this.gpu.completed += processed;
+
+                        if (this.gpu.completed >= this.batchSize) {
+                            this.gpu.smStates.fill(0);
+                        }
                     }
                 }
             }
+        } else {
+            this.gpu.isTransferringPcie = false;
         }
 
         this.updateTelemetry();
@@ -361,8 +378,10 @@ class HardwareLabApp {
         }
 
         if (gpuActiveEl) {
-            if (this.isRunning && this.gpu.completed < this.batchSize) {
-                gpuActiveEl.textContent = this.workload === 'branch' ? '12 / 256 (Warp Divergence)' : '256 / 256 (Plein régime)';
+            if (this.gpu.isTransferringPcie) {
+                gpuActiveEl.textContent = 'Goulot PCIe (32 Go/s)...';
+            } else if (this.isRunning && this.gpu.completed < this.batchSize) {
+                gpuActiveEl.textContent = this.workload === 'branch' ? '128 / 256 (Warp Divergence)' : '256 / 256 (Plein régime)';
             } else {
                 gpuActiveEl.textContent = '0 / 256 (Inactif)';
             }
@@ -385,7 +404,11 @@ class HardwareLabApp {
             } else if (this.gpu.completed === this.batchSize && this.cpu.completed < this.batchSize) {
                 verdictEl.innerHTML = `<span style="color:var(--neon-purple);">GPU TERMINE 1ER !</span> Les 256 cœurs SIMT ont liquidé le lot, le CPU vide sa file 4 par 4...`;
             } else if (this.isRunning) {
-                verdictEl.textContent = "Calcul en cours...";
+                if (this.gpu.isTransferringPcie) {
+                    verdictEl.innerHTML = `<span style="color:#ffaa00;">TRANSFERT PCIe 5.0 (32 Go/s)</span> — Copie mémoire RAM vers VRAM en cours. Le CPU calcule déjà à 4.5 GHz...`;
+                } else {
+                    verdictEl.textContent = "Calcul en cours...";
+                }
             } else {
                 verdictEl.textContent = "Prêt à lancer la simulation.";
             }
@@ -629,6 +652,7 @@ class HardwareLabApp {
 
                 this.drawCpu(ctx);
                 this.drawGpu(ctx);
+                this.drawPcieBridge(ctx);
             } else {
                 const midX = w * 0.495;
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
@@ -656,11 +680,13 @@ class HardwareLabApp {
 
                 this.drawCpu(ctx);
                 this.drawGpu(ctx);
+                this.drawPcieBridge(ctx);
             }
         } else if (this.viewMode === 'cpu') {
             this.drawCpu(ctx);
         } else if (this.viewMode === 'gpu') {
             this.drawGpu(ctx);
+            this.drawPcieBridge(ctx);
         }
     }
 
@@ -1150,7 +1176,10 @@ class HardwareLabApp {
         if (this.isRunning && this.gpu.completed < this.batchSize) {
             ctx.font = 'bold 8px ' + fontMono;
             ctx.textAlign = 'center';
-            if (isBranch) {
+            if (this.gpu.isTransferringPcie) {
+                ctx.fillStyle = '#ffaa00';
+                ctx.fillText('GOULOT PCIe 5.0 // CHARGEMENT DE LA VRAM (32 Go/s)...', g.disp.x, g.y + g.h - 4);
+            } else if (isBranch) {
                 ctx.fillStyle = '#ffaa00';
                 const branchTxt = isFirstBranch ? 'PHASE 1 : BRANCHE IF (128 CŒURS MASQUÉS)' : 'PHASE 2 : BRANCHE ELSE (128 CŒURS MASQUÉS)';
                 ctx.fillText(`WARP DIVERGENCE // ${branchTxt}`, g.disp.x, g.y + g.h - 4);
@@ -1158,6 +1187,244 @@ class HardwareLabApp {
                 ctx.fillStyle = '#00ffaa';
                 ctx.fillText('SIMT LOCKSTEP // 16 SMs × 16 ALUs = 256 CŒURS EN PARALLÈLE', g.disp.x, g.y + g.h - 4);
             }
+        }
+    }
+
+    /* ==========================================
+       PONT DE CONNEXION PCIe 5.0 (RAM -> VRAM)
+       Matérialisation du goulot d'étranglement Host-to-Device
+       ========================================== */
+    drawPcieBridge(ctx) {
+        const w = this.logicalWidth;
+        const h = this.logicalHeight;
+        const fontMono = 'ui-monospace, "Space Mono", "SF Mono", Consolas, monospace';
+        const isTransferring = this.isRunning && this.gpu.isTransferringPcie;
+        const pcieProg = Math.min(1, Math.max(0, this.gpu.pcieProgress || 0));
+
+        if (this.viewMode === 'split') {
+            if (this.isStacked()) {
+                // Mode empilé (écrans étroits / mobile)
+                const c = this.getCpuCoordinates();
+                const g = this.getGpuCoordinates();
+                const x = c.ram.x;
+                const startY = c.ram.y + c.ram.r;
+                const endY = g.vram.y - g.vram.r;
+                const trackH = Math.max(10, endY - startY);
+                const midY = h * 0.495;
+
+                ctx.save();
+                // Conduit vertical
+                this.drawRoundedRect(ctx, x - 7, startY, 14, trackH, 4);
+                ctx.fillStyle = isTransferring ? 'rgba(38, 24, 10, 0.88)' : 'rgba(20, 14, 10, 0.65)';
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = isTransferring ? '#ffaa00' : 'rgba(255, 170, 0, 0.35)';
+                if (isTransferring) {
+                    ctx.shadowColor = '#ffaa00';
+                    ctx.shadowBlur = 8;
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Flux de paquets verticaux vers le bas (RAM -> VRAM)
+                if (isTransferring) {
+                    for (let p = 0; p < 4; p++) {
+                        const t = (this.animTime * 2.2 + p * 0.25) % 1.0;
+                        const py = startY + trackH * t;
+                        ctx.fillStyle = '#ffaa00';
+                        ctx.shadowColor = '#ffaa00';
+                        ctx.shadowBlur = 8;
+                        ctx.beginPath();
+                        ctx.arc(x, py, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(x, py, 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.shadowBlur = 0;
+                }
+
+                // Badge central vertical
+                const badgeW = 120;
+                const badgeH = 18;
+                const badgeX = x - badgeW * 0.5;
+                const badgeY = midY - badgeH * 0.5;
+
+                this.drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 4);
+                ctx.fillStyle = 'rgba(15, 11, 7, 0.96)';
+                ctx.fill();
+                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = isTransferring ? '#ffaa00' : 'rgba(255, 170, 0, 0.45)';
+                ctx.stroke();
+
+                ctx.font = 'bold 7px ' + fontMono;
+                ctx.fillStyle = '#ffaa00';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(isTransferring ? 'PCIe // COPIE H2D...' : 'PCIe 5.0 (32 Go/s)', x, midY);
+
+                this._renderedNodes.push({ x: badgeX, y: badgeY, w: badgeW, h: badgeH, type: 'pcie-bus' });
+                this._renderedNodes.push({ x: x - 7, y: startY, w: 14, h: trackH, type: 'pcie-bus' });
+                ctx.restore();
+            } else {
+                // Mode côte à côte standard
+                const c = this.getCpuCoordinates();
+                const g = this.getGpuCoordinates();
+                const startX = c.ram.x + c.ram.r;
+                const endX = g.vram.x - g.vram.r;
+                const y = c.ram.y;
+                const midX = w * 0.495;
+                const trackW = Math.max(10, endX - startX);
+                const trackY = y - 8;
+
+                ctx.save();
+                // Conduit horizontal
+                this.drawRoundedRect(ctx, startX, trackY, trackW, 16, 4);
+                ctx.fillStyle = isTransferring ? 'rgba(38, 24, 10, 0.88)' : 'rgba(20, 14, 10, 0.65)';
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = isTransferring ? 'rgba(255, 170, 0, 0.85)' : 'rgba(255, 170, 0, 0.3)';
+                if (isTransferring) {
+                    ctx.shadowColor = '#ffaa00';
+                    ctx.shadowBlur = 8;
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Lignes de bus internes (double rail cybernétique)
+                ctx.strokeStyle = isTransferring ? 'rgba(255, 170, 0, 0.5)' : 'rgba(255, 170, 0, 0.18)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(startX + 4, y - 3);
+                ctx.lineTo(endX - 4, y - 3);
+                ctx.moveTo(startX + 4, y + 3);
+                ctx.lineTo(endX - 4, y + 3);
+                ctx.stroke();
+
+                // Paquets de données lumineux transférés de la RAM vers la VRAM
+                if (isTransferring) {
+                    for (let p = 0; p < 5; p++) {
+                        const t = (this.animTime * 2.4 + p * 0.2) % 1.0;
+                        const px = startX + trackW * t;
+                        ctx.fillStyle = '#ffaa00';
+                        ctx.shadowColor = '#ffaa00';
+                        ctx.shadowBlur = 10;
+                        ctx.beginPath();
+                        ctx.arc(px, y, 3.5, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(px, y, 1.8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.shadowBlur = 0;
+                } else if (this.isRunning) {
+                    const t = (this.animTime * 0.6) % 1.0;
+                    const px = startX + trackW * t;
+                    ctx.fillStyle = 'rgba(255, 170, 0, 0.35)';
+                    ctx.beginPath();
+                    ctx.arc(px, y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Badge central PCIe
+                const badgeW = Math.min(160, Math.max(124, trackW * 0.55));
+                const badgeH = 20;
+                const badgeX = midX - badgeW * 0.5;
+                const badgeY = y - badgeH * 0.5;
+
+                this.drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 4);
+                ctx.fillStyle = 'rgba(15, 11, 7, 0.96)';
+                ctx.fill();
+                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = isTransferring ? '#ffaa00' : 'rgba(255, 170, 0, 0.5)';
+                if (isTransferring) {
+                    ctx.shadowColor = '#ffaa00';
+                    ctx.shadowBlur = 10;
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.font = 'bold 7.5px ' + fontMono;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                if (isTransferring) {
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.fillText('PCIe 5.0 // TRANSFERT H2D...', midX, y - 3);
+                    const barW = badgeW - 14;
+                    ctx.fillStyle = 'rgba(255, 170, 0, 0.2)';
+                    ctx.fillRect(midX - barW * 0.5, y + 4, barW, 2.5);
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.fillRect(midX - barW * 0.5, y + 4, barW * pcieProg, 2.5);
+                } else {
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.fillText('PCIe 5.0 // 32 Go/s (GOULOT)', midX, y);
+                }
+
+                this._renderedNodes.push({ x: badgeX, y: badgeY, w: badgeW, h: badgeH, type: 'pcie-bus' });
+                this._renderedNodes.push({ x: startX, y: trackY, w: trackW, h: 16, type: 'pcie-bus' });
+                ctx.restore();
+            }
+        } else if (this.viewMode === 'gpu') {
+            // Vue GPU isolée : matérialiser l'entrée Host RAM -> PCIe -> VRAM
+            const g = this.getGpuCoordinates();
+            const hostRam = { x: 50, y: g.vram.y, r: 15 };
+            const startX = hostRam.x + hostRam.r;
+            const endX = g.vram.x - g.vram.r;
+            const y = g.vram.y;
+            const trackW = Math.max(10, endX - startX);
+            const midX = (startX + endX) * 0.5;
+
+            ctx.save();
+            // Nœud Host RAM externe
+            this.drawGlassNode(ctx, hostRam, 'RAM', 'HOST', '#00f3ff', this.isRunning, false, false);
+            this._renderedNodes.push({ x: hostRam.x, y: hostRam.y, r: hostRam.r, type: 'cpu-ram' });
+
+            // Conduit PCIe
+            this.drawRoundedRect(ctx, startX, y - 8, trackW, 16, 4);
+            ctx.fillStyle = isTransferring ? 'rgba(38, 24, 10, 0.88)' : 'rgba(20, 14, 10, 0.65)';
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = isTransferring ? '#ffaa00' : 'rgba(255, 170, 0, 0.35)';
+            ctx.stroke();
+
+            if (isTransferring) {
+                for (let p = 0; p < 4; p++) {
+                    const t = (this.animTime * 2.2 + p * 0.25) % 1.0;
+                    const px = startX + trackW * t;
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.shadowColor = '#ffaa00';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(px, y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+            }
+
+            const badgeW = 135;
+            const badgeH = 18;
+            const badgeX = midX - badgeW * 0.5;
+            const badgeY = y - badgeH * 0.5;
+
+            this.drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 4);
+            ctx.fillStyle = 'rgba(15, 11, 7, 0.96)';
+            ctx.fill();
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = isTransferring ? '#ffaa00' : 'rgba(255, 170, 0, 0.5)';
+            ctx.stroke();
+
+            ctx.font = 'bold 7px ' + fontMono;
+            ctx.fillStyle = '#ffaa00';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(isTransferring ? 'PCIe // TRANSFERT H2D...' : 'PCIe 5.0 (32 Go/s)', midX, y);
+
+            this._renderedNodes.push({ x: badgeX, y: badgeY, w: badgeW, h: badgeH, type: 'pcie-bus' });
+            this._renderedNodes.push({ x: startX, y: y - 8, w: trackW, h: 16, type: 'pcie-bus' });
+            ctx.restore();
         }
     }
 
@@ -1249,6 +1516,14 @@ class HardwareLabApp {
                     <p>Statut : <span class="val">${statusText}</span></p>
                     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
                     <p>${isBranch ? (isActive ? 'Exécute la branche active sans interruption.' : 'Warp Divergence : 16 cœurs suspendus par le masque d\'exécution (sérialisation forcée).') : '16 micro-cœurs exécutant l\'instruction matricielle en parallèle synchrone.'}</p>
+                `;
+            } else if (closestNode.type === 'pcie-bus') {
+                html = `
+                    <h4>Bus PCIe 5.0 <span>Host-to-Device (H2D)</span></h4>
+                    <p>Bande passante : <span class="val">32 Go/s (vs 3000 Go/s VRAM)</span></p>
+                    <p>Rôle : <span class="val">Transfert cudaMemcpy (RAM vers VRAM)</span></p>
+                    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
+                    <p>Goulot d'étranglement : Avant de pouvoir calculer, le GPU doit impérativement copier matrices ou données depuis la RAM centrale via le bus PCIe. Sans un lot de calcul suffisant (batch), cette copie neutralise le gain du GPU.</p>
                 `;
             }
 
