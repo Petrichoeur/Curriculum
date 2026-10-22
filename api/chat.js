@@ -26,8 +26,9 @@ const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const MAX_INPUT_CHARS = 4_000;
 const MAX_SYSTEM_CHARS = 24_000;
 const MAX_TOTAL_CHARS = 48_000;
-const MAX_OUTPUT_TOKENS = 3_000;
-const MIN_OUTPUT_TOKENS = 1_800;
+const MAX_OUTPUT_TOKENS = 1_200;
+const MIN_OUTPUT_TOKENS = 200;
+const DEFAULT_OUTPUT_TOKENS = 600;
 
 /**
  * Rôles acceptés côté historique client.
@@ -472,7 +473,7 @@ export default async function handler(req, res) {
     try {
         // 5. Validation du body
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-        const { messages, temperature, maxTokens, model: reqModel, reasoningEffort } = body || {};
+        const { messages, temperature, maxTokens, stream: wantStream } = body || {};
 
         const sanitized = sanitizeMessages(messages, body?.systemPrompt);
         if (sanitized.error) {
@@ -480,27 +481,23 @@ export default async function handler(req, res) {
         }
 
         // On n'accepte qu'un sous-ensemble de paramètres, borné.
-        const requestedTokens = Number(maxTokens) || MAX_OUTPUT_TOKENS;
+        const requestedTokens = Number(maxTokens) || DEFAULT_OUTPUT_TOKENS;
         const clampedTemperature = Math.min(
-            Math.max(Number(temperature) || 0.6, 0),
+            Math.max(Number(temperature) || 0.35, 0),
             2
         );
-
-        const targetModel = (typeof reqModel === 'string' && reqModel.endsWith(':free'))
-            ? reqModel
-            : model;
-        const effort = typeof reasoningEffort === 'string' ? reasoningEffort : 'none';
+        const isStreaming = Boolean(wantStream);
 
         const upstreamBody = {
-            model: targetModel,
+            model,
             messages: sanitized.messages,
             temperature: clampedTemperature,
             max_tokens: Math.min(
                 Math.max(requestedTokens, MIN_OUTPUT_TOKENS),
                 MAX_OUTPUT_TOKENS
             ),
-            reasoning: effort === 'none' ? { effort: 'none', exclude: true } : { effort },
-            stream: false
+            reasoning: { effort: 'none', exclude: true },
+            stream: isStreaming
         };
 
         // 6. Appel OpenRouter
@@ -515,21 +512,51 @@ export default async function handler(req, res) {
             body: JSON.stringify(upstreamBody)
         });
 
-        const data = await response.json();
-
-        // 7. On renvoie la réponse au front
+        // 7. Gestion des erreurs amont
         if (!response.ok) {
+            const errData = await response.json().catch(() => ({ error: 'Erreur amont OpenRouter' }));
             console.error('Erreur OpenRouter:', response.status,
-                JSON.stringify(data).slice(0, 500));
-            return res.status(response.status).json(data);
+                JSON.stringify(errData).slice(0, 500));
+            return res.status(response.status).json(errData);
         }
 
+        // 8. Mode Streaming SSE temps réel
+        if (isStreaming && response.body) {
+            res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-cache, no-transform');
+            res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Accel-Buffering', 'no');
+            res.setHeader('X-Model-Used', model);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    res.write(decoder.decode(value, { stream: true }));
+                }
+            } catch (streamErr) {
+                console.error('Erreur flux SSE:', streamErr);
+            } finally {
+                res.end();
+            }
+            return;
+        }
+
+        // 9. Mode JSON classique (fallback)
+        const data = await response.json();
         res.status(200).json({
             ...data,
             model: data.model || model
         });
     } catch (error) {
         console.error("Erreur serveur proxy:", error);
-        res.status(500).json({ error: 'Erreur interne lors de l\'appel à OpenRouter' });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Erreur interne lors de l\'appel à OpenRouter' });
+        } else {
+            res.end();
+        }
     }
 }

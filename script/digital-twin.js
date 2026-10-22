@@ -299,11 +299,12 @@ const DigitalTwin = {
      */
     addMessage: function (role, text, trusted = false, model = null) {
         const chatWindow = document.getElementById('chat-window');
-        if (!chatWindow) return;
+        if (!chatWindow) return null;
 
         const div = document.createElement('div');
         div.className = `message ${role}-msg`;
 
+        let body = null;
         if (role === 'bot') {
             const header = document.createElement('div');
             header.className = 'msg-header';
@@ -323,7 +324,7 @@ const DigitalTwin = {
             }
             div.appendChild(header);
 
-            const body = document.createElement('div');
+            body = document.createElement('div');
             body.className = 'msg-body';
             body.innerHTML = trusted ? text : this.formatMarkdown(text);
             div.appendChild(body);
@@ -333,6 +334,7 @@ const DigitalTwin = {
 
         chatWindow.appendChild(div);
         chatWindow.scrollTop = chatWindow.scrollHeight;
+        return { div, body, chatWindow };
     },
 
     /* ==========================================
@@ -372,7 +374,7 @@ const DigitalTwin = {
     },
 
     /* ==========================================
-       APPEL API (Avec Loading Animation)
+       APPEL API (Avec Streaming SSE Temps Réel)
        ========================================== */
     callAPI: async function (userMessage) {
         this.setLoadingState(true);
@@ -380,84 +382,140 @@ const DigitalTwin = {
         // 1. Création et affichage de la barre de chargement
         const loader = this.createLoadingBar();
 
-        // 2. Animation (Simulation de progression)
-        let progress = 0;
+        // 2. Animation jusqu'au premier token (TTFT)
+        let progress = 15;
         let phraseIndex = 0;
+        loader.barFill.style.width = `${progress}%`;
 
         const interval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress > 95) progress = 95;
-
+            progress += Math.random() * 18;
+            if (progress > 92) progress = 92;
             loader.barFill.style.width = `${progress}%`;
 
-            if (Math.random() > 0.6) {
+            if (Math.random() > 0.5) {
                 phraseIndex = (phraseIndex + 1) % this.loadingPhrases.length;
                 loader.textEl.textContent = this.loadingPhrases[phraseIndex];
             }
-        }, 400);
+        }, 250);
+
+        const cleanupLoader = () => {
+            clearInterval(interval);
+            if (loader.container && loader.container.parentNode) {
+                loader.container.remove();
+            }
+        };
 
         try {
-            // 3. Préparation du Prompt
-            const systemPrompt = this.buildContext();
-
+            // 3. Préparation des messages (le serveur injecte le prompt système complet)
             const messages = this.history.slice(-10).map(msg => ({
                 role: msg.role === 'user' ? 'user' : 'assistant',
                 content: msg.content
             }));
-
             messages.push({ role: 'user', content: userMessage });
 
-            // 4. Appel API Réel
+            // 4. Appel API avec stream: true
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    systemPrompt: systemPrompt,
                     messages: messages,
-                    temperature: 0.6,
-                    maxTokens: 2500
+                    temperature: 0.35,
+                    maxTokens: 600,
+                    stream: true
                 })
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get('content-type') || '';
 
-            // 5. Fin de l'animation
-            clearInterval(interval);
-            loader.barFill.style.width = '100%';
-
-            setTimeout(() => {
-                loader.container.remove();
+            if (!response.ok || !contentType.includes('text/event-stream')) {
+                const data = await response.json().catch(() => ({}));
+                cleanupLoader();
                 this.setLoadingState(false);
 
                 if (!response.ok || data.error) {
                     console.error("Erreur API:", data);
                     const errorDetail = data?.error?.message || (typeof data?.error === 'string' ? data.error : null) || "Erreur critique du système Bio-Numérique.";
-                    this.addMessage('system', `<strong>ERREUR SYSTEME :</strong> ${this.escapeHtml(errorDetail)}`);
+                    this.addMessage('system', `<strong>ERREUR SYSTEME :</strong> ${this.escapeHtml(errorDetail)}`, true);
                     return;
                 }
 
-                if (data.choices && data.choices[0] && data.choices[0].message) {
-                    const botReply = data.choices[0].message.content;
-                    if (!botReply) {
-                        this.addMessage('system', "Données corrompues (Réponse vide).");
-                        return;
-                    }
-                    const usedModel = data.model || this.currentModel || 'nvidia/nemotron-3-ultra-550b-a55b:free';
-                    this.updateModelDisplay(usedModel);
-                    this.history.push({ role: "user", content: userMessage });
-                    this.history.push({ role: "assistant", content: botReply });
-                    this.addMessage('bot', botReply, false, usedModel);
-                } else {
-                    this.addMessage('system', "Données corrompues (Réponse vide).");
+                const botReply = data.choices?.[0]?.message?.content;
+                if (!botReply) {
+                    this.addMessage('system', "Données corrompues (Réponse vide).", true);
+                    return;
                 }
-            }, 300);
+                const usedModel = data.model || this.currentModel || 'nvidia/nemotron-3-ultra-550b-a55b:free';
+                this.updateModelDisplay(usedModel);
+                this.history.push({ role: "user", content: userMessage });
+                this.history.push({ role: "assistant", content: botReply });
+                this.addMessage('bot', botReply, false, usedModel);
+                return;
+            }
+
+            // 5. Lecture du flux SSE token par token
+            const usedModel = response.headers.get('X-Model-Used') || this.currentModel || 'nvidia/nemotron-3-ultra-550b-a55b:free';
+            this.updateModelDisplay(usedModel);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let fullReply = '';
+            let msgUI = null;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const rawLine of lines) {
+                    const line = rawLine.trim();
+                    if (!line || line.startsWith(':')) continue;
+                    if (!line.startsWith('data:')) continue;
+
+                    const payload = line.slice(5).trim();
+                    if (payload === '[DONE]') continue;
+
+                    try {
+                        const parsed = JSON.parse(payload);
+                        if (parsed.model && parsed.model !== this.currentModel) {
+                            this.updateModelDisplay(parsed.model);
+                        }
+                        const delta = parsed.choices?.[0]?.delta?.content;
+                        if (delta) {
+                            fullReply += delta;
+                            if (!msgUI) {
+                                cleanupLoader();
+                                msgUI = this.addMessage('bot', fullReply, false, parsed.model || usedModel);
+                            } else if (msgUI.body) {
+                                msgUI.body.innerHTML = this.formatMarkdown(fullReply);
+                                msgUI.chatWindow.scrollTop = msgUI.chatWindow.scrollHeight;
+                            }
+                        }
+                    } catch (e) {
+                        // Chunk JSON partiel ignoré
+                    }
+                }
+            }
+
+            cleanupLoader();
+            this.setLoadingState(false);
+
+            if (!fullReply.trim()) {
+                this.addMessage('system', "Données corrompues (Réponse vide).", true);
+                return;
+            }
+
+            this.history.push({ role: "user", content: userMessage });
+            this.history.push({ role: "assistant", content: fullReply });
 
         } catch (error) {
-            clearInterval(interval);
-            loader.container.remove();
+            cleanupLoader();
             this.setLoadingState(false);
             console.error("Erreur Réseau:", error);
-            this.addMessage('system', "Échec de connexion au réseau neural.");
+            this.addMessage('system', "Échec de connexion au réseau neural.", true);
         }
     },
 
