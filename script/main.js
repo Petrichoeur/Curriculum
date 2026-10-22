@@ -102,7 +102,7 @@ function initNeuralNetwork() {
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
-        config.count = width < 1200 ? 80 : 130;
+        config.count = width < 768 ? 24 : (width < 1200 ? 55 : 110);
         initParticles();
     }
 
@@ -185,6 +185,13 @@ function initNeuralNetwork() {
     }
 
     function animate() {
+        const isMobile = window.innerWidth < 768;
+        const activeTab = document.querySelector('.tab-content.active');
+        if (isMobile && activeTab && (activeTab.id === 'hardware-lab' || activeTab.id === 'mlp-studio')) {
+            rafId = requestAnimationFrame(animate);
+            return;
+        }
+
         ctx.clearRect(0, 0, width, height);
         
         globalHue += config.hueSpeed; // Rotation couleur globale

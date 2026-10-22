@@ -75,10 +75,11 @@ class HardwareLabApp {
 
     resizeCanvas() {
         if (!this.canvas || !this.ctx) return;
-        const rect = this.canvas.getBoundingClientRect();
-        const targetW = Math.round(rect.width) || 320;
-        const targetH = Math.round(rect.height) || 380;
-        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        const targetW = Math.round(this.canvas.clientWidth) || 320;
+        const targetH = Math.round(this.canvas.clientHeight) || 380;
+        const isMobile = targetW < 640;
+        // Plafonnement DPR : 1.5 sur mobile pour éliminer la saturation GPU, 2 sur desktop
+        const dpr = isMobile ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2);
 
         const physicalW = Math.round(targetW * dpr);
         const physicalH = Math.round(targetH * dpr);
@@ -91,7 +92,6 @@ class HardwareLabApp {
         // Échelle haute résolution Retina / HiDPI
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = 'high';
 
         this.logicalWidth = targetW;
         this.logicalHeight = targetH;
@@ -144,6 +144,14 @@ class HardwareLabApp {
                 viewBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.viewMode = btn.dataset.view;
+                if (this.canvas) {
+                    if (this.viewMode === 'split') {
+                        this.canvas.classList.remove('single-view');
+                    } else {
+                        this.canvas.classList.add('single-view');
+                    }
+                }
+                this.resizeCanvas();
                 this.draw();
             });
         });
@@ -421,7 +429,14 @@ class HardwareLabApp {
             const isVisible = section && section.classList.contains('active');
             if (isVisible) {
                 this.animTime += (this.isRunning && !this.isPaused ? 0.04 * this.clockMultiplier : 0.015);
-                this.resizeCanvas();
+                // Redimensionnement uniquement en cas de changement effectif de dimension (évite le reflow 60fps)
+                if (this.canvas) {
+                    const cw = Math.round(this.canvas.clientWidth);
+                    const ch = Math.round(this.canvas.clientHeight);
+                    if (cw > 0 && ch > 0 && (cw !== this.logicalWidth || ch !== this.logicalHeight)) {
+                        this.resizeCanvas();
+                    }
+                }
                 this.update();
                 this.draw();
             }
@@ -466,10 +481,10 @@ class HardwareLabApp {
         }
 
         if (stacked) {
-            const stackH = h * 0.48;
             const cx = w * 0.5;
-            const topY = 56;
-            const coreH = stackH - topY - 8;
+            const topY = 74;
+            const stackH = 265;
+            const coreH = stackH - topY;
             const coreW = (w - 30 - 3 * 6) / 4;
             const cores = [];
             for (let i = 0; i < 4; i++) {
@@ -482,9 +497,9 @@ class HardwareLabApp {
                 });
             }
             return {
-                x: 15, y: 10, w: w - 30, h: stackH,
-                ram: { x: cx - 52, y: 28, r: 13 },
-                l3: { x: cx + 52, y: 28, r: 14 },
+                x: 15, y: 12, w: w - 30, h: stackH,
+                ram: { x: cx - 48, y: 44, r: 13 },
+                l3: { x: cx + 48, y: 44, r: 14 },
                 cores: cores
             };
         }
@@ -548,22 +563,21 @@ class HardwareLabApp {
         }
 
         if (stacked) {
-            const topY = h * 0.52;
-            const stackH = h * 0.46;
+            const gpuTopY = 302;
             const cx = w * 0.5;
-            const vram = { x: cx - 52, y: topY + 22, r: 13 };
-            const disp = { x: cx + 52, y: topY + 22, r: 13 };
-            const smGridY = topY + 44;
-            const smBottomY = h - 10;
+            const vram = { x: cx - 48, y: gpuTopY + 32, r: 13 };
+            const disp = { x: cx + 48, y: gpuTopY + 32, r: 13 };
+            const smGridY = gpuTopY + 54;
+            const smBottomY = h - 26;
             const gridW = w - 30;
-            const smW = (gridW - 3 * 6) / 4;
-            const smH = (smBottomY - smGridY - 3 * 4) / 4;
+            const smW = (gridW - 3 * 5) / 4;
+            const smH = Math.max(36, (smBottomY - smGridY - 3 * 5) / 4);
             const smNodes = [];
             for (let r = 0; r < 4; r++) {
                 for (let c = 0; c < 4; c++) {
                     smNodes.push({
-                        x: 15 + c * (smW + 6),
-                        y: smGridY + r * (smH + 4),
+                        x: 15 + c * (smW + 5),
+                        y: smGridY + r * (smH + 5),
                         w: smW,
                         h: smH,
                         index: r * 4 + c
@@ -571,7 +585,7 @@ class HardwareLabApp {
                 }
             }
             return {
-                x: 15, y: topY, w: gridW, h: stackH,
+                x: 15, y: gpuTopY, w: gridW, h: h - gpuTopY,
                 vram, disp, smNodes
             };
         }
@@ -622,26 +636,24 @@ class HardwareLabApp {
         ctx.fillStyle = 'rgba(8, 8, 18, 0.96)';
         ctx.fillRect(0, 0, w, h);
 
-        // Grille cybernétique discrète
+        // Grille cybernétique discrète (optimisation batched en 1 seul stroke)
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.03)';
         ctx.lineWidth = 1;
         const gridSize = 28;
+        ctx.beginPath();
         for (let x = 0; x < w; x += gridSize) {
-            ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, h);
-            ctx.stroke();
         }
         for (let y = 0; y < h; y += gridSize) {
-            ctx.beginPath();
             ctx.moveTo(0, y);
             ctx.lineTo(w, y);
-            ctx.stroke();
         }
+        ctx.stroke();
 
         if (this.viewMode === 'split') {
             if (this.isStacked()) {
-                const midY = h * 0.495;
+                const midY = 284;
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
                 ctx.setLineDash([3, 5]);
                 ctx.beginPath();
@@ -734,15 +746,20 @@ class HardwareLabApp {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         ctx.fillStyle = color;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 12;
+        ctx.globalAlpha = 0.35;
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, radius * 1.8, 0, Math.PI * 2);
+        ctx.arc(pt.x, pt.y, radius * 2.0, 0, Math.PI * 2);
         ctx.fill();
 
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, radius * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 1.0;
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+        ctx.arc(pt.x, pt.y, radius * 0.55, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     }
@@ -754,8 +771,12 @@ class HardwareLabApp {
         ctx.save();
 
         if (isActive && !isStalled) {
-            ctx.shadowColor = color;
-            ctx.shadowBlur = pulseAura ? 16 : 8;
+            ctx.fillStyle = color;
+            ctx.globalAlpha = pulseAura ? 0.22 : 0.12;
+            ctx.beginPath();
+            ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
         }
 
         ctx.beginPath();
@@ -770,7 +791,6 @@ class HardwareLabApp {
         }
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.shadowBlur = 0;
 
         if (isActive) {
             ctx.fillStyle = color;
@@ -808,18 +828,13 @@ class HardwareLabApp {
         ctx.save();
 
         // 1. Pod Glass Container
-        if (isBusy) {
-            ctx.shadowColor = '#00f3ff';
-            ctx.shadowBlur = 8;
-        }
         this.drawRoundedRect(ctx, x, y, w, h, 6);
         ctx.fillStyle = isBusy ? 'rgba(12, 18, 32, 0.95)' : 'rgba(8, 12, 22, 0.92)';
         ctx.fill();
 
-        ctx.lineWidth = isBusy ? 1.5 : 1;
+        ctx.lineWidth = isBusy ? 1.8 : 1;
         ctx.strokeStyle = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.3)';
         ctx.stroke();
-        ctx.shadowBlur = 0;
 
         // 2. Pod Header: CŒUR X · 4.5 GHz
         ctx.fillStyle = '#ffffff';
@@ -859,8 +874,6 @@ class HardwareLabApp {
         if (isBusy && prog > 0.4) {
             ctx.beginPath();
             ctx.strokeStyle = '#00f3ff';
-            ctx.shadowColor = '#00f3ff';
-            ctx.shadowBlur = 6;
             ctx.lineWidth = 1.5;
             const midAluY = aluY + aluH * 0.48;
             const amp = aluH * 0.32;
@@ -928,10 +941,6 @@ class HardwareLabApp {
         ctx.save();
 
         // 1. Pod Glass Container
-        if (isSmActive) {
-            ctx.shadowColor = '#00ffaa';
-            ctx.shadowBlur = 8;
-        }
         this.drawRoundedRect(ctx, x, y, w, h, 5);
         ctx.fillStyle = isSmActive ? 'rgba(16, 22, 38, 0.95)' : (isStalled ? 'rgba(26, 18, 14, 0.94)' : 'rgba(12, 10, 24, 0.92)');
         ctx.fill();
@@ -943,7 +952,6 @@ class HardwareLabApp {
         }
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.shadowBlur = 0;
 
         // 2. Pod Header: SM-XX et indicateur 16 ALUs / STALL
         ctx.font = 'bold 7px ' + fontMono;
@@ -975,6 +983,7 @@ class HardwareLabApp {
         ctx.stroke();
 
         // 3. Les 16 Micro-Cœurs SIMT (Matrice 4x4 interne = 256 cœurs au total sur le GPU)
+        // Rendu batched haute performance sans flou de convolution (gain 60 FPS mobile)
         const padX = x + 4;
         const padY = y + 15;
         const innerW = w - 8;
@@ -983,39 +992,72 @@ class HardwareLabApp {
         const cellH = innerH / 4;
         const microR = Math.max(1.6, Math.min(3.0, cellW * 0.28, cellH * 0.28));
 
-        for (let mr = 0; mr < 4; mr++) {
-            for (let mc = 0; mc < 4; mc++) {
-                const cx = padX + (mc + 0.5) * cellW;
-                const cy = padY + (mr + 0.5) * cellH;
-
-                if (isSmActive) {
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
-                    ctx.fillStyle = '#00ffaa';
-                    ctx.shadowColor = '#00ffaa';
-                    ctx.shadowBlur = 5;
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, microR * 0.45, 0, Math.PI * 2);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                } else if (isStalled) {
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 170, 0, 0.25)';
-                    ctx.fill();
-                    ctx.strokeStyle = '#ffaa00';
-                    ctx.lineWidth = 0.8;
-                    ctx.stroke();
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(217, 70, 239, 0.35)';
-                    ctx.fill();
+        if (isSmActive) {
+            // Passe 1 : Halo externe doux
+            ctx.fillStyle = 'rgba(0, 255, 170, 0.28)';
+            ctx.beginPath();
+            for (let mr = 0; mr < 4; mr++) {
+                for (let mc = 0; mc < 4; mc++) {
+                    const cx = padX + (mc + 0.5) * cellW;
+                    const cy = padY + (mr + 0.5) * cellH;
+                    ctx.moveTo(cx + microR * 1.5, cy);
+                    ctx.arc(cx, cy, microR * 1.5, 0, Math.PI * 2);
                 }
             }
+            ctx.fill();
+
+            // Passe 2 : Cœur émeraude
+            ctx.fillStyle = '#00ffaa';
+            ctx.beginPath();
+            for (let mr = 0; mr < 4; mr++) {
+                for (let mc = 0; mc < 4; mc++) {
+                    const cx = padX + (mc + 0.5) * cellW;
+                    const cy = padY + (mr + 0.5) * cellH;
+                    ctx.moveTo(cx + microR, cy);
+                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
+                }
+            }
+            ctx.fill();
+
+            // Passe 3 : Centre blanc chaud
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            for (let mr = 0; mr < 4; mr++) {
+                for (let mc = 0; mc < 4; mc++) {
+                    const cx = padX + (mc + 0.5) * cellW;
+                    const cy = padY + (mr + 0.5) * cellH;
+                    ctx.moveTo(cx + microR * 0.45, cy);
+                    ctx.arc(cx, cy, microR * 0.45, 0, Math.PI * 2);
+                }
+            }
+            ctx.fill();
+        } else if (isStalled) {
+            ctx.fillStyle = 'rgba(255, 170, 0, 0.25)';
+            ctx.strokeStyle = '#ffaa00';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            for (let mr = 0; mr < 4; mr++) {
+                for (let mc = 0; mc < 4; mc++) {
+                    const cx = padX + (mc + 0.5) * cellW;
+                    const cy = padY + (mr + 0.5) * cellH;
+                    ctx.moveTo(cx + microR, cy);
+                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
+                }
+            }
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = 'rgba(217, 70, 239, 0.35)';
+            ctx.beginPath();
+            for (let mr = 0; mr < 4; mr++) {
+                for (let mc = 0; mc < 4; mc++) {
+                    const cx = padX + (mc + 0.5) * cellW;
+                    const cy = padY + (mr + 0.5) * cellH;
+                    ctx.moveTo(cx + microR, cy);
+                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
+                }
+            }
+            ctx.fill();
         }
 
         ctx.restore();
@@ -1024,13 +1066,15 @@ class HardwareLabApp {
     drawCpu(ctx) {
         const c = this.getCpuCoordinates();
         const fontMono = 'ui-monospace, "Space Mono", "SF Mono", Consolas, monospace';
+        const isSmall = this.logicalWidth < 500;
 
         // En-tête CPU
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.font = 'bold 10px ' + fontMono;
+        ctx.font = 'bold 9.5px ' + fontMono;
         ctx.fillStyle = '#00f3ff';
-        ctx.fillText('CPU // 4 CŒURS SUPERSCALAIRES @ 4.5 GHz', c.x, c.y);
+        const cpuTitle = isSmall ? 'CPU // 4 CŒURS @ 4.5 GHz' : 'CPU // 4 CŒURS SUPERSCALAIRES @ 4.5 GHz';
+        ctx.fillText(cpuTitle, c.x, c.y);
 
         // 1. Nœuds RAM et Cache L3
         this._renderedNodes.push({ x: c.ram.x, y: c.ram.y, r: c.ram.r, type: 'cpu-ram' });
@@ -1082,20 +1126,24 @@ class HardwareLabApp {
             ctx.font = 'bold 7px ' + fontMono;
             ctx.fillStyle = '#00ffaa';
             ctx.textAlign = 'center';
-            ctx.fillText('BRANCH PREDICTOR : 96% HIT (0 BULLE)', c.l3.x, c.l3.y + c.l3.r + 9);
+            const branchPredTxt = this.logicalWidth < 400 ? 'PREDICTOR : 96% HIT' : 'BRANCH PREDICTOR : 96% HIT (0 BULLE)';
+            const predY = this.isStacked() ? (c.l3.y + c.l3.r + 7) : (c.l3.y + c.l3.r + 9);
+            ctx.fillText(branchPredTxt, c.l3.x, predY);
         }
     }
 
     drawGpu(ctx) {
         const g = this.getGpuCoordinates();
         const fontMono = 'ui-monospace, "Space Mono", "SF Mono", Consolas, monospace';
+        const isSmall = this.logicalWidth < 500;
 
         // En-tête GPU
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.font = 'bold 10px ' + fontMono;
+        ctx.font = 'bold 9.5px ' + fontMono;
         ctx.fillStyle = '#e879f9';
-        ctx.fillText('GPU // 16 STREAMING MULTIPROCESSORS (256 CŒURS)', g.x, g.y);
+        const gpuTitle = isSmall ? 'GPU // 16 SMs (256 CŒURS)' : 'GPU // 16 STREAMING MULTIPROCESSORS (256 CŒURS)';
+        ctx.fillText(gpuTitle, g.x, g.y);
 
         // 1. Enregistrement VRAM & Dispatcher
         this._renderedNodes.push({ x: g.vram.x, y: g.vram.y, r: g.vram.r, type: 'gpu-vram' });
@@ -1174,18 +1222,22 @@ class HardwareLabApp {
 
         // 4. Bannière d'état HUD au bas du GPU
         if (this.isRunning && this.gpu.completed < this.batchSize) {
-            ctx.font = 'bold 8px ' + fontMono;
+            ctx.font = 'bold 7.5px ' + fontMono;
             ctx.textAlign = 'center';
+            const bannerCx = this.isStacked() ? (this.logicalWidth * 0.5) : g.disp.x;
+            const bannerY = this.isStacked() ? (this.logicalHeight - 9) : (g.y + g.h - 4);
+            const isNarrow = this.logicalWidth < 440;
+
             if (this.gpu.isTransferringPcie) {
                 ctx.fillStyle = '#ffaa00';
-                ctx.fillText('GOULOT PCIe 5.0 // CHARGEMENT DE LA VRAM (32 Go/s)...', g.disp.x, g.y + g.h - 4);
+                ctx.fillText(isNarrow ? 'GOULOT PCIe // CHARGEMENT VRAM (32 Go/s)...' : 'GOULOT PCIe 5.0 // CHARGEMENT DE LA VRAM (32 Go/s)...', bannerCx, bannerY);
             } else if (isBranch) {
                 ctx.fillStyle = '#ffaa00';
-                const branchTxt = isFirstBranch ? 'PHASE 1 : BRANCHE IF (128 CŒURS MASQUÉS)' : 'PHASE 2 : BRANCHE ELSE (128 CŒURS MASQUÉS)';
-                ctx.fillText(`WARP DIVERGENCE // ${branchTxt}`, g.disp.x, g.y + g.h - 4);
+                const branchTxt = isFirstBranch ? 'PHASE 1 : IF (128 CŒURS OFF)' : 'PHASE 2 : ELSE (128 CŒURS OFF)';
+                ctx.fillText(isNarrow ? `DIVERGENCE // ${branchTxt}` : `WARP DIVERGENCE // ${branchTxt}`, bannerCx, bannerY);
             } else {
                 ctx.fillStyle = '#00ffaa';
-                ctx.fillText('SIMT LOCKSTEP // 16 SMs × 16 ALUs = 256 CŒURS EN PARALLÈLE', g.disp.x, g.y + g.h - 4);
+                ctx.fillText(isNarrow ? 'SIMT // 256 CŒURS EN PARALLÈLE' : 'SIMT LOCKSTEP // 16 SMs × 16 ALUs = 256 CŒURS', bannerCx, bannerY);
             }
         }
     }
@@ -1210,7 +1262,7 @@ class HardwareLabApp {
                 const startY = c.ram.y + c.ram.r;
                 const endY = g.vram.y - g.vram.r;
                 const trackH = Math.max(10, endY - startY);
-                const midY = h * 0.495;
+                const midY = 284;
 
                 ctx.save();
                 // Conduit vertical
@@ -1219,12 +1271,7 @@ class HardwareLabApp {
                 ctx.fill();
                 ctx.lineWidth = 1;
                 ctx.strokeStyle = isTransferring ? '#ffaa00' : 'rgba(255, 170, 0, 0.35)';
-                if (isTransferring) {
-                    ctx.shadowColor = '#ffaa00';
-                    ctx.shadowBlur = 8;
-                }
                 ctx.stroke();
-                ctx.shadowBlur = 0;
 
                 // Flux de paquets verticaux vers le bas (RAM -> VRAM)
                 if (isTransferring) {
@@ -1232,8 +1279,6 @@ class HardwareLabApp {
                         const t = (this.animTime * 2.2 + p * 0.25) % 1.0;
                         const py = startY + trackH * t;
                         ctx.fillStyle = '#ffaa00';
-                        ctx.shadowColor = '#ffaa00';
-                        ctx.shadowBlur = 8;
                         ctx.beginPath();
                         ctx.arc(x, py, 3, 0, Math.PI * 2);
                         ctx.fill();
@@ -1242,13 +1287,12 @@ class HardwareLabApp {
                         ctx.arc(x, py, 1.5, 0, Math.PI * 2);
                         ctx.fill();
                     }
-                    ctx.shadowBlur = 0;
                 }
 
-                // Badge central vertical
-                const badgeW = 120;
-                const badgeH = 18;
-                const badgeX = x - badgeW * 0.5;
+                // Badge central horizontal au niveau du séparateur midY
+                const badgeW = Math.min(220, w - 40);
+                const badgeH = 20;
+                const badgeX = (w * 0.5) - badgeW * 0.5;
                 const badgeY = midY - badgeH * 0.5;
 
                 this.drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 4);
@@ -1262,7 +1306,16 @@ class HardwareLabApp {
                 ctx.fillStyle = '#ffaa00';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(isTransferring ? 'PCIe // COPIE H2D...' : 'PCIe 5.0 (32 Go/s)', x, midY);
+                if (isTransferring) {
+                    ctx.fillText('PCIe 5.0 // TRANSFERT H2D...', w * 0.5, midY - 3);
+                    const barW = badgeW - 14;
+                    ctx.fillStyle = 'rgba(255, 170, 0, 0.2)';
+                    ctx.fillRect((w * 0.5) - barW * 0.5, midY + 4, barW, 2);
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.fillRect((w * 0.5) - barW * 0.5, midY + 4, barW * pcieProg, 2);
+                } else {
+                    ctx.fillText('BUS PCIe 5.0 // 32 Go/s (GOULOT H2D)', w * 0.5, midY);
+                }
 
                 this._renderedNodes.push({ x: badgeX, y: badgeY, w: badgeW, h: badgeH, type: 'pcie-bus' });
                 this._renderedNodes.push({ x: x - 7, y: startY, w: 14, h: trackH, type: 'pcie-bus' });
@@ -1285,12 +1338,7 @@ class HardwareLabApp {
                 ctx.fill();
                 ctx.lineWidth = 1;
                 ctx.strokeStyle = isTransferring ? 'rgba(255, 170, 0, 0.85)' : 'rgba(255, 170, 0, 0.3)';
-                if (isTransferring) {
-                    ctx.shadowColor = '#ffaa00';
-                    ctx.shadowBlur = 8;
-                }
                 ctx.stroke();
-                ctx.shadowBlur = 0;
 
                 // Lignes de bus internes (double rail cybernétique)
                 ctx.strokeStyle = isTransferring ? 'rgba(255, 170, 0, 0.5)' : 'rgba(255, 170, 0, 0.18)';
@@ -1308,8 +1356,6 @@ class HardwareLabApp {
                         const t = (this.animTime * 2.4 + p * 0.2) % 1.0;
                         const px = startX + trackW * t;
                         ctx.fillStyle = '#ffaa00';
-                        ctx.shadowColor = '#ffaa00';
-                        ctx.shadowBlur = 10;
                         ctx.beginPath();
                         ctx.arc(px, y, 3.5, 0, Math.PI * 2);
                         ctx.fill();
@@ -1319,7 +1365,6 @@ class HardwareLabApp {
                         ctx.arc(px, y, 1.8, 0, Math.PI * 2);
                         ctx.fill();
                     }
-                    ctx.shadowBlur = 0;
                 } else if (this.isRunning) {
                     const t = (this.animTime * 0.6) % 1.0;
                     const px = startX + trackW * t;
@@ -1340,12 +1385,7 @@ class HardwareLabApp {
                 ctx.fill();
                 ctx.lineWidth = 1.2;
                 ctx.strokeStyle = isTransferring ? '#ffaa00' : 'rgba(255, 170, 0, 0.5)';
-                if (isTransferring) {
-                    ctx.shadowColor = '#ffaa00';
-                    ctx.shadowBlur = 10;
-                }
                 ctx.stroke();
-                ctx.shadowBlur = 0;
 
                 ctx.font = 'bold 7.5px ' + fontMono;
                 ctx.textAlign = 'center';

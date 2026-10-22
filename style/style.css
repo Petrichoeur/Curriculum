@@ -2611,7 +2611,11 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 430px;
+        height: 590px;
+    }
+
+    .hw-canvas.single-view {
+        height: 380px;
     }
 }
 
@@ -2621,7 +2625,11 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 420px;
+        height: 590px;
+    }
+
+    .hw-canvas.single-view {
+        height: 370px;
     }
 }
 
