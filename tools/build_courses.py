@@ -881,6 +881,114 @@ def course_jepa():
     )
 
 
+# ============================================================ 19. Arbres, Boosting & Algos génétiques
+def course_ensemble_ga():
+    # SVG 1 : Bagging (Random Forest) vs Boosting (Gradient Boosting)
+    b = txt(130, 18, 'Random Forest (Bagging : en parallèle)', 'tc')
+    b += txt(390, 18, 'Gradient Boosting (en série : erreurs)', 'tp')
+
+    # Gauche : 3 arbres indépendants qui votent
+    for i, x in enumerate((42, 130, 218)):
+        b += box(x - 34, 32, 68, 42, 'c', 5) + txt(x, 50, f'Arbre {i + 1}', 'tc') + txt(x, 66, 'Tirage aléa.', 'ts')
+        b += arrow(x, 76, 130, 112, 'c')
+    b += box(54, 114, 152, 34, 'g', 6) + txt(130, 136, 'Vote majoritaire / Moyenne', 'tg')
+
+    # Droite : chaîne d'arbres corrigeant les erreurs
+    steps = [
+        (296, 'Arbre 1', 'Prédiction brute', 'c'),
+        (390, 'Arbre 2', 'Corrige erreur 1', 'a'),
+        (484, 'Arbre 3', 'Corrige erreur 2', 'p'),
+    ]
+    for idx, (x, title, sub, col) in enumerate(steps):
+        b += box(x - 36, 32, 72, 42, col, 5) + txt(x, 50, title, 't' + col) + txt(x, 66, sub, 'ts')
+        if idx < 2:
+            b += arrow(x + 38, 53, steps[idx + 1][0] - 38, 53, 'a')
+        b += arrow(x, 76, 390, 112, col)
+    b += box(306, 114, 168, 34, 'g', 6) + txt(390, 136, 'Somme pondérée ultra-précise', 'tg')
+    trees_fig = svg('0 0 524 160', b, 'Comparaison entre Random Forest en parallèle et Gradient Boosting en série')
+
+    # SVG 2 : Cycle d'un algorithme génétique
+    g = ''
+    ga_steps = [
+        (12, 34, 108, 54, 'c', '1. Population', 'N candidats au hasard'),
+        (144, 34, 108, 54, 'g', '2. Fitness', 'Score de survie'),
+        (276, 34, 108, 54, 'p', '3. Croisement', 'Mix des meilleurs'),
+        (408, 34, 104, 54, 'a', '4. Mutation', 'Aléa créatif (1 %)'),
+    ]
+    for idx, (x, y, w, h, col, t1, t2) in enumerate(ga_steps):
+        g += box(x, y, w, h, col, 6) + txt(x + w // 2, y + 23, t1, 't' + col) + txt(x + w // 2, y + 42, t2, 'ts')
+        if idx < 3:
+            g += arrow(x + w + 2, y + 27, ga_steps[idx + 1][0] - 2, y + 27, 'w')
+    g += '<path d="M460 90 C460 128 66 128 66 90" class="l-g" fill="none" marker-end="url(#ah-g)"/>'
+    g += txt(260, 120, 'Nouvelle génération (répété sur des centaines de cycles)', 'tg')
+    ga_fig = svg('0 0 520 138', g, 'Cycle d’évolution d’un algorithme génétique : population, fitness, croisement, mutation')
+
+    return (
+        '<h2>Random Forest, Gradient Boosting et Algorithmes Génétiques</h2>'
+        '<p>Avant de sortir l’artillerie lourde du Deep Learning et des ' + course_link('LLM', IDX_LLM) + ', '
+        'l’immense majorité des problèmes industriels sur données tabulaires (fraude bancaire, risque de crédit, '
+        'prévision des ventes, maintenance prédictive) ainsi que les problèmes d’optimisation combinatoire '
+        'sont dominés par deux grandes familles d’algorithmes : les <strong>forêts d’arbres de décision</strong> '
+        'et les <strong>algorithmes évolutionnaires</strong>.</p>'
+        '<h3>1. La brique de base : l’arbre de décision (et sa limite)</h3>'
+        '<p>Un arbre de décision fonctionne comme le jeu du « Qui est-ce ? » : il pose une série de questions simples '
+        'sur les colonnes d’un tableau (<em>« Revenu &gt; 2 500 € ? »</em> → <em>« Ancienneté &gt; 2 ans ? »</em>) '
+        'jusqu’à prendre une décision finale. C’est rapide et très lisible, mais un arbre seul a un gros défaut : '
+        's’il est trop profond, il apprend le tableau par cœur (<strong>sur-apprentissage</strong> ou <em>overfitting</em>) '
+        'et se trompe dès qu’un nouveau client arrive.</p>'
+        '<h3>2. Random Forest (Forêt Aléatoire) : la sagesse de la foule</h3>'
+        + callout('Analogie : le jury indépendant (Bagging)',
+                  'Plutôt que de faire confiance à un seul expert qui a ses propres biais, réunissez 500 médecins '
+                  'dans des pièces séparées. Donnez à chacun un extrait différent du dossier médical, puis faites-les voter '
+                  'à la majorité : leurs erreurs individuelles s’annulent.')
+        + '<p>Une <strong>Random Forest</strong> entraîne des centaines d’arbres de décision <strong>en parallèle</strong>, '
+        'en injectant volontairement un double hasard (d’où le mot <em>Random</em>) :</p>'
+        '<ul><li><strong>Bootstrap (tirage de lignes)</strong> : chaque arbre ne voit qu’un échantillon tiré au sort des données.</li>'
+        '<li><strong>Feature bagging (tirage de colonnes)</strong> : à chaque embranchement, l’arbre n’a le droit de choisir '
+        'que parmi un sous-ensemble aléatoire de variables.</li></ul>'
+        '<p>Résultat : les arbres sont tous différents (décorrélés). En moyennant leurs prédictions, '
+        'on obtient un modèle extrêmement robuste qui ne sur-apprend presque jamais.</p>'
+        '<h3>3. Forêts par Boost de Gradient (XGBoost, LightGBM, CatBoost)</h3>'
+        + callout('Analogie : le relais de spécialistes (Boosting)',
+                  'Un premier golfeur tape la balle de loin et atterrit à 15 mètres du trou. Le deuxième joueur ne repart pas '
+                  'du départ : il joue depuis les 15 mètres restants et s’approche à 1 mètre. Le troisième finit le putt.')
+        + fig(trees_fig, 'Random Forest fait voter des arbres indépendants en parallèle ; le Gradient Boosting enchaîne des arbres qui corrigent les erreurs résiduelles.')
+        + '<p>Dans le <strong>Gradient Boosting</strong>, les arbres sont construits <strong>les uns après les autres (en série)</strong> :</p>'
+        '<ol><li>Le premier arbre fait une prédiction grossière.</li>'
+        '<li>On calcule l’<strong>erreur résiduelle</strong> (l’écart — ou le gradient de la fonction de coût — entre la réalité et la prédiction).</li>'
+        '<li>L’arbre suivant est entraîné non pas sur la cible initiale, mais <strong>pour prédire et corriger l’erreur</strong> des arbres précédents.</li></ol>'
+        '<p>Des bibliothèques comme <strong>XGBoost</strong>, <strong>LightGBM</strong> ou <strong>CatBoost</strong> restent aujourd’hui '
+        'les reines incontestées sur les tableaux Excel/SQL : elles battent régulièrement les réseaux de neurones tout en s’entraînant '
+        'en quelques secondes sur un simple ' + course_link('CPU', IDX_CPUGPU) + '.</p>'
+        '<h3>4. Les Algorithmes Génétiques : l’évolution de Darwin dans le code</h3>'
+        '<p>Que faire quand on ne cherche pas à prédire un chiffre, mais à trouver la <strong>combinaison optimale</strong> '
+        'parmi des milliards de possibilités (dessiner une antenne spatiale, organiser les tournées de 200 camions, '
+        'placer des emplois du temps sans conflit) et qu’aucune formule mathématique dérivable n’existe ?</p>'
+        + callout('Principe évolutionnaire',
+                  'On copie la sélection naturelle : on crée une population de solutions au hasard, on garde les meilleures, '
+                  'on croise leur « ADN » et on ajoute de petites mutations aléatoires génération après génération.')
+        + fig(ga_fig, 'Les 4 étapes d’un algorithme génétique : génération initiale, sélection par fitness, croisement et mutation.')
+        + '<p>Le cycle d’un algorithme génétique tient en quatre opérations :</p>'
+        '<ul><li><strong>Population et Chromosome</strong> : chaque solution candidate est codée sous forme d’une suite de gènes '
+        '(une liste de nombres ou de bits, par exemple l’ordre des villes visitées par un livreur).</li>'
+        '<li><strong>Fonction de Fitness (adaptation)</strong> : un score objectif évalue chaque individu '
+        '(par exemple : distance totale parcourue + pénalité de retard). Seuls les meilleurs survivent.</li>'
+        '<li><strong>Croisement (Crossover)</strong> : deux parents performants combinent la moitié de leurs paramètres '
+        'pour donner naissance à un « enfant » qui cumule leurs points forts.</li>'
+        '<li><strong>Mutation</strong> : avec une faible probabilité (souvent 1 % à 5 %), on modifie un paramètre au hasard. '
+        'C’est indispensable pour sortir des impasses (minimums locaux) et découvrir des solutions inédites.</li></ul>'
+        '<h3>Récapitulatif : quel algorithme choisir ?</h3>'
+        '<table class="edu-table"><thead><tr><th>Algorithme</th><th>Mécanisme</th><th>Points forts</th><th>Cas d’usage typique</th></tr></thead><tbody>'
+        '<tr><td><strong>Random Forest</strong></td><td>Arbres indépendants en parallèle (vote)</td>'
+        '<td>Très stable, peu de réglages, résiste au bruit</td><td>Diagnostic rapide, capteurs bruités</td></tr>'
+        '<tr><td><strong>Gradient Boosting</strong> (LightGBM, XGBoost)</td><td>Arbres en série qui corrigent les erreurs</td>'
+        '<td>Précision maximale sur données tabulaires</td><td>Scoring bancaire, fraude, prévision de ventes</td></tr>'
+        '<tr><td><strong>Algorithme Génétique</strong></td><td>Sélection naturelle (croisement + mutation)</td>'
+        '<td>Fonctionne sans gradient sur des problèmes discrets</td><td>Logistique, emploi du temps, design matériel, réglage d’hyperparamètres</td></tr>'
+        '</tbody></table>'
+    )
+
+
 COURSES = [
     ('cpu_gpu', '7. CPU vs GPU', course_cpu_gpu),
     ('rnn', '8. RNN et LSTM', course_rnn),
@@ -894,6 +1002,7 @@ COURSES = [
     ('agentic', '16. L’IA agentique et les outils', course_agentic),
     ('mcp', '17. Le protocole MCP (et ses limites)', course_mcp),
     ('jepa_latent', '18. Modèles JEPA et espace latent', course_jepa),
+    ('ensemble_ga', '19. Random Forest, Boosting et Algos génétiques', course_ensemble_ga),
 ]
 
 
