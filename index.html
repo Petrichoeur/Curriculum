@@ -216,10 +216,23 @@
                                         <span class="btn-title">Logique if / else</span>
                                         <span class="badge-favor tag-cpu">Atout CPU</span>
                                     </button>
+                                <div class="hw-why-box" id="hw-why-box">
+                                    <div class="why-header">
+                                        <span class="why-badge tag-gpu" id="hw-why-badge">Vainqueur : GPU (Parallélisme massif SIMT)</span>
+                                        <span class="why-speedup" id="hw-why-speedup">~8x à 10x plus rapide</span>
+                                    </div>
+                                    <div class="why-content">
+                                        <div class="why-row">
+                                            <strong class="why-label">Pourquoi ?</strong>
+                                            <span id="hw-why-reason" class="why-text">La multiplication matricielle (C = A × B) est découpée en millions d'opérations d'accumulation indépendantes.</span>
+                                        </div>
+                                        <div class="why-row">
+                                            <strong class="why-label">Architecture :</strong>
+                                            <span id="hw-why-tech" class="why-text">256 cœurs SIMT (16 SMs × 16 ALUs) alimentés à 3000 Go/s par le bus HBM3 4096-bit vs boucles séquentielles sur 4 cœurs CPU.</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="hw-guide-banner" id="hw-workload-guide">
-                                    256 calculs simultanés sur GPU contre 4 par 4 sur CPU.
-                                </div>
+                                <div class="hw-guide-banner" id="hw-workload-guide" style="display:none;"></div>
 
                                 <div class="hw-params-grid">
                                     <div class="input-group">
@@ -316,12 +329,12 @@
         <div id="modal-caption"></div>
     </div>
 
-    <script src="script/digital-twin.js?v=2.5"></script>
-    <script src="script/projects.js?v=2.5"></script>
-    <script src="script/educational.js?v=2.5"></script>
-    <script src="script/hardware-lab.js?v=2.5"></script>
-    <script type="module" src="script/mlp/app.js?v=2.5"></script>
-    <script src="script/main.js?v=2.5"></script>
+    <script src="script/digital-twin.js?v=2.6"></script>
+    <script src="script/projects.js?v=2.6"></script>
+    <script src="script/educational.js?v=2.6"></script>
+    <script src="script/hardware-lab.js?v=2.6"></script>
+    <script type="module" src="script/mlp/app.js?v=2.6"></script>
+    <script src="script/main.js?v=2.6"></script>
 </body>
 
 </html>

@@ -96,27 +96,44 @@ class HardwareLabApp {
     }
 
     setupUI() {
-        // Sélecteurs de workload
-        const workloadBtns = document.querySelectorAll('.hw-workload-btn');
-        const guideBanner = document.getElementById('hw-workload-guide');
-
-        const guides = {
-            gemm: "256 calculs simultanés sur GPU contre 4 par 4 sur CPU.",
-            pixel: "Chaque pixel est filtré indépendamment en parallèle sur GPU.",
-            branch: "Le Branch Predictor CPU gagne ; le GPU bloque (Warp Divergence)."
+        // Explications pedagogiques detaillees pour chaque use case
+        this.workloadExplanations = {
+            gemm: {
+                winner: 'Vainqueur : GPU (Parallélisme massif SIMT)',
+                speedup: '~8x à 10x plus rapide',
+                badgeClass: 'tag-gpu',
+                reason: "La multiplication matricielle (C = A × B) est un cas idéal de parallélisme massif : chaque coefficient est le produit scalaire indépendant de lignes et colonnes.",
+                architecture: "Le GPU mobilise 256 cœurs SIMT (16 SMs × 16 ALUs) alimentés à 3000 Go/s par sa VRAM HBM3. Le CPU, avec 4 cœurs et 80 Go/s de RAM, doit empiler des boucles séquentielles lentes."
+            },
+            pixel: {
+                winner: 'Vainqueur : GPU (Indépendance spatiale)',
+                speedup: '~6x à 8x plus rapide',
+                badgeClass: 'tag-gpu',
+                reason: "Chaque pixel d'une image ou fragment de shader est calculé indépendamment de ses voisins (filtrage 2D, seuillage, convolutions, ray tracing).",
+                architecture: "Le GPU traite la grille de pixels en une seule passe globale sur ses 256 cœurs SIMT. Le CPU, même avec AVX, traite les pixels par petits paquets et sature ses pipelines."
+            },
+            branch: {
+                winner: 'Vainqueur : CPU (Latence & Spéculation)',
+                speedup: '~3x à 4x plus rapide',
+                badgeClass: 'tag-cpu',
+                reason: "Le code décisionnel avec embranchements conditionnels imprévisibles (if / else) casse l'exécution synchrone du GPU et provoque de la 'Warp Divergence'.",
+                architecture: "Le CPU dispose d'un Branch Predictor (96% de réussite) et d'un cache L3 (10ns) qui exécutent les instructions sans arrêt à 4.5 GHz. Le GPU ne pouvant avoir deux pointeurs d'instruction par Warp, il gèle 50% de ses cœurs pour exécuter le IF, puis gèle l'autre moitié pour le ELSE."
+            }
         };
 
+        // Sélecteurs de workload
+        const workloadBtns = document.querySelectorAll('.hw-workload-btn');
         workloadBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 workloadBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.workload = btn.dataset.workload;
-                if (guideBanner && guides[this.workload]) {
-                    guideBanner.textContent = guides[this.workload];
-                }
+                this.updateWorkloadUI();
                 this.resetSimulation();
             });
         });
+
+        this.updateWorkloadUI();
 
         // Mode d'affichage (Split / CPU / GPU)
         const viewBtns = document.querySelectorAll('.hw-view-btn');
@@ -173,6 +190,27 @@ class HardwareLabApp {
                 if (startBtn) startBtn.textContent = 'LANCER';
             });
         }
+    }
+
+    updateWorkloadUI() {
+        if (!this.workloadExplanations) return;
+        const expl = this.workloadExplanations[this.workload];
+        if (!expl) return;
+
+        const badge = document.getElementById('hw-why-badge');
+        const speedup = document.getElementById('hw-why-speedup');
+        const reason = document.getElementById('hw-why-reason');
+        const tech = document.getElementById('hw-why-tech');
+        const guide = document.getElementById('hw-workload-guide');
+
+        if (badge) {
+            badge.textContent = expl.winner;
+            badge.className = `why-badge ${expl.badgeClass}`;
+        }
+        if (speedup) speedup.textContent = expl.speedup;
+        if (reason) reason.textContent = expl.reason;
+        if (tech) tech.textContent = expl.architecture;
+        if (guide) guide.textContent = expl.reason;
     }
 
     setupEventListeners() {
@@ -334,22 +372,22 @@ class HardwareLabApp {
             if (this.cpu.completed === this.batchSize && this.gpu.completed === this.batchSize) {
                 if (this.workload === 'gemm') {
                     const ratio = (this.cpu.timeMs / Math.max(1, this.gpu.timeMs)).toFixed(1);
-                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span> — 256 calculs simultanés.`;
+                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span> — Les 256 cœurs SIMT ont calculé les tenseurs en parallèle sur bus HBM3 3000 Go/s, tandis que le CPU a empilé des boucles séquentielles 4 par 4.`;
                 } else if (this.workload === 'pixel') {
                     const ratio = (this.cpu.timeMs / Math.max(1, this.gpu.timeMs)).toFixed(1);
-                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span> — Shaders 2D en parallèle.`;
+                    verdictEl.innerHTML = `<span style="color:var(--neon-purple);">VAINQUEUR : GPU (${ratio}x plus rapide)</span> — Pixels mappés directement sur les 256 cœurs sans dépendance de données, surpassant le streaming séquentiel du CPU.`;
                 } else {
                     const ratio = (this.gpu.timeMs / Math.max(1, this.cpu.timeMs)).toFixed(1);
-                    verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">VAINQUEUR : CPU (${ratio}x plus rapide)</span> — Branch Predictor vs Warp Divergence.`;
+                    verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">VAINQUEUR : CPU (${ratio}x plus rapide)</span> — Le Branch Predictor CPU (96% succès) n'a subi aucune bulle de pipeline, tandis que le GPU a divisé son débit par deux (Warp Divergence : 50% de cœurs gelés).`;
                 }
             } else if (this.cpu.completed === this.batchSize && this.gpu.completed < this.batchSize) {
-                verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">CPU TERMINE 1ER !</span> GPU ralenti (Warp Divergence)...`;
+                verdictEl.innerHTML = `<span style="color:var(--neon-cyan);">CPU TERMINE 1ER !</span> Le GPU est pénalisé par la Warp Divergence (moitié des cœurs masqués)...`;
             } else if (this.gpu.completed === this.batchSize && this.cpu.completed < this.batchSize) {
-                verdictEl.innerHTML = `<span style="color:var(--neon-purple);">GPU TERMINE 1ER !</span> CPU vide sa file séquentielle...`;
+                verdictEl.innerHTML = `<span style="color:var(--neon-purple);">GPU TERMINE 1ER !</span> Les 256 cœurs SIMT ont liquidé le lot, le CPU vide sa file 4 par 4...`;
             } else if (this.isRunning) {
                 verdictEl.textContent = "Calcul en cours...";
             } else {
-                verdictEl.textContent = "Prêt à lancer.";
+                verdictEl.textContent = "Prêt à lancer la simulation.";
             }
         }
     }
@@ -383,21 +421,23 @@ class HardwareLabApp {
 
         if (this.viewMode === 'cpu') {
             const cx = w * 0.5;
-            const coreY = h - 65;
+            const topY = 115;
+            const coreH = h - topY - 25;
+            const coreW = (w - 60 - 3 * 10) / 4;
             const cores = [];
-            const coreW = (w - 80) / 4;
             for (let i = 0; i < 4; i++) {
                 cores.push({
-                    x: 40 + (i + 0.5) * coreW,
-                    y: coreY,
-                    r: Math.min(26, coreW * 0.32),
+                    x: 30 + i * (coreW + 10),
+                    y: topY,
+                    w: coreW,
+                    h: coreH,
                     index: i
                 });
             }
             return {
                 x: 20, y: 15, w: w - 40, h: h - 30,
-                ram: { x: cx, y: 50, r: 20 },
-                l3: { x: cx, y: 125, r: 24 },
+                ram: { x: cx, y: 44, r: 18 },
+                l3: { x: cx, y: 88, r: 20 },
                 cores: cores
             };
         }
@@ -405,21 +445,23 @@ class HardwareLabApp {
         if (stacked) {
             const stackH = h * 0.48;
             const cx = w * 0.5;
-            const coreY = stackH - 28;
+            const topY = 56;
+            const coreH = stackH - topY - 8;
+            const coreW = (w - 30 - 3 * 6) / 4;
             const cores = [];
-            const coreW = (w - 40) / 4;
             for (let i = 0; i < 4; i++) {
                 cores.push({
-                    x: 20 + (i + 0.5) * coreW,
-                    y: coreY,
-                    r: Math.min(16, coreW * 0.3),
+                    x: 15 + i * (coreW + 6),
+                    y: topY,
+                    w: coreW,
+                    h: coreH,
                     index: i
                 });
             }
             return {
                 x: 15, y: 10, w: w - 30, h: stackH,
-                ram: { x: cx, y: 34, r: 14 },
-                l3: { x: cx, y: 76, r: 17 },
+                ram: { x: cx - 52, y: 28, r: 13 },
+                l3: { x: cx + 52, y: 28, r: 14 },
                 cores: cores
             };
         }
@@ -427,21 +469,23 @@ class HardwareLabApp {
         // Split standard (côte à côte)
         const cpuW = w * 0.475;
         const cx = 15 + cpuW * 0.5;
-        const coreY = h - 60;
+        const topY = 115;
+        const coreH = h - topY - 25;
+        const coreW = (cpuW - 20 - 3 * 8) / 4;
         const cores = [];
-        const coreW = (cpuW - 24) / 4;
         for (let i = 0; i < 4; i++) {
             cores.push({
-                x: 15 + (i + 0.5) * coreW,
-                y: coreY,
-                r: Math.min(20, coreW * 0.32),
+                x: 15 + i * (coreW + 8),
+                y: topY,
+                w: coreW,
+                h: coreH,
                 index: i
             });
         }
         return {
             x: 15, y: 15, w: cpuW, h: h - 30,
-            ram: { x: cx, y: 50, r: 18 },
-            l3: { x: cx, y: 120, r: 21 },
+            ram: { x: cx, y: 44, r: 17 },
+            l3: { x: cx, y: 88, r: 19 },
             cores: cores
         };
     }
@@ -453,20 +497,23 @@ class HardwareLabApp {
 
         if (this.viewMode === 'gpu') {
             const cx = w * 0.5;
-            const vram = { x: cx, y: 50, r: 20 };
-            const disp = { x: cx, y: 115, r: 18 };
-            const topY = 165;
-            const bottomY = h - 40;
-            const gridW = Math.min(w - 60, 520);
+            const vram = { x: cx, y: 44, r: 18 };
+            const disp = { x: cx, y: 88, r: 17 };
+            const topY = 118;
+            const bottomY = h - 25;
+            const gridW = Math.min(w - 60, 560);
             const gridX = cx - gridW * 0.5;
             const gridH = bottomY - topY;
+            const smW = (gridW - 3 * 8) / 4;
+            const smH = (gridH - 3 * 8) / 4;
             const smNodes = [];
             for (let r = 0; r < 4; r++) {
                 for (let c = 0; c < 4; c++) {
                     smNodes.push({
-                        x: gridX + (c + 0.5) * (gridW / 4),
-                        y: topY + (r + 0.5) * (gridH / 4),
-                        r: Math.min(18, gridW / 14, gridH / 14),
+                        x: gridX + c * (smW + 8),
+                        y: topY + r * (smH + 8),
+                        w: smW,
+                        h: smH,
                         index: r * 4 + c
                     });
                 }
@@ -481,19 +528,22 @@ class HardwareLabApp {
             const topY = h * 0.52;
             const stackH = h * 0.46;
             const cx = w * 0.5;
-            const vram = { x: cx, y: topY + 28, r: 14 };
-            const disp = { x: cx, y: topY + 62, r: 13 };
-            const smGridY = topY + 92;
-            const smBottomY = h - 22;
+            const vram = { x: cx - 52, y: topY + 22, r: 13 };
+            const disp = { x: cx + 52, y: topY + 22, r: 13 };
+            const smGridY = topY + 44;
+            const smBottomY = h - 10;
             const gridW = w - 30;
+            const smW = (gridW - 3 * 6) / 4;
+            const smH = (smBottomY - smGridY - 3 * 4) / 4;
             const smNodes = [];
-            for (let r = 0; r < 2; r++) {
-                for (let c = 0; c < 8; c++) {
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
                     smNodes.push({
-                        x: 15 + (c + 0.5) * (gridW / 8),
-                        y: smGridY + (r + 0.5) * ((smBottomY - smGridY) / 2),
-                        r: Math.min(11, gridW / 26),
-                        index: r * 8 + c
+                        x: 15 + c * (smW + 6),
+                        y: smGridY + r * (smH + 4),
+                        w: smW,
+                        h: smH,
+                        index: r * 4 + c
                     });
                 }
             }
@@ -507,19 +557,22 @@ class HardwareLabApp {
         const left = w * 0.525;
         const gpuW = w * 0.46;
         const cx = left + gpuW * 0.5;
-        const vram = { x: cx, y: 50, r: 18 };
-        const disp = { x: cx, y: 110, r: 16 };
-        const smGridY = 150;
-        const smBottomY = h - 45;
-        const gridW = gpuW - 20;
-        const gridH = smBottomY - smGridY;
+        const vram = { x: cx, y: 44, r: 17 };
+        const disp = { x: cx, y: 88, r: 16 };
+        const topY = 118;
+        const bottomY = h - 25;
+        const gridW = gpuW - 16;
+        const gridH = bottomY - topY;
+        const smW = (gridW - 3 * 6) / 4;
+        const smH = (gridH - 3 * 6) / 4;
         const smNodes = [];
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 4; c++) {
                 smNodes.push({
-                    x: left + 10 + (c + 0.5) * (gridW / 4),
-                    y: smGridY + (r + 0.5) * (gridH / 4),
-                    r: Math.min(14, gridW / 13, gridH / 13),
+                    x: left + 8 + c * (smW + 6),
+                    y: topY + r * (smH + 6),
+                    w: smW,
+                    h: smH,
                     index: r * 4 + c
                 });
             }
@@ -611,6 +664,20 @@ class HardwareLabApp {
         }
     }
 
+    drawRoundedRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
     getBezierPoint(a, b, t) {
         const mt = 1 - t;
         const cpy = (a.y + b.y) / 2;
@@ -660,19 +727,16 @@ class HardwareLabApp {
 
         ctx.save();
 
-        // Aura lumineuse
         if (isActive && !isStalled) {
             ctx.shadowColor = color;
             ctx.shadowBlur = pulseAura ? 16 : 8;
         }
 
-        // Corps en verre sombre
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = isActive ? 'rgba(12, 14, 28, 0.96)' : 'rgba(8, 8, 18, 0.92)';
+        ctx.fillStyle = isActive ? 'rgba(12, 16, 30, 0.96)' : 'rgba(8, 8, 18, 0.92)';
         ctx.fill();
 
-        // Bordure
         ctx.lineWidth = isActive ? 1.8 : 1;
         ctx.strokeStyle = isStalled ? '#ffaa00' : color;
         if (isStalled) {
@@ -682,41 +746,250 @@ class HardwareLabApp {
         ctx.setLineDash([]);
         ctx.shadowBlur = 0;
 
-        // Noyau intérieur
-        if (isStalled) {
-            ctx.strokeStyle = 'rgba(255, 170, 0, 0.6)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(x - r * 0.35, y - r * 0.35);
-            ctx.lineTo(x + r * 0.35, y + r * 0.35);
-            ctx.moveTo(x + r * 0.35, y - r * 0.35);
-            ctx.lineTo(x - r * 0.35, y + r * 0.35);
-            ctx.stroke();
-        } else if (isActive) {
+        if (isActive) {
             ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(x, y, Math.max(2, r * 0.32), 0, Math.PI * 2);
+            ctx.arc(x, y, Math.max(2, r * 0.28), 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(x, y, Math.max(1, r * 0.16), 0, Math.PI * 2);
+            ctx.arc(x, y, Math.max(1, r * 0.14), 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Libellé
         ctx.fillStyle = isStalled ? '#ffaa00' : (isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)');
-        const mainFontSize = Math.max(7, Math.min(10, r * 0.6));
+        const mainFontSize = Math.max(7, Math.min(9.5, r * 0.58));
         ctx.font = `bold ${mainFontSize}px ${fontMono}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = sublabel ? 'bottom' : 'middle';
         const labelY = sublabel ? y - 1 : y;
         ctx.fillText(label, x, labelY);
 
-        if (sublabel && r >= 14) {
+        if (sublabel && r >= 13) {
             ctx.fillStyle = isStalled ? 'rgba(255, 170, 0, 0.7)' : (isActive ? color : 'rgba(255, 255, 255, 0.4)');
             ctx.font = `6.5px ${fontMono}`;
             ctx.textBaseline = 'top';
             ctx.fillText(sublabel, x, y + 2);
+        }
+
+        ctx.restore();
+    }
+
+    drawCpuCorePod(ctx, core, index, prog, isBusy, animTime) {
+        const { x, y, w, h } = core;
+        const fontMono = 'ui-monospace, "Space Mono", "SF Mono", Consolas, monospace';
+
+        ctx.save();
+
+        // 1. Pod Glass Container
+        if (isBusy) {
+            ctx.shadowColor = '#00f3ff';
+            ctx.shadowBlur = 8;
+        }
+        this.drawRoundedRect(ctx, x, y, w, h, 6);
+        ctx.fillStyle = isBusy ? 'rgba(12, 18, 32, 0.95)' : 'rgba(8, 12, 22, 0.92)';
+        ctx.fill();
+
+        ctx.lineWidth = isBusy ? 1.5 : 1;
+        ctx.strokeStyle = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.3)';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 2. Pod Header: CŒUR X · 4.5 GHz
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 8.5px ' + fontMono;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`CŒUR ${index}`, x + w * 0.5, y + 5);
+
+        ctx.fillStyle = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.5)';
+        ctx.font = '7px ' + fontMono;
+        ctx.fillText('4.5 GHz', x + w * 0.5, y + 16);
+
+        // 3. Instruction Decode / Queue Stage
+        const qY = y + 27;
+        const qH = Math.min(24, Math.max(16, h * 0.11));
+        ctx.fillStyle = 'rgba(0, 243, 255, 0.05)';
+        ctx.strokeStyle = isBusy && prog <= 0.45 ? '#00f3ff' : 'rgba(0, 243, 255, 0.18)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 4, qY, w - 8, qH);
+        ctx.fillRect(x + 4, qY, w - 8, qH);
+
+        ctx.fillStyle = isBusy && prog <= 0.45 ? '#00f3ff' : 'rgba(255, 255, 255, 0.4)';
+        ctx.font = '6.5px ' + fontMono;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('DÉCODE', x + w * 0.5, qY + qH * 0.5);
+
+        // 4. Superscalar 64-bit ALU Stage with High-Speed Oscillator
+        const aluY = qY + qH + 5;
+        const aluH = Math.min(52, Math.max(30, h * 0.24));
+        ctx.fillStyle = 'rgba(5, 8, 18, 0.9)';
+        ctx.strokeStyle = isBusy && prog > 0.4 ? 'rgba(0, 243, 255, 0.7)' : 'rgba(0, 243, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 4, aluY, w - 8, aluH);
+        ctx.fillRect(x + 4, aluY, w - 8, aluH);
+
+        if (isBusy && prog > 0.4) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#00f3ff';
+            ctx.shadowColor = '#00f3ff';
+            ctx.shadowBlur = 6;
+            ctx.lineWidth = 1.5;
+            const midAluY = aluY + aluH * 0.48;
+            const amp = aluH * 0.32;
+            for (let px = x + 6; px <= x + w - 6; px += 2) {
+                const py = midAluY + Math.sin((px - x) * 0.45 + animTime * 24 + index) * amp;
+                if (px === x + 6) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 7px ' + fontMono;
+            ctx.textAlign = 'center';
+            ctx.fillText('ALU 64-BIT', x + w * 0.5, aluY + aluH - 5);
+        } else {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.font = '6.5px ' + fontMono;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('ALU 64-BIT', x + w * 0.5, aluY + aluH * 0.5);
+        }
+
+        // 5. Private L1/L2 SRAM Cache Unit
+        const l1Y = aluY + aluH + 5;
+        const l1H = Math.min(22, Math.max(14, h * 0.1));
+        if (l1Y + l1H < y + h - 16) {
+            ctx.fillStyle = 'rgba(0, 243, 255, 0.04)';
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.18)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 4, l1Y, w - 8, l1H);
+            ctx.fillRect(x + 4, l1Y, w - 8, l1H);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.font = '6px ' + fontMono;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('L1/L2 SRAM', x + w * 0.5, l1Y + l1H * 0.5);
+        }
+
+        // 6. Scalar Progress Bar & Status
+        const barY = y + h - 13;
+        const barW = w - 8;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(x + 4, barY, barW, 4);
+
+        if (prog > 0) {
+            ctx.fillStyle = '#00f3ff';
+            ctx.fillRect(x + 4, barY, barW * prog, 4);
+        }
+
+        ctx.font = 'bold 6.5px ' + fontMono;
+        ctx.fillStyle = isBusy ? '#00f3ff' : 'rgba(255, 255, 255, 0.3)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(isBusy ? 'ACTIF' : 'ATTENTE', x + w * 0.5, barY - 2);
+
+        ctx.restore();
+    }
+
+    drawSmPod(ctx, sm, index, isSmActive, isStalled, isFirstBranch, waveProg, animTime) {
+        const { x, y, w, h } = sm;
+        const fontMono = 'ui-monospace, "Space Mono", "SF Mono", Consolas, monospace';
+
+        ctx.save();
+
+        // 1. Pod Glass Container
+        if (isSmActive) {
+            ctx.shadowColor = '#00ffaa';
+            ctx.shadowBlur = 8;
+        }
+        this.drawRoundedRect(ctx, x, y, w, h, 5);
+        ctx.fillStyle = isSmActive ? 'rgba(16, 22, 38, 0.95)' : (isStalled ? 'rgba(26, 18, 14, 0.94)' : 'rgba(12, 10, 24, 0.92)');
+        ctx.fill();
+
+        ctx.lineWidth = isSmActive || isStalled ? 1.5 : 1;
+        ctx.strokeStyle = isStalled ? '#ffaa00' : (isSmActive ? '#00ffaa' : 'rgba(217, 70, 239, 0.35)');
+        if (isStalled) {
+            ctx.setLineDash([3, 3]);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.shadowBlur = 0;
+
+        // 2. Pod Header: SM-XX et indicateur 16 ALUs / STALL
+        ctx.font = 'bold 7px ' + fontMono;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = isStalled ? '#ffaa00' : (isSmActive ? '#00ffaa' : '#e879f9');
+        const smLabel = `SM-${index < 10 ? '0' + index : index}`;
+        ctx.fillText(smLabel, x + 4, y + 3);
+
+        ctx.font = 'bold 6px ' + fontMono;
+        ctx.textAlign = 'right';
+        if (isStalled) {
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillText('STALL', x + w - 4, y + 3);
+        } else if (isSmActive) {
+            ctx.fillStyle = '#00ffaa';
+            ctx.fillText('16 ALUs', x + w - 4, y + 3);
+        } else {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.fillText('16 ALUs', x + w - 4, y + 3);
+        }
+
+        // Ligne de démarcation interne
+        ctx.strokeStyle = isStalled ? 'rgba(255, 170, 0, 0.2)' : (isSmActive ? 'rgba(0, 255, 170, 0.2)' : 'rgba(217, 70, 239, 0.15)');
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + 3, y + 13);
+        ctx.lineTo(x + w - 3, y + 13);
+        ctx.stroke();
+
+        // 3. Les 16 Micro-Cœurs SIMT (Matrice 4x4 interne = 256 cœurs au total sur le GPU)
+        const padX = x + 4;
+        const padY = y + 15;
+        const innerW = w - 8;
+        const innerH = h - 18;
+        const cellW = innerW / 4;
+        const cellH = innerH / 4;
+        const microR = Math.max(1.6, Math.min(3.0, cellW * 0.28, cellH * 0.28));
+
+        for (let mr = 0; mr < 4; mr++) {
+            for (let mc = 0; mc < 4; mc++) {
+                const cx = padX + (mc + 0.5) * cellW;
+                const cy = padY + (mr + 0.5) * cellH;
+
+                if (isSmActive) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
+                    ctx.fillStyle = '#00ffaa';
+                    ctx.shadowColor = '#00ffaa';
+                    ctx.shadowBlur = 5;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, microR * 0.45, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else if (isStalled) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 170, 0, 0.25)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffaa00';
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, microR, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(217, 70, 239, 0.35)';
+                    ctx.fill();
+                }
+            }
         }
 
         ctx.restore();
@@ -731,7 +1004,7 @@ class HardwareLabApp {
         ctx.textBaseline = 'top';
         ctx.font = 'bold 10px ' + fontMono;
         ctx.fillStyle = '#00f3ff';
-        ctx.fillText('CPU // FAIBLE LATENCE (4 CŒURS @ 4.5 GHz)', c.x, c.y);
+        ctx.fillText('CPU // 4 CŒURS SUPERSCALAIRES @ 4.5 GHz', c.x, c.y);
 
         // 1. Nœuds RAM et Cache L3
         this._renderedNodes.push({ x: c.ram.x, y: c.ram.y, r: c.ram.r, type: 'cpu-ram' });
@@ -740,60 +1013,50 @@ class HardwareLabApp {
         // Synapse RAM -> L3
         this.drawSynapse(ctx, c.ram, c.l3, '#00f3ff', 1.5, 0.4);
 
-        // 2. Synapses L3 -> Cœurs
+        // 2. Synapses L3 -> Pods Cœurs
         for (let i = 0; i < 4; i++) {
             const core = c.cores[i];
-            this._renderedNodes.push({ x: core.x, y: core.y, r: core.r, type: 'cpu-core', index: i });
+            const coreTop = { x: core.x + core.w * 0.5, y: core.y };
+            this._renderedNodes.push({
+                x: core.x,
+                y: core.y,
+                w: core.w,
+                h: core.h,
+                type: 'cpu-core',
+                index: i
+            });
+
             const prog = this.cpu.coreStates[i];
             const isBusy = prog > 0;
             const lineColor = isBusy ? '#00f3ff' : 'rgba(0, 243, 255, 0.2)';
-            this.drawSynapse(ctx, c.l3, core, lineColor, isBusy ? 1.5 : 1, isBusy ? 0.6 : 0.2);
-        }
+            this.drawSynapse(ctx, c.l3, coreTop, lineColor, isBusy ? 1.5 : 1, isBusy ? 0.6 : 0.2);
 
-        // 3. Propagation des paquets de données & Oscillations
-        for (let i = 0; i < 4; i++) {
-            const core = c.cores[i];
-            const prog = this.cpu.coreStates[i];
-
+            // Propagation du paquet d'instruction
             if (this.isRunning && prog > 0) {
                 if (prog <= 0.22) {
                     const t = prog / 0.22;
-                    this.drawPulse(ctx, c.ram, c.l3, t, '#00f3ff', 3.5);
+                    this.drawPulse(ctx, c.ram, c.l3, t, '#00f3ff', 3.2);
                 } else if (prog <= 0.45) {
                     const t = (prog - 0.22) / 0.23;
-                    this.drawPulse(ctx, c.l3, core, t, '#00f3ff', 3.5);
-                } else {
-                    // Calcul actif dans le cœur : anneau orbital 4.5 GHz
-                    ctx.save();
-                    const angle = this.animTime * 18 + i * (Math.PI / 2);
-                    ctx.beginPath();
-                    ctx.arc(core.x, core.y, core.r + 4, angle, angle + Math.PI * 1.1);
-                    ctx.strokeStyle = '#00f3ff';
-                    ctx.lineWidth = 1.5;
-                    ctx.shadowColor = '#00f3ff';
-                    ctx.shadowBlur = 8;
-                    ctx.stroke();
-                    ctx.restore();
+                    this.drawPulse(ctx, c.l3, coreTop, t, '#00f3ff', 3.2);
                 }
             }
+
+            // Dessin du pod exécutif du cœur
+            this.drawCpuCorePod(ctx, core, i, prog, isBusy, this.animTime);
         }
 
-        // 4. Rendu des nœuds de verre
+        // 3. Rendu des nœuds mémoire RAM et L3 / Predictor
         const isBranch = this.workload === 'branch';
         this.drawGlassNode(ctx, c.ram, 'RAM', 'DDR5', '#00f3ff', this.isRunning, false, false);
         this.drawGlassNode(ctx, c.l3, isBranch ? 'PRED' : 'L3', isBranch ? '96%' : '32M', isBranch ? '#00ffaa' : '#00f3ff', this.isRunning, false, isBranch && this.isRunning);
 
-        for (let i = 0; i < 4; i++) {
-            const core = c.cores[i];
-            const prog = this.cpu.coreStates[i];
-            const isBusy = prog > 0;
-            this.drawGlassNode(ctx, core, `C${i}`, '4.5G', '#00f3ff', isBusy, false, prog > 0.45);
-
-            // Statut textuel sous le cœur
+        // Indicateur prédiction sous le L3 en mode branche
+        if (isBranch) {
             ctx.font = 'bold 7px ' + fontMono;
-            ctx.fillStyle = isBusy ? '#00f3ff' : 'rgba(255, 255, 255, 0.3)';
+            ctx.fillStyle = '#00ffaa';
             ctx.textAlign = 'center';
-            ctx.fillText(isBusy ? 'ACTIF' : 'ATTENTE', core.x, core.y + core.r + 10);
+            ctx.fillText('BRANCH PREDICTOR : 96% HIT (0 BULLE)', c.l3.x, c.l3.y + c.l3.r + 9);
         }
     }
 
@@ -806,40 +1069,48 @@ class HardwareLabApp {
         ctx.textBaseline = 'top';
         ctx.font = 'bold 10px ' + fontMono;
         ctx.fillStyle = '#e879f9';
-        ctx.fillText('GPU // HAUT DÉBIT SIMT (256 CŒURS @ 1.8 GHz)', g.x, g.y);
+        ctx.fillText('GPU // 16 STREAMING MULTIPROCESSORS (256 CŒURS)', g.x, g.y);
 
         // 1. Enregistrement VRAM & Dispatcher
         this._renderedNodes.push({ x: g.vram.x, y: g.vram.y, r: g.vram.r, type: 'gpu-vram' });
         this._renderedNodes.push({ x: g.disp.x, y: g.disp.y, r: g.disp.r, type: 'gpu-disp' });
 
-        // Bus VRAM -> Dispatcher (3 synapses parallèles représentant le bus large 4096-bit)
+        // Bus large VRAM -> Dispatcher (3 traces parallèles)
         [-5, 0, 5].forEach(dx => {
             const a = { x: g.vram.x + dx, y: g.vram.y };
             const b = { x: g.disp.x + dx, y: g.disp.y };
             this.drawSynapse(ctx, a, b, '#e879f9', 1.2, 0.35);
         });
 
-        // Pulsations VRAM -> Dispatcher en continu pendant le calcul
+        // Pulsations continues VRAM -> Dispatcher
         if (this.isRunning && this.gpu.completed < this.batchSize) {
             const pulseT = (this.animTime * 3) % 1.0;
             this.drawPulse(ctx, g.vram, g.disp, pulseT, '#e879f9', 3.0);
         }
 
-        // 2. Synapses et nœuds des 16 SMs
+        // 2. Rendu des 16 SMs (chacun avec 16 micro-ALUs = 256 cœurs)
         const isBranch = this.workload === 'branch';
         const waveProg = this.gpuProgressInWave || 0;
         const isFirstBranch = waveProg < 0.5;
 
         for (let k = 0; k < g.smNodes.length; k++) {
             const sm = g.smNodes[k];
-            this._renderedNodes.push({ x: sm.x, y: sm.y, r: sm.r, type: 'gpu-sm', index: k });
+            const smTop = { x: sm.x + sm.w * 0.5, y: sm.y };
+            this._renderedNodes.push({
+                x: sm.x,
+                y: sm.y,
+                w: sm.w,
+                h: sm.h,
+                type: 'gpu-sm',
+                index: k
+            });
 
             const isEven = (k % 2 === 0);
             const isActive = !isBranch || (isFirstBranch && isEven) || (!isFirstBranch && !isEven);
             const isStalled = isBranch && this.isRunning && (this.gpu.completed < this.batchSize) && !isActive;
             const isSmActive = this.isRunning && (this.gpu.completed < this.batchSize) && (!isBranch || isActive);
 
-            // Dessin de la synapse Dispatcher -> SM
+            // Synapse Dispatcher -> SM pod
             let synColor = 'rgba(217, 70, 239, 0.2)';
             let synWidth = 1;
             let synAlpha = 0.25;
@@ -856,39 +1127,36 @@ class HardwareLabApp {
                 synAlpha = 0.55;
             }
 
-            this.drawSynapse(ctx, g.disp, sm, synColor, synWidth, synAlpha, isDashed);
+            this.drawSynapse(ctx, g.disp, smTop, synColor, synWidth, synAlpha, isDashed);
 
             // Pulsation d'activation SIMT
             if (isSmActive) {
                 const branchT = isBranch ? (isFirstBranch ? (waveProg / 0.5) : ((waveProg - 0.5) / 0.5)) : waveProg;
                 const smT = ((branchT * 1.5) - (k % 4) * 0.08) % 1.0;
                 if (smT >= 0 && smT <= 0.88) {
-                    this.drawPulse(ctx, g.disp, sm, smT / 0.88, '#00ffaa', 2.4);
+                    this.drawPulse(ctx, g.disp, smTop, smT / 0.88, '#00ffaa', 2.4);
                 }
             }
 
-            // Dessin du nœud de verre SM
-            const label = k < 10 ? '0' + k : '' + k;
-            const sublabel = isStalled ? 'WAIT' : (isSmActive ? (isBranch ? (isFirstBranch ? 'IF' : 'ELSE') : 'SIMT') : null);
-            const nodeColor = isStalled ? '#ffaa00' : (isSmActive ? '#00ffaa' : '#e879f9');
-            this.drawGlassNode(ctx, sm, label, sublabel, nodeColor, isSmActive, isStalled, isSmActive);
+            // Dessin du pod SM avec ses 16 micro-cœurs internes
+            this.drawSmPod(ctx, sm, k, isSmActive, isStalled, isFirstBranch, waveProg, this.animTime);
         }
 
         // 3. Rendu des nœuds VRAM & Dispatcher
         this.drawGlassNode(ctx, g.vram, 'VRAM', 'HBM3', '#e879f9', this.isRunning, false, false);
         this.drawGlassNode(ctx, g.disp, 'WARP', 'SCHED', '#bd00ff', this.isRunning, false, false);
 
-        // 4. Bannière d'état HUD
+        // 4. Bannière d'état HUD au bas du GPU
         if (this.isRunning && this.gpu.completed < this.batchSize) {
             ctx.font = 'bold 8px ' + fontMono;
             ctx.textAlign = 'center';
             if (isBranch) {
                 ctx.fillStyle = '#ffaa00';
-                const branchTxt = isFirstBranch ? 'PHASE 1 : BRANCHE IF (50% SMs EN PAUSE)' : 'PHASE 2 : BRANCHE ELSE (50% SMs EN PAUSE)';
+                const branchTxt = isFirstBranch ? 'PHASE 1 : BRANCHE IF (128 CŒURS MASQUÉS)' : 'PHASE 2 : BRANCHE ELSE (128 CŒURS MASQUÉS)';
                 ctx.fillText(`WARP DIVERGENCE // ${branchTxt}`, g.disp.x, g.y + g.h - 4);
             } else {
                 ctx.fillStyle = '#00ffaa';
-                ctx.fillText('SIMT LOCKSTEP // 256 THREADS PARALLÈLES (PLEIN RÉGIME)', g.disp.x, g.y + g.h - 4);
+                ctx.fillText('SIMT LOCKSTEP // 16 SMs × 16 ALUs = 256 CŒURS EN PARALLÈLE', g.disp.x, g.y + g.h - 4);
             }
         }
     }
@@ -905,13 +1173,22 @@ class HardwareLabApp {
         const cy = (e.clientY - rect.top) * scaleY;
 
         let closestNode = null;
-        let minDist = 22;
+        let minDist = 24;
 
         for (let node of this._renderedNodes) {
-            const d = Math.hypot(node.x - cx, node.y - cy);
-            if (d < Math.max(node.r + 6, minDist)) {
-                minDist = d;
-                closestNode = node;
+            if (node.w && node.h) {
+                // Pod rectangulaire (cpu-core ou gpu-sm)
+                if (cx >= node.x - 3 && cx <= node.x + node.w + 3 && cy >= node.y - 3 && cy <= node.y + node.h + 3) {
+                    closestNode = node;
+                    break;
+                }
+            } else if (node.r) {
+                // Nœud circulaire (ram, l3, vram, disp)
+                const d = Math.hypot(node.x - cx, node.y - cy);
+                if (d < Math.max(node.r + 6, minDist)) {
+                    minDist = d;
+                    closestNode = node;
+                }
             }
         }
 
@@ -931,31 +1208,32 @@ class HardwareLabApp {
                     <p>Latence : <span class="val">~10 ns</span></p>
                     <p>Précision Predictor : <span class="val">96%</span></p>
                     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
-                    <p>${isBranch ? 'Anticipe les conditions if/else sans bloquer le pipeline.' : 'Tampon haute vitesse évitant les allers-retours vers la RAM.'}</p>
+                    <p>${isBranch ? 'Anticipation spéculative : exécute le if/else sans aucune bulle de pipeline à 4.5 GHz.' : 'Tampon haute vitesse évitant les allers-retours vers la RAM DDR5.'}</p>
                 `;
             } else if (closestNode.type === 'cpu-core') {
                 const prog = this.cpu.coreStates[closestNode.index];
                 const isBusy = prog > 0;
                 html = `
-                    <h4>Cœur CPU ${closestNode.index} <span>Superscalaire</span></h4>
-                    <p>Fréquence : <span class="val">4.5 GHz</span></p>
-                    <p>État : <span class="val">${isBusy ? 'Calcul ALU actif' : 'En attente'}</span></p>
+                    <h4>Cœur CPU ${closestNode.index} <span>Superscalaire 64-bit</span></h4>
+                    <p>Fréquence : <span class="val">4.5 GHz (Latence minimale)</span></p>
+                    <p>Architecture : <span class="val">Out-of-Order + Caches L1/L2</span></p>
+                    <p>État : <span class="val">${isBusy ? 'Calcul ALU actif (4.5 GHz)' : 'Attente file'}</span></p>
                     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
-                    <p>Exécution out-of-order minimisant la latence unitaire de chaque tâche.</p>
+                    <p>Conçu pour maximiser la vitesse unitaire de chaque instruction grâce à une fréquence très haute.</p>
                 `;
             } else if (closestNode.type === 'gpu-vram') {
                 html = `
                     <h4>VRAM HBM3 <span>Bus 4096-bit</span></h4>
                     <p>Bande passante : <span class="val">3000 Go/s</span></p>
                     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
-                    <p>Bus ultra-large alimentant les matrices de poids et tenseurs en continu.</p>
+                    <p>Bus ultra-large alimentant simultanément les 256 cœurs SIMT en coefficients matriciels.</p>
                 `;
             } else if (closestNode.type === 'gpu-disp') {
                 html = `
                     <h4>Warp Scheduler <span>SIMT Hub</span></h4>
                     <p>Granularité : <span class="val">32 threads / warp</span></p>
                     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
-                    <p>Distribue les instructions identiques sur l'ensemble de la grille de calcul.</p>
+                    <p>Distribue les instructions identiques en lockstep sur l'ensemble des 16 multiprocesseurs.</p>
                 `;
             } else if (closestNode.type === 'gpu-sm') {
                 const k = closestNode.index;
@@ -963,14 +1241,14 @@ class HardwareLabApp {
                 const isEven = k % 2 === 0;
                 const isFirstBranch = (this.gpuProgressInWave || 0) < 0.5;
                 const isActive = !isBranch || (isFirstBranch && isEven) || (!isFirstBranch && !isEven);
-                const statusText = !this.isRunning ? 'Prêt' : (isBranch ? (isActive ? 'Branche active' : 'Stalled (Divergence)') : 'SIMT Lockstep');
+                const statusText = !this.isRunning ? 'Prêt (16 cœurs ALUs)' : (isBranch ? (isActive ? 'Branche active (16 ALUs)' : 'Stalled / Masqué (16 ALUs gelés)') : 'SIMT Lockstep (16 ALUs)');
 
                 html = `
                     <h4>Streaming Multiprocessor <span>SM-${k < 10 ? '0' + k : k}</span></h4>
-                    <p>Micro-cœurs : <span class="val">16 ALU / FP32</span></p>
+                    <p>Micro-cœurs : <span class="val">16 ALUs SIMT (Total GPU : 256 cœurs)</span></p>
                     <p>Statut : <span class="val">${statusText}</span></p>
                     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
-                    <p>${isBranch ? (isActive ? 'Exécute la condition sans interruption.' : 'Suspendu par le masque d\'exécution (sérialisation SIMT).') : 'Exécute la même instruction mathématique sur 16 données en parallèle.'}</p>
+                    <p>${isBranch ? (isActive ? 'Exécute la branche active sans interruption.' : 'Warp Divergence : 16 cœurs suspendus par le masque d\'exécution (sérialisation forcée).') : '16 micro-cœurs exécutant l\'instruction matricielle en parallèle synchrone.'}</p>
                 `;
             }
 

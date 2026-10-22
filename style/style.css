@@ -2289,6 +2289,69 @@ body {
     border: 1px solid rgba(0, 243, 255, 0.4);
 }
 
+/* Card d'explication pedagogique Use Case */
+.hw-why-box {
+    margin: 10px 0;
+    padding: 10px 12px;
+    background: rgba(12, 10, 24, 0.92);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    border-radius: 6px;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: #ddd;
+    box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.03);
+}
+
+.why-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.why-badge {
+    font-family: var(--font-tech);
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.why-speedup {
+    font-family: var(--font-tech);
+    font-size: 0.68rem;
+    color: #00ffaa;
+    font-weight: bold;
+}
+
+.why-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.why-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.why-label {
+    font-family: var(--font-tech);
+    font-size: 0.66rem;
+    color: var(--neon-cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.why-text {
+    color: #bbb;
+}
+
 /* Guide 1 ligne */
 .hw-guide-banner {
     margin: 10px 0;
@@ -2518,7 +2581,7 @@ input[type="range"]::-moz-range-thumb {
 .hw-canvas {
     width: 100% !important;
     max-width: 100% !important;
-    height: 400px;
+    height: 440px;
     display: block;
     border-radius: 8px;
     border: 1px solid rgba(0, 243, 255, 0.25);
@@ -2540,7 +2603,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 390px;
+        height: 430px;
     }
 }
 
@@ -2550,7 +2613,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .hw-canvas {
-        height: 380px;
+        height: 420px;
     }
 }
 
