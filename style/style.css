@@ -2684,6 +2684,14 @@ input[type="range"]::-moz-range-thumb {
     letter-spacing: 0.5px;
 }
 
+.pedagogy-viewer h4 {
+    color: #ffaa00;
+    font-family: var(--font-tech);
+    font-size: 0.94rem;
+    margin: 20px 0 8px;
+    letter-spacing: 0.3px;
+}
+
 .pedagogy-viewer ul,
 .pedagogy-viewer ol {
     margin: 0 0 20px 22px;
