@@ -25,9 +25,9 @@ const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const MAX_INPUT_CHARS = 4_000;
 const MAX_SYSTEM_CHARS = 24_000;
 const MAX_TOTAL_CHARS = 48_000;
-const MAX_OUTPUT_TOKENS = 500;
-const MIN_OUTPUT_TOKENS = 80;
-const DEFAULT_OUTPUT_TOKENS = 250;
+const MAX_OUTPUT_TOKENS = 350;
+const MIN_OUTPUT_TOKENS = 60;
+const DEFAULT_OUTPUT_TOKENS = 180;
 
 /**
  * Rôles acceptés côté historique client.
@@ -320,9 +320,10 @@ PASSIONS & CENTRES D'INTÉRÊT :
 - Autres : ${(interests.other || []).join(', ')}
 
 CONSIGNES DE RÉPONSE :
-1. Réponds de façon ULTRA-CONCISE, percutante et directe : 2 à 3 phrases courtes maximum par défaut. Va droit au but sans bavardage ni politesse à rallonge. Ne liste pas tous tes projets ou technos sauf si c'est expressément demandé.
-2. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
-3. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
+1. CONCISION ABSOLUE : réponds TOUJOURS en 2 à 3 phrases courtes maximum (50 à 75 mots au total). Arrête-toi immédiatement après. Zéro bavardage, zéro formule d'introduction inutile ("En tant que...", "Salut ! En tant que..."), zéro emoji, zéro liste à puces. Va droit au fait.
+2. N'invente AUCUNE ville ni faits non mentionnés (tu vis à Pérols dans l'Hérault, tu as travaillé à Salindres et Montpellier, point).
+3. Si on te demande du code Python : écris du code chirurgical, typé (type hints, Pydantic), propre et optimisé.
+4. Utilise volontiers des analogies tirées du Metal, des JDR (Shadowrun, Warhammer 40K), de l'enseignement ou du MLOps. Reste honnête sur tes niveaux (tu bricoles en Rust en admirant le borrow checker, tu lis/modifies du Go).`;
     } catch (e) {
         console.error('Erreur lecture config serveur:', e);
         return '';
