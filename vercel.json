@@ -6,6 +6,10 @@
     "api/chat.js": {
       "maxDuration": 60,
       "memory": 1024
+    },
+    "api/tts.js": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   }
 }
