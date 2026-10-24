@@ -1,6 +1,6 @@
 /* =========================================================================
    MODULE: EDUCATIONAL (ORGANISATION PAR CHAPITRES & LABS INTERACTIFS)
-   Gestion des cours, de la navigation par chapitres et de l'interactivité.
+   Gestion des cours, navigation par chapitres et ergonomie mobile optimisée.
    ========================================================================= */
 
 const Educational = {
@@ -36,6 +36,10 @@ const Educational = {
         19: 'jepa_latent',
         20: 'ensemble_ga',
         21: 'system_one_jev'
+    },
+
+    isMobile: function() {
+        return window.innerWidth <= 980;
     },
 
     /**
@@ -103,42 +107,30 @@ const Educational = {
      * Construction du menu latéral hiérarchisé par chapitres
      */
     renderMenu: function() {
-        const menuContainer = document.querySelector('.pedagogy-menu');
+        const filterBar = document.getElementById('pedagogy-filter-bar');
         const listContainer = document.getElementById('pedagogy-list');
-        if (!listContainer || !menuContainer) return;
+        if (!listContainer) return;
 
         // 1. Barre de filtres par domaine
-        let filterBar = document.getElementById('pedagogy-filter-bar');
-        if (!filterBar) {
-            filterBar = document.createElement('div');
-            filterBar.id = 'pedagogy-filter-bar';
-            filterBar.className = 'pedagogy-filter-bar';
-            const menuH3 = menuContainer.querySelector('h3');
-            if (menuH3) {
-                menuH3.textContent = 'MODULES PAR CHAPITRE';
-                menuH3.insertAdjacentElement('afterend', filterBar);
-            } else {
-                menuContainer.insertBefore(filterBar, listContainer);
-            }
+        if (filterBar) {
+            const filterItems = [
+                { id: 'ALL', label: 'TOUS' },
+                ...this.chapters.map(ch => ({ id: ch.id, label: ch.short }))
+            ];
+
+            filterBar.innerHTML = filterItems.map(f => `
+                <button class="pedagogy-filter-pill ${this.activeFilter === f.id ? 'active' : ''}" 
+                        onclick="Educational.setFilter('${f.id}')">
+                    ${f.label}
+                </button>
+            `).join('');
         }
-
-        const filterItems = [
-            { id: 'ALL', label: 'TOUS' },
-            ...this.chapters.map(ch => ({ id: ch.id, label: ch.short }))
-        ];
-
-        filterBar.innerHTML = filterItems.map(f => `
-            <button class="pedagogy-filter-pill ${this.activeFilter === f.id ? 'active' : ''}" 
-                    onclick="Educational.setFilter('${f.id}')">
-                ${f.label}
-            </button>
-        `).join('');
 
         // 2. Construction des blocs de chapitres
         listContainer.innerHTML = '';
         listContainer.className = 'pedagogy-chapters-container';
 
-        this.chapters.forEach(ch => {
+        this.chapters.forEach((ch, chIdx) => {
             const isVisible = (this.activeFilter === 'ALL' || this.activeFilter === ch.id);
             const groupEl = document.createElement('div');
             groupEl.className = `pedagogy-chapter-group ${isVisible ? '' : 'hidden'}`;
@@ -147,6 +139,10 @@ const Educational = {
             const headerEl = document.createElement('div');
             headerEl.className = 'pedagogy-chapter-header';
             headerEl.onclick = () => this.toggleChapter(ch.id);
+            
+            // Sur mobile, seul le premier chapitre est déplié par défaut
+            const startCollapsed = this.isMobile() && chIdx > 0;
+
             headerEl.innerHTML = `
                 <div class="chapter-header-left">
                     <span class="chapter-num-badge">${ch.num}</span>
@@ -154,12 +150,12 @@ const Educational = {
                 </div>
                 <div class="chapter-header-right">
                     <span class="chapter-count-badge">${ch.courses.length}</span>
-                    <span class="chapter-chevron" id="chevron-${ch.id}">▼</span>
+                    <span class="chapter-chevron" id="chevron-${ch.id}">${startCollapsed ? '▶' : '▼'}</span>
                 </div>
             `;
 
             const coursesUl = document.createElement('ul');
-            coursesUl.className = 'pedagogy-chapter-courses';
+            coursesUl.className = `pedagogy-chapter-courses ${startCollapsed ? 'collapsed' : ''}`;
             coursesUl.id = `courses-ul-${ch.id}`;
 
             ch.courses.forEach(({ course, index }) => {
@@ -178,6 +174,31 @@ const Educational = {
             groupEl.appendChild(coursesUl);
             listContainer.appendChild(groupEl);
         });
+    },
+
+    /**
+     * Gestion du tiroir menu sur mobile
+     */
+    toggleMobileMenu: function() {
+        const menuBody = document.getElementById('pedagogy-menu-body');
+        const icon = document.getElementById('mobile-menu-btn-icon');
+        const btn = document.getElementById('pedagogy-mobile-menu-btn');
+        if (!menuBody) return;
+
+        const isOpen = menuBody.classList.toggle('mobile-open');
+        if (icon) icon.textContent = isOpen ? '▲' : '▼';
+        if (btn) btn.classList.toggle('active', isOpen);
+    },
+
+    closeMobileMenu: function() {
+        const menuBody = document.getElementById('pedagogy-menu-body');
+        const icon = document.getElementById('mobile-menu-btn-icon');
+        const btn = document.getElementById('pedagogy-mobile-menu-btn');
+        if (!menuBody) return;
+
+        menuBody.classList.remove('mobile-open');
+        if (icon) icon.textContent = '▼';
+        if (btn) btn.classList.remove('active');
     },
 
     /**
@@ -263,6 +284,19 @@ const Educational = {
                 coursesUl.classList.remove('collapsed');
                 if (chevron) chevron.textContent = '▼';
             }
+        }
+
+        // Mise à jour de l'indicateur mobile du cours courant
+        const mobileTitle = document.getElementById('mobile-current-title');
+        if (mobileTitle) {
+            mobileTitle.textContent = course.title;
+        }
+
+        // Si on est sur mobile, replier le menu pour laisser 100% de place au texte
+        if (this.isMobile()) {
+            this.closeMobileMenu();
+            const viewer = document.querySelector('.pedagogy-viewer');
+            if (viewer) viewer.scrollTop = 0;
         }
 
         this.currentSlideIndex = 0;

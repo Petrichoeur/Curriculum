@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Florian Bobo - IA &amp; MLOps | Jumeau Numérique, Labo Hardware &amp; Pédagogie</title>
-    <meta name="description" content="Portail interactif IA &amp; MLOps de Florian Bobo : Jumeau Numérique (Nemotron Ultra), simulateurs MLP Studio et CPU vs GPU, projets open source et 22 cours de vulgarisation IA.">
+    <meta name="description" content="Portail interactif IA &amp; MLOps de Florian Bobo : Jumeau Numérique, simulateurs MLP Studio et CPU vs GPU, projets open source et 25 cours de vulgarisation IA.">
     <meta name="author" content="Florian Bobo">
     <link rel="canonical" href="https://www.iaops.fr/">
 
@@ -15,7 +15,7 @@
     <meta property="og:url" content="https://www.iaops.fr/">
     <meta property="og:locale" content="fr_FR">
     <meta property="og:title" content="Florian Bobo - IA &amp; MLOps | Jumeau Numérique, Labo Hardware &amp; Pédagogie">
-    <meta property="og:description" content="Portail interactif IA &amp; MLOps : Jumeau Numérique en temps réel, simulateurs CPU vs GPU et MLP Studio, projets open source et 22 modules de vulgarisation technique.">
+    <meta property="og:description" content="Portail interactif IA &amp; MLOps : Jumeau Numérique en temps réel, simulateurs CPU vs GPU et MLP Studio, projets open source et 25 modules de vulgarisation technique.">
     <meta property="og:image" content="https://www.iaops.fr/data/1792676251311.jpg">
     <meta property="og:image:secure_url" content="https://www.iaops.fr/data/1792676251311.jpg">
     <meta property="og:image:type" content="image/jpeg">
@@ -26,10 +26,10 @@
     <!-- Twitter / X Large Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Florian Bobo - IA &amp; MLOps | Jumeau Numérique, Labo Hardware &amp; Pédagogie">
-    <meta name="twitter:description" content="Portail interactif IA &amp; MLOps : Jumeau Numérique en temps réel, simulateurs CPU vs GPU et MLP Studio, projets open source et 22 modules de vulgarisation technique.">
+    <meta name="twitter:description" content="Portail interactif IA &amp; MLOps : Jumeau Numérique en temps réel, simulateurs CPU vs GPU et MLP Studio, projets open source et 25 modules de vulgarisation technique.">
     <meta name="twitter:image" content="https://www.iaops.fr/data/1792676251311.jpg">
 
-    <link rel="stylesheet" href="style/style.css?v=3.4">
+    <link rel="stylesheet" href="style/style.css?v=4.0">
 </head>
 
 <body>
@@ -336,9 +336,28 @@
 
             <section id="educational" class="tab-content">
                 <div class="glass-panel pedagogy-panel">
-                    <nav class="pedagogy-menu">
-                        <h3>Modules</h3>
-                        <ul id="pedagogy-list"></ul>
+                    <nav class="pedagogy-menu" id="pedagogy-menu">
+                        <!-- Barre de sélection tactile compacte sur mobile -->
+                        <div class="pedagogy-mobile-toggle-bar">
+                            <div class="mobile-course-info">
+                                <span class="mobile-course-label">COURS ACTIF</span>
+                                <span id="mobile-current-title" class="mobile-course-title">1.1 Probabilités & TCL</span>
+                            </div>
+                            <button id="pedagogy-mobile-menu-btn" class="pedagogy-mobile-menu-btn" onclick="Educational.toggleMobileMenu()" aria-label="Afficher ou masquer la liste des chapitres">
+                                <span id="mobile-menu-btn-text">CHAPITRES (25)</span>
+                                <span id="mobile-menu-btn-icon" class="mobile-menu-btn-icon">▼</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Corps du menu (fixe à gauche sur desktop, tiroir déroulant sur mobile) -->
+                        <div class="pedagogy-menu-body" id="pedagogy-menu-body">
+                            <div class="pedagogy-menu-desktop-header">
+                                <h3>MODULES PAR CHAPITRE</h3>
+                                <span class="pedagogy-total-badge">25 COURS</span>
+                            </div>
+                            <div id="pedagogy-filter-bar" class="pedagogy-filter-bar"></div>
+                            <div id="pedagogy-list" class="pedagogy-chapters-container"></div>
+                        </div>
                     </nav>
                     <div class="pedagogy-viewer">
                         <div id="pedagogy-content"></div>
@@ -360,8 +379,8 @@
 
     <script src="script/digital-twin.js?v=3.9"></script>
     <script src="script/projects.js?v=3.1"></script>
-    <script src="script/pedagogy-interactive.js?v=1.0"></script>
-    <script src="script/educational.js?v=4.0"></script>
+    <script src="script/pedagogy-interactive.js?v=1.1"></script>
+    <script src="script/educational.js?v=4.1"></script>
     <script src="script/hardware-lab.js?v=3.1"></script>
     <script type="module" src="script/mlp/app.js?v=3.1"></script>
     <script src="script/main.js?v=3.1"></script>
