@@ -12,8 +12,8 @@
  * `parts` de Gemini. Le front a été aligné en conséquence.
  */
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_MODEL = 'nvidia/nemotron-3.5-lightning:free';
-const FALLBACK_MODEL = 'nvidia/nemotron-3.5-super-vl:free';
+const DEFAULT_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const FALLBACK_MODEL = 'nvidia/nemotron-3.5-lightning:free';
 const LEGACY_MODELS = new Set([
     'openrouter/free'
 ]);
