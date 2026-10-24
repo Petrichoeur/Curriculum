@@ -3553,6 +3553,7 @@ body:has(#digital-twin.active) .mirza-widget-root {
     transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
+.mirza-status-dot.thinking,
 .mirza-status-dot.speaking {
     background: #ef4444;
     box-shadow: 0 0 12px #ef4444;

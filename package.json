@@ -2,9 +2,5 @@
   "name": "iaops-curriculum",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "dependencies": {
-    "node-edge-tts": "^1.2.11",
-    "ws": "^8.18.0"
-  }
+  "type": "module"
 }

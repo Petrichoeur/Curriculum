@@ -1,14 +1,12 @@
 /**
- * MIRZA // Widget Copilote Vocal Cyberpunk
+ * MIRZA // Widget Copilote Conversationnel Cyberpunk
  *
- * Chatbot flottant vocal connecte au modele du Jumeau Numerique via /api/chat
- * et a la synthese vocale haute-fidelite Microsoft Edge TTS via /api/tts.
- *
+ * Chatbot flottant connecte au modele du Jumeau Numerique via /api/chat.
  * Icone interactive : Oeil Reacteur Mirza (reticules concentriques,
- * ondes radiales de voix et pads d'accostage animes sur Canvas).
+ * ondes radiales et pads d'accostage animes sur Canvas).
  *
  * Regles strictes : Zero emoji, esthetique cyberpunk glassmorphism,
- * reponses ultra-concises orientees IA & MLOps.
+ * reponses ultra-concises orientees IA & MLOps, masquage sur le Jumeau Numerique.
  */
 
 (function () {
@@ -19,19 +17,13 @@
     // -------------------------------------------------------------
     const CONFIG = {
         chatEndpoint: '/api/chat',
-        ttsEndpoint: '/api/tts',
-        voice: 'fr-FR-RemyMultilingualNeural',
         maxTokens: 140,
         temperature: 0.65,
-        storageMuteKey: 'mirza_voice_muted',
-        defaultWelcome: 'Mirza connecte. Posez votre question par ecrit, je reponds de vive voix et de maniere concise.'
+        defaultWelcome: 'Mirza connecte. Posez votre question par ecrit, je vous reponds de maniere concise.'
     };
 
     let isOpen = false;
-    let isSpeaking = false;
     let isThinking = false;
-    let isMuted = localStorage.getItem(CONFIG.storageMuteKey) === 'true';
-    let currentAudio = null;
 
     const conversationHistory = [
         {
@@ -39,9 +31,6 @@
             content: CONFIG.defaultWelcome
         }
     ];
-
-    // Cache des URL audio synthetisees (cle: texte)
-    const audioCache = new Map();
 
     // -------------------------------------------------------------
     // Injection du DOM du widget
@@ -55,13 +44,13 @@
 
         root.innerHTML = `
             <!-- Bouton Lanceur Flottant -->
-            <button id="mirza-launcher-btn" class="mirza-launcher-btn" type="button" aria-label="Ouvrir le copilote vocal Mirza">
+            <button id="mirza-launcher-btn" class="mirza-launcher-btn" type="button" aria-label="Ouvrir le copilote Mirza">
                 <canvas id="mirza-launcher-canvas" class="mirza-launcher-canvas" width="68" height="68"></canvas>
                 <div class="mirza-launcher-ring"></div>
                 <div class="mirza-status-dot" id="mirza-status-dot"></div>
                 <div class="mirza-launcher-tooltip">
                     <span class="mirza-tooltip-tag">COPILOTE IA</span>
-                    <span class="mirza-tooltip-title">MIRZA // VOCAL</span>
+                    <span class="mirza-tooltip-title">MIRZA // CHATBOT</span>
                 </div>
             </button>
 
@@ -77,26 +66,10 @@
                         </div>
                     </div>
                     <div class="mirza-header-actions">
-                        <button id="mirza-mute-btn" class="mirza-icon-btn ${isMuted ? 'muted' : ''}" type="button" title="Activer / Couper la voix" aria-label="Mute toggle">
-                            <span class="mirza-btn-label">${isMuted ? 'VOIX: OFF' : 'VOIX: ON'}</span>
-                        </button>
                         <button id="mirza-close-btn" class="mirza-icon-btn mirza-close-btn" type="button" title="Reduire" aria-label="Fermer le chat">
                             [X]
                         </button>
                     </div>
-                </div>
-
-                <!-- Indicateur de synthese audio -->
-                <div class="mirza-audio-meter" id="mirza-audio-meter">
-                    <div class="mirza-meter-bar"></div>
-                    <div class="mirza-meter-bar"></div>
-                    <div class="mirza-meter-bar"></div>
-                    <div class="mirza-meter-bar"></div>
-                    <div class="mirza-meter-bar"></div>
-                    <div class="mirza-meter-bar"></div>
-                    <div class="mirza-meter-bar"></div>
-                    <div class="mirza-meter-bar"></div>
-                    <span class="mirza-meter-text" id="mirza-meter-text">TRANSMISSION VOCALE</span>
                 </div>
 
                 <!-- Historique des Messages -->
@@ -140,26 +113,11 @@
     function initUIEvents() {
         const launcherBtn = document.getElementById('mirza-launcher-btn');
         const closeBtn = document.getElementById('mirza-close-btn');
-        const muteBtn = document.getElementById('mirza-mute-btn');
         const chatForm = document.getElementById('mirza-chat-form');
         const chatInput = document.getElementById('mirza-chat-input');
 
         launcherBtn.addEventListener('click', toggleChat);
         closeBtn.addEventListener('click', closeChat);
-
-        muteBtn.addEventListener('click', () => {
-            isMuted = !isMuted;
-            localStorage.setItem(CONFIG.storageMuteKey, isMuted ? 'true' : 'false');
-            muteBtn.classList.toggle('muted', isMuted);
-            const label = muteBtn.querySelector('.mirza-btn-label');
-            if (label) label.textContent = isMuted ? 'VOIX: OFF' : 'VOIX: ON';
-
-            if (isMuted && currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
-                setSpeaking(false);
-            }
-        });
 
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -201,14 +159,6 @@
             if (isOpen) {
                 closeChat();
             }
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
-                setSpeaking(false);
-            }
-            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
         } else {
             root.classList.remove('tab-hidden');
         }
@@ -248,34 +198,21 @@
         btn.classList.remove('active');
     }
 
-    function setSpeaking(speaking) {
-        isSpeaking = speaking;
-        const meter = document.getElementById('mirza-audio-meter');
-        const sub = document.getElementById('mirza-header-sub');
-        const dot = document.getElementById('mirza-status-dot');
-
-        if (meter) {
-            meter.classList.toggle('active', speaking);
-        }
-        if (sub) {
-            sub.textContent = speaking ? 'TRANSMISSION VOCALE...' : (isThinking ? 'REFLEXION EN COURS...' : 'STANDBY // PRET');
-        }
-        if (dot) {
-            dot.classList.toggle('speaking', speaking);
-        }
-    }
-
     function setThinking(thinking) {
         isThinking = thinking;
         const sendBtn = document.getElementById('mirza-chat-send');
         const input = document.getElementById('mirza-chat-input');
         const sub = document.getElementById('mirza-header-sub');
+        const dot = document.getElementById('mirza-status-dot');
 
         if (sendBtn) sendBtn.disabled = thinking;
         if (input) input.disabled = thinking;
 
-        if (sub && !isSpeaking) {
+        if (sub) {
             sub.textContent = thinking ? 'REFLEXION EN COURS...' : 'STANDBY // PRET';
+        }
+        if (dot) {
+            dot.classList.toggle('thinking', thinking);
         }
     }
 
@@ -318,15 +255,10 @@
             removeThinkingBubble(thinkingId);
             appendMessage('assistant', assistantText);
             conversationHistory.push({ role: 'assistant', content: assistantText });
-
-            // Synthese vocale Edge TTS si non silencieux
-            if (!isMuted) {
-                speakWithEdgeTTS(assistantText);
-            }
         } catch (error) {
             removeThinkingBubble(thinkingId);
             const errMsg = `Erreur de communication : ${error.message}`;
-            appendMessage('assistant', errMsg, false);
+            appendMessage('assistant', errMsg);
         } finally {
             setThinking(false);
             const input = document.getElementById('mirza-chat-input');
@@ -335,133 +267,9 @@
     }
 
     // -------------------------------------------------------------
-    // Synthese Vocale Edge-TTS
-    // -------------------------------------------------------------
-    async function speakWithEdgeTTS(text) {
-        if (!text || isMuted) return;
-
-        // Arreter toute lecture en cours
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio = null;
-        }
-
-        const cleaned = text
-            .replace(/```[\s\S]*?```/g, ' ')
-            .replace(/`([^`]+)`/g, '$1')
-            .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-            .replace(/[*_~#>]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        if (!cleaned) return;
-
-        setSpeaking(true);
-
-        try {
-            let audioUrl = audioCache.get(cleaned);
-
-            if (!audioUrl) {
-                const res = await fetch(CONFIG.ttsEndpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: cleaned,
-                        voice: CONFIG.voice
-                    })
-                });
-
-                if (!res.ok) {
-                    throw new Error(`TTS HTTP ${res.status}`);
-                }
-
-                const blob = await res.blob();
-                audioUrl = URL.createObjectURL(blob);
-                audioCache.set(cleaned, audioUrl);
-            }
-
-            const audio = new Audio(audioUrl);
-            currentAudio = audio;
-
-            audio.onplay = () => setSpeaking(true);
-            audio.onended = () => {
-                currentAudio = null;
-                setSpeaking(false);
-            };
-            audio.onerror = () => {
-                currentAudio = null;
-                // Fallback direct sur la synthese Web Speech si echec
-                fallbackWebSpeech(cleaned);
-            };
-
-            await audio.play();
-        } catch (err) {
-            console.warn('Fallback synthese locale suite a incident Edge TTS:', err);
-            fallbackWebSpeech(cleaned);
-        }
-    }
-
-    let cachedVoices = [];
-    function loadVoices() {
-        if ('speechSynthesis' in window) {
-            cachedVoices = window.speechSynthesis.getVoices();
-        }
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        loadVoices();
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
-    function findFrenchMaleVoice(voices) {
-        if (!voices || !voices.length) return null;
-        const frVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
-        if (!frVoices.length) return null;
-
-        // 1. Voix d'homme prioritaires (Remy Multilingual, Henri Edge, Thomas, Alain, Paul, Nicolas, Arthur, Daniel)
-        const maleNames = ['remy', 'remymultilingual', 'henri', 'thomas', 'alain', 'paul', 'nicolas', 'arthur', 'daniel', 'claude'];
-        for (const name of maleNames) {
-            const found = frVoices.find(v => v.name.toLowerCase().includes(name));
-            if (found) return found;
-        }
-
-        // 2. Exclusion des voix feminines connues pour garantir une voix masculine
-        const femaleNames = ['denise', 'eloise', 'brigitte', 'audrey', 'aurelie', 'amelie', 'alice', 'marie', 'celeste', 'julie', 'hortense'];
-        const maleCandidate = frVoices.find(v => {
-            const lower = v.name.toLowerCase();
-            return !femaleNames.some(f => lower.includes(f));
-        });
-        if (maleCandidate) return maleCandidate;
-
-        return frVoices[0];
-    }
-
-    function fallbackWebSpeech(text) {
-        if (!('speechSynthesis' in window) || isMuted) {
-            setSpeaking(false);
-            return;
-        }
-
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'fr-FR';
-        utterance.rate = 1.0; // Cadence naturelle
-        utterance.pitch = 0.90; // Timbre masculin
-
-        const voices = (cachedVoices && cachedVoices.length) ? cachedVoices : window.speechSynthesis.getVoices();
-        const maleVoice = findFrenchMaleVoice(voices);
-        if (maleVoice) utterance.voice = maleVoice;
-
-        utterance.onstart = () => setSpeaking(true);
-        utterance.onend = () => setSpeaking(false);
-        utterance.onerror = () => setSpeaking(false);
-
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // -------------------------------------------------------------
     // Rendu des bulles de messages
     // -------------------------------------------------------------
-    function appendMessage(role, text, withReplay = true) {
+    function appendMessage(role, text) {
         const container = document.getElementById('mirza-chat-messages');
         if (!container) return;
 
@@ -470,29 +278,11 @@
         msgDiv.className = `mirza-msg mirza-msg-${isUser ? 'user' : 'assistant'}`;
 
         const metaText = isUser ? 'UTILISATEUR' : 'MIRZA // NEMOTRON ULTRA';
-        let replayBtnHtml = '';
-        if (!isUser && withReplay) {
-            replayBtnHtml = `
-                <div class="mirza-msg-actions">
-                    <button type="button" class="mirza-replay-btn" title="Rejouer l'audio">
-                        [AUDIO REPLAY]
-                    </button>
-                </div>
-            `;
-        }
 
         msgDiv.innerHTML = `
             <div class="mirza-msg-meta">${metaText}</div>
             <div class="mirza-msg-body">${escapeHTML(text)}</div>
-            ${replayBtnHtml}
         `;
-
-        const replayBtn = msgDiv.querySelector('.mirza-replay-btn');
-        if (replayBtn) {
-            replayBtn.addEventListener('click', () => {
-                speakWithEdgeTTS(text);
-            });
-        }
 
         container.appendChild(msgDiv);
         scrollMessagesToBottom();
@@ -568,7 +358,7 @@
             hCtx.scale(dpr, dpr);
         }
 
-        let speechPulse = 0;
+        let pulseTime = 0;
         let radialWavePhase = 0;
         let angleReticle = 0;
         let angleOuterDock = 0;
@@ -586,16 +376,16 @@
             const scale = size / 300;
             const baseR = size * 0.38;
 
-            const targetAmp = (isSpeaking ? 16.0 : (isThinking ? 6.5 : 2.5)) * scale;
-            smoothRadialAmp += (targetAmp - smoothRadialAmp) * 0.14;
+            const targetAmp = (isThinking ? 12.0 : 3.0) * scale;
+            smoothRadialAmp += (targetAmp - smoothRadialAmp) * 0.12;
 
-            const dynamicR = baseR + Math.sin(speechPulse * (isSpeaking ? 3.0 : 1.2)) * (3 * scale);
+            const dynamicR = baseR + Math.sin(pulseTime * (isThinking ? 2.5 : 1.0)) * (3 * scale);
 
             // COUCHE 1 : HALO LASER CENTRAL
             const halo = ctx.createRadialGradient(cx, cy, 2 * scale, cx, cy, dynamicR * 1.25);
             halo.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-            halo.addColorStop(0.2, `rgba(${cr}, ${cg}, ${cb}, ${isSpeaking ? 0.95 : 0.75})`);
-            halo.addColorStop(0.5, `rgba(${cr}, ${cg}, ${cb}, ${isSpeaking ? 0.45 : 0.25})`);
+            halo.addColorStop(0.2, `rgba(${cr}, ${cg}, ${cb}, ${isThinking ? 0.95 : 0.75})`);
+            halo.addColorStop(0.5, `rgba(${cr}, ${cg}, ${cb}, ${isThinking ? 0.45 : 0.25})`);
             halo.addColorStop(0.85, `rgba(${dimR}, ${dimG}, ${dimB}, 0.08)`);
             halo.addColorStop(1, 'transparent');
 
@@ -638,7 +428,7 @@
 
             ctx.restore();
 
-            // COUCHE 3 : COURONNE D'ONDES RADIALES DE LA VOIX (8 STRANDS)
+            // COUCHE 3 : COURONNE D'ONDES RADIALES (8 STRANDS)
             const numRadialStrands = 8;
             const rRadialBase = dynamicR * 0.68;
 
@@ -699,8 +489,8 @@
 
         function animLoop() {
             // Mise a jour temporelle
-            const speedFactor = isSpeaking ? 1.8 : (isThinking ? 1.4 : 0.8);
-            speechPulse += 0.04 * speedFactor;
+            const speedFactor = isThinking ? 1.5 : 0.8;
+            pulseTime += 0.04 * speedFactor;
             radialWavePhase += 0.05 * speedFactor;
             angleReticle += 0.001 * speedFactor;
             angleOuterDock -= 0.0012 * speedFactor;
