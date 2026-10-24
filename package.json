@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "node-edge-tts": "^1.2.11"
+    "node-edge-tts": "^1.2.11",
+    "ws": "^8.18.0"
   }
 }

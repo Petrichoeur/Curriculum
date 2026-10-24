@@ -20,7 +20,7 @@
     const CONFIG = {
         chatEndpoint: '/api/chat',
         ttsEndpoint: '/api/tts',
-        voice: 'fr-FR-HenriNeural',
+        voice: 'fr-FR-RemyMultilingualNeural',
         maxTokens: 140,
         temperature: 0.65,
         storageMuteKey: 'mirza_voice_muted',
@@ -417,8 +417,8 @@
         const frVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
         if (!frVoices.length) return null;
 
-        // 1. Voix d'homme prioritaires (Henri Edge, Thomas, Alain, Paul, Nicolas, Arthur, Daniel)
-        const maleNames = ['henri', 'thomas', 'alain', 'paul', 'nicolas', 'arthur', 'daniel', 'claude'];
+        // 1. Voix d'homme prioritaires (Remy Multilingual, Henri Edge, Thomas, Alain, Paul, Nicolas, Arthur, Daniel)
+        const maleNames = ['remy', 'remymultilingual', 'henri', 'thomas', 'alain', 'paul', 'nicolas', 'arthur', 'daniel', 'claude'];
         for (const name of maleNames) {
             const found = frVoices.find(v => v.name.toLowerCase().includes(name));
             if (found) return found;
@@ -444,8 +444,8 @@
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'fr-FR';
-        utterance.rate = 1.5; // Elocution acceleree de 50%
-        utterance.pitch = 0.90; // Timbre masculin distinctif et dynamique
+        utterance.rate = 1.0; // Cadence naturelle
+        utterance.pitch = 0.90; // Timbre masculin
 
         const voices = (cachedVoices && cachedVoices.length) ? cachedVoices : window.speechSynthesis.getVoices();
         const maleVoice = findFrenchMaleVoice(voices);
