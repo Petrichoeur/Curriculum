@@ -69,6 +69,6 @@ export default async function handler(req, res) {
         return res.status(200).send(audioBuffer);
     } catch (err) {
         console.error('Erreur synthese Edge TTS:', err);
-        return res.status(500).json({ error: 'Erreur interne synthese Edge TTS' });
+        return res.status(500).json({ error: 'Erreur interne synthese Edge TTS', detail: err?.message || String(err) });
     }
 }
