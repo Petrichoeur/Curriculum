@@ -12,7 +12,8 @@
  * `parts` de Gemini. Le front a été aligné en conséquence.
  */
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_MODEL = 'nvidia/nemotron-3.5-lightning:free';
+const DEFAULT_MODEL = 'deepseek/deepseek-v4.1-flash';
+const FALLBACK_MODEL = 'nvidia/nemotron-3.5-lightning:free';
 const LEGACY_MODELS = new Set([
     'openrouter/free'
 ]);
@@ -511,7 +512,7 @@ export default async function handler(req, res) {
         };
 
         // 6. Appel OpenRouter
-        const response = await fetch(apiUrl, {
+        let response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -522,7 +523,25 @@ export default async function handler(req, res) {
             body: JSON.stringify(upstreamBody)
         });
 
-        // 7. Gestion des erreurs amont
+        // 7. Bascule automatique vers le modele de secours si DeepSeek echoue
+        let activeModel = model;
+        if (!response.ok && model !== FALLBACK_MODEL) {
+            console.warn(`Modele ${model} a echoue (HTTP ${response.status}), bascule vers ${FALLBACK_MODEL}`);
+            upstreamBody.model = FALLBACK_MODEL;
+            activeModel = FALLBACK_MODEL;
+            response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': process.env.SITE_URL || 'https://github.com/Petrichoeur/Curriculum',
+                    'X-Title': 'Curriculum - Jumeau Numerique'
+                },
+                body: JSON.stringify(upstreamBody)
+            });
+        }
+
+        // 8. Gestion des erreurs amont définitives
         if (!response.ok) {
             const errData = await response.json().catch(() => ({ error: 'Erreur amont OpenRouter' }));
             console.error('Erreur OpenRouter:', response.status,
@@ -536,7 +555,7 @@ export default async function handler(req, res) {
             res.setHeader('Cache-Control', 'no-cache, no-transform');
             res.setHeader('Connection', 'keep-alive');
             res.setHeader('X-Accel-Buffering', 'no');
-            res.setHeader('X-Model-Used', model);
+            res.setHeader('X-Model-Used', activeModel);
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -559,7 +578,7 @@ export default async function handler(req, res) {
         const data = await response.json();
         res.status(200).json({
             ...data,
-            model: data.model || model
+            model: data.model || activeModel
         });
     } catch (error) {
         console.error("Erreur serveur proxy:", error);

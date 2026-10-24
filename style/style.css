@@ -3473,6 +3473,14 @@ input[type="range"]::-moz-range-thumb {
     font-family: var(--font-tech), monospace;
 }
 
+/* Masquage strict du widget Mirza lorsque l'utilisateur est sur le Jumeau Numerique */
+.mirza-widget-root.tab-hidden,
+body:has(#digital-twin.active) .mirza-widget-root {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 /* Bouton Lanceur Flottant */
 .mirza-launcher-btn {
     position: fixed;

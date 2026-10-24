@@ -47,6 +47,7 @@ export default async function handler(req, res) {
         const tts = new EdgeTTS({
             voice: voice || DEFAULT_VOICE,
             lang: 'fr-FR',
+            rate: '+50%',
             outputFormat: 'audio-24khz-48kbitrate-mono-mp3'
         });
 

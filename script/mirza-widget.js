@@ -72,7 +72,7 @@
                     <div class="mirza-header-left">
                         <canvas id="mirza-header-canvas" class="mirza-header-canvas" width="34" height="34"></canvas>
                         <div class="mirza-header-info">
-                            <div class="mirza-header-title">MIRZA <span class="mirza-version-badge">VOCAL</span></div>
+                            <div class="mirza-header-title">MIRZA <span class="mirza-version-badge">DEEPSEEK V4.1</span></div>
                             <div class="mirza-header-sub" id="mirza-header-sub">STANDBY // PRET</div>
                         </div>
                     </div>
@@ -176,6 +176,42 @@
                 closeChat();
             }
         });
+
+        // Masquage automatique des que l'onglet Jumeau Numerique est actif
+        window.addEventListener('hashchange', updateVisibilityForCurrentTab);
+        window.addEventListener('popstate', updateVisibilityForCurrentTab);
+
+        const dtSection = document.getElementById('digital-twin');
+        if (dtSection) {
+            const observer = new MutationObserver(updateVisibilityForCurrentTab);
+            observer.observe(dtSection, { attributes: true, attributeFilter: ['class'] });
+        }
+        updateVisibilityForCurrentTab();
+    }
+
+    function updateVisibilityForCurrentTab() {
+        const root = document.getElementById('mirza-widget-root');
+        if (!root) return;
+
+        const isDigitalTwin = window.location.hash === '#digital-twin' ||
+            Boolean(document.getElementById('digital-twin')?.classList.contains('active'));
+
+        if (isDigitalTwin) {
+            root.classList.add('tab-hidden');
+            if (isOpen) {
+                closeChat();
+            }
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+                setSpeaking(false);
+            }
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        } else {
+            root.classList.remove('tab-hidden');
+        }
     }
 
     function toggleChat() {
@@ -376,6 +412,29 @@
         window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
+    function findFrenchMaleVoice(voices) {
+        if (!voices || !voices.length) return null;
+        const frVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+        if (!frVoices.length) return null;
+
+        // 1. Voix d'homme prioritaires (Henri Edge, Thomas, Alain, Paul, Nicolas, Arthur, Daniel)
+        const maleNames = ['henri', 'thomas', 'alain', 'paul', 'nicolas', 'arthur', 'daniel', 'claude'];
+        for (const name of maleNames) {
+            const found = frVoices.find(v => v.name.toLowerCase().includes(name));
+            if (found) return found;
+        }
+
+        // 2. Exclusion des voix feminines connues pour garantir une voix masculine
+        const femaleNames = ['denise', 'eloise', 'brigitte', 'audrey', 'aurelie', 'amelie', 'alice', 'marie', 'celeste', 'julie', 'hortense'];
+        const maleCandidate = frVoices.find(v => {
+            const lower = v.name.toLowerCase();
+            return !femaleNames.some(f => lower.includes(f));
+        });
+        if (maleCandidate) return maleCandidate;
+
+        return frVoices[0];
+    }
+
     function fallbackWebSpeech(text) {
         if (!('speechSynthesis' in window) || isMuted) {
             setSpeaking(false);
@@ -385,15 +444,12 @@
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'fr-FR';
-        utterance.rate = 1.05;
-        utterance.pitch = 0.95;
+        utterance.rate = 1.5; // Elocution acceleree de 50%
+        utterance.pitch = 0.90; // Timbre masculin distinctif et dynamique
 
         const voices = (cachedVoices && cachedVoices.length) ? cachedVoices : window.speechSynthesis.getVoices();
-        // 1. Voix Microsoft Edge Neural (Microsoft Henri Online Natural, Denise, etc.)
-        // 2. Voix francaises de haute qualite (Google, Thomas, etc.)
-        const edgeVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Henri') || v.name.includes('Online (Natural)') || v.name.includes('Microsoft')));
-        const frVoice = edgeVoice || voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Thomas') || v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('French'))) || voices.find(v => v.lang.startsWith('fr'));
-        if (frVoice) utterance.voice = frVoice;
+        const maleVoice = findFrenchMaleVoice(voices);
+        if (maleVoice) utterance.voice = maleVoice;
 
         utterance.onstart = () => setSpeaking(true);
         utterance.onend = () => setSpeaking(false);
@@ -413,7 +469,7 @@
         const msgDiv = document.createElement('div');
         msgDiv.className = `mirza-msg mirza-msg-${isUser ? 'user' : 'assistant'}`;
 
-        const metaText = isUser ? 'UTILISATEUR' : 'MIRZA // NEMOTRON';
+        const metaText = isUser ? 'UTILISATEUR' : 'MIRZA // DEEPSEEK V4.1';
         let replayBtnHtml = '';
         if (!isUser && withReplay) {
             replayBtnHtml = `
