@@ -365,6 +365,17 @@
         }
     }
 
+    let cachedVoices = [];
+    function loadVoices() {
+        if ('speechSynthesis' in window) {
+            cachedVoices = window.speechSynthesis.getVoices();
+        }
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
     function fallbackWebSpeech(text) {
         if (!('speechSynthesis' in window) || isMuted) {
             setSpeaking(false);
@@ -377,9 +388,11 @@
         utterance.rate = 1.05;
         utterance.pitch = 0.95;
 
-        // Trouver une voix francaise masculine ou neutre si disponible
-        const voices = window.speechSynthesis.getVoices();
-        const frVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Henri') || v.name.includes('Thomas') || v.name.includes('French')));
+        const voices = (cachedVoices && cachedVoices.length) ? cachedVoices : window.speechSynthesis.getVoices();
+        // 1. Voix Microsoft Edge Neural (Microsoft Henri Online Natural, Denise, etc.)
+        // 2. Voix francaises de haute qualite (Google, Thomas, etc.)
+        const edgeVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Henri') || v.name.includes('Online (Natural)') || v.name.includes('Microsoft')));
+        const frVoice = edgeVoice || voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Thomas') || v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('French'))) || voices.find(v => v.lang.startsWith('fr'));
         if (frVoice) utterance.voice = frVoice;
 
         utterance.onstart = () => setSpeaking(true);
