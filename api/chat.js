@@ -12,8 +12,8 @@
  * `parts` de Gemini. Le front a été aligné en conséquence.
  */
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_MODEL = 'deepseek/deepseek-v4.1-flash';
-const FALLBACK_MODEL = 'nvidia/nemotron-3.5-lightning:free';
+const DEFAULT_MODEL = 'nvidia/nemotron-3.5-lightning:free';
+const FALLBACK_MODEL = 'nvidia/nemotron-3.5-super-vl:free';
 const LEGACY_MODELS = new Set([
     'openrouter/free'
 ]);
@@ -429,7 +429,7 @@ function sanitizeMessages(rawMessages, rawSystemPrompt) {
 
 export default async function handler(req, res) {
     const rawEnvModel = process.env.OPEN_ROUTER_MODEL || process.env.OPENROUTER_MODEL;
-    const configuredModel = (rawEnvModel && !LEGACY_MODELS.has(rawEnvModel))
+    const configuredModel = (rawEnvModel && rawEnvModel.endsWith(':free') && !LEGACY_MODELS.has(rawEnvModel))
         ? rawEnvModel
         : DEFAULT_MODEL;
 

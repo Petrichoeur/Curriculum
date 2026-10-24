@@ -72,7 +72,7 @@
                     <div class="mirza-header-left">
                         <canvas id="mirza-header-canvas" class="mirza-header-canvas" width="34" height="34"></canvas>
                         <div class="mirza-header-info">
-                            <div class="mirza-header-title">MIRZA <span class="mirza-version-badge">DEEPSEEK V4.1</span></div>
+                            <div class="mirza-header-title">MIRZA <span class="mirza-version-badge">VOCAL // FREE</span></div>
                             <div class="mirza-header-sub" id="mirza-header-sub">STANDBY // PRET</div>
                         </div>
                     </div>
@@ -469,7 +469,7 @@
         const msgDiv = document.createElement('div');
         msgDiv.className = `mirza-msg mirza-msg-${isUser ? 'user' : 'assistant'}`;
 
-        const metaText = isUser ? 'UTILISATEUR' : 'MIRZA // DEEPSEEK V4.1';
+        const metaText = isUser ? 'UTILISATEUR' : 'MIRZA // VOCAL';
         let replayBtnHtml = '';
         if (!isUser && withReplay) {
             replayBtnHtml = `
