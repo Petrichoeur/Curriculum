@@ -2233,6 +2233,7 @@ const PedagogyInteractive = {
         const intensityVal = document.getElementById('ds-intensity-val');
         const retrainBtn = document.getElementById('ds-retrain-btn');
         const noiseBtn = document.getElementById('ds-noise-btn');
+        const resetBtn = document.getElementById('ds-reset-btn');
 
         const psiVal = document.getElementById('ds-psi-val');
         const statusVal = document.getElementById('ds-status-val');
@@ -2241,10 +2242,41 @@ const PedagogyInteractive = {
 
         let driftType = 'covariate';
         let intensity = 45;
-        let isRetrained = false;
         let noiseActive = false;
 
+        // Baseline (distribution d'entraînement P)
+        let trainMean = 0.0;
+        let trainStd = 1.0;
+        let trainPWeight = 0.5;
+
+        // Animation de réentraînement
+        let animTimer = null;
+
         const gaussPDF = (x, m, s) => (1 / (s * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * ((x - m) / s)**2);
+
+        // Calcule les paramètres de la distribution de production (Q)
+        const getProdParams = () => {
+            const shiftFraction = intensity / 100;
+            let meanProd = 0.0;
+            let stdProd = 1.0;
+            let pWeight = 0.5;
+
+            if (driftType === 'covariate') {
+                meanProd = shiftFraction * 2.2;
+                stdProd = 1.0 + shiftFraction * 0.4;
+            } else if (driftType === 'prior') {
+                pWeight = 0.5 - shiftFraction * 0.42;
+            } else if (driftType === 'concept') {
+                meanProd = shiftFraction * 1.6;
+                stdProd = 1.0 + shiftFraction * 0.2;
+            }
+
+            if (noiseActive) {
+                stdProd += 0.25;
+            }
+
+            return { meanProd, stdProd, pWeight };
+        };
 
         const render = () => {
             const { ctx, width, height } = this.setupCanvasDPR(canvas);
@@ -2252,23 +2284,7 @@ const PedagogyInteractive = {
             ctx.fillStyle = '#090312';
             ctx.fillRect(0, 0, width, height);
 
-            const shiftFraction = intensity / 100;
-            let meanProd = 0;
-            let stdProd = 1;
-            let pWeight = 0.5;
-
-            if (driftType === 'covariate') {
-                meanProd = shiftFraction * 2.2;
-                stdProd = 1 + shiftFraction * 0.4;
-            } else if (driftType === 'prior') {
-                pWeight = 0.5 - shiftFraction * 0.42;
-            } else if (driftType === 'concept') {
-                meanProd = shiftFraction * 1.5;
-            }
-
-            if (noiseActive) {
-                stdProd += 0.25;
-            }
+            const { meanProd, stdProd, pWeight } = getProdParams();
 
             const numBins = 10;
             const minX = -3.5;
@@ -2280,41 +2296,38 @@ const PedagogyInteractive = {
                 const xMid = minX + (b + 0.5) * binW;
                 let P_bin, Q_bin;
                 if (driftType === 'prior') {
-                    P_bin = Math.max(0.001, (0.5 * gaussPDF(xMid, -0.8, 0.9) + 0.5 * gaussPDF(xMid, 0.8, 0.9)) * binW);
-                    Q_bin = Math.max(0.001, (pWeight * gaussPDF(xMid, -0.8, 0.9) + (1 - pWeight) * gaussPDF(xMid, 0.8, 0.9)) * binW);
+                    P_bin = Math.max(0.0001, (trainPWeight * gaussPDF(xMid, -0.8, 0.9) + (1 - trainPWeight) * gaussPDF(xMid, 0.8, 0.9)) * binW);
+                    Q_bin = Math.max(0.0001, (pWeight * gaussPDF(xMid, -0.8, 0.9) + (1 - pWeight) * gaussPDF(xMid, 0.8, 0.9)) * binW);
                 } else {
-                    P_bin = Math.max(0.001, gaussPDF(xMid, 0, 1) * binW);
-                    Q_bin = Math.max(0.001, gaussPDF(xMid, meanProd, stdProd) * binW);
+                    P_bin = Math.max(0.0001, gaussPDF(xMid, trainMean, trainStd) * binW);
+                    Q_bin = Math.max(0.0001, gaussPDF(xMid, meanProd, stdProd) * binW);
                 }
                 const term = (P_bin - Q_bin) * Math.log(P_bin / Q_bin);
                 psiSum += term;
             }
 
-            if (isRetrained) {
-                psiSum = 0.015;
-            }
+            // Précision calculée à partir de la distance réelle PSI
+            const accuracy = Math.max(48, Math.min(98.5, 98.2 - psiSum * 42));
 
-            let accuracy = 98.2 - shiftFraction * 36;
-            if (isRetrained) accuracy = 97.6;
-            if (driftType === 'concept' && !isRetrained) accuracy = 98.2 - shiftFraction * 48;
-
-            const chartHeight = height * 0.62;
-            const chartBottom = height * 0.72;
+            const chartHeight = height * 0.60;
+            const chartBottom = height * 0.70;
             const toCanvasX = (x) => 60 + ((x - minX) / (maxX - minX)) * (width - 120);
-            const maxPDF = 0.45;
+            const maxPDF = 0.48;
             const toCanvasY = (pdf) => chartBottom - (pdf / maxPDF) * chartHeight;
 
-            // Distribution Train P (Cyan)
+            // Distribution Train P (Cyan) - change lors du réentraînement
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 243, 255, 0.12)';
+            ctx.fillStyle = 'rgba(0, 243, 255, 0.15)';
             ctx.strokeStyle = '#00f3ff';
-            ctx.lineWidth = 2.2;
+            ctx.lineWidth = 2.4;
             ctx.shadowColor = '#00f3ff';
             ctx.shadowBlur = 8;
             ctx.beginPath();
             ctx.moveTo(toCanvasX(minX), chartBottom);
             for (let x = minX; x <= maxX; x += 0.05) {
-                let yVal = (driftType === 'prior') ? (0.5 * gaussPDF(x, -0.8, 0.9) + 0.5 * gaussPDF(x, 0.8, 0.9)) : gaussPDF(x, 0, 1);
+                let yVal = (driftType === 'prior') ?
+                    (trainPWeight * gaussPDF(x, -0.8, 0.9) + (1 - trainPWeight) * gaussPDF(x, 0.8, 0.9)) :
+                    gaussPDF(x, trainMean, trainStd);
                 ctx.lineTo(toCanvasX(x), toCanvasY(yVal));
             }
             ctx.lineTo(toCanvasX(maxX), chartBottom);
@@ -2323,23 +2336,20 @@ const PedagogyInteractive = {
             ctx.stroke();
             ctx.restore();
 
-            // Distribution Prod Q (Magenta)
+            // Distribution Prod Q (Magenta pointillé pour le flux de production)
             ctx.save();
-            ctx.fillStyle = 'rgba(232, 121, 249, 0.14)';
+            ctx.fillStyle = 'rgba(232, 121, 249, 0.12)';
             ctx.strokeStyle = '#e879f9';
             ctx.lineWidth = 2.2;
             ctx.shadowColor = '#e879f9';
-            ctx.shadowBlur = 8;
-            if (!isRetrained && shiftFraction > 0.05) ctx.setLineDash([4, 4]);
+            ctx.shadowBlur = 6;
+            ctx.setLineDash([5, 4]);
             ctx.beginPath();
             ctx.moveTo(toCanvasX(minX), chartBottom);
             for (let x = minX; x <= maxX; x += 0.05) {
-                let yVal;
-                if (driftType === 'prior') {
-                    yVal = pWeight * gaussPDF(x, -0.8, 0.9) + (1 - pWeight) * gaussPDF(x, 0.8, 0.9);
-                } else {
-                    yVal = gaussPDF(x, meanProd, stdProd);
-                }
+                let yVal = (driftType === 'prior') ?
+                    (pWeight * gaussPDF(x, -0.8, 0.9) + (1 - pWeight) * gaussPDF(x, 0.8, 0.9)) :
+                    gaussPDF(x, meanProd, stdProd);
                 ctx.lineTo(toCanvasX(x), toCanvasY(yVal));
             }
             ctx.lineTo(toCanvasX(maxX), chartBottom);
@@ -2348,7 +2358,7 @@ const PedagogyInteractive = {
             ctx.stroke();
             ctx.restore();
 
-            // Axe
+            // Axe horizontal
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -2356,17 +2366,23 @@ const PedagogyInteractive = {
             ctx.lineTo(toCanvasX(maxX), chartBottom);
             ctx.stroke();
 
-            // Barres de décomposition par décile
-            const barY = height * 0.80;
-            const barH = height * 0.14;
+            // Barres déciles (|P - Q|)
+            const barY = height * 0.78;
+            const barH = height * 0.15;
             for (let b = 0; b < numBins; b++) {
                 const bx = toCanvasX(minX + b * binW);
                 const bw = (width - 120) / numBins - 4;
                 const binMid = minX + (b + 0.5) * binW;
-                const P_b = gaussPDF(binMid, 0, 1);
-                const Q_b = gaussPDF(binMid, meanProd, stdProd);
+                let P_b, Q_b;
+                if (driftType === 'prior') {
+                    P_b = (trainPWeight * gaussPDF(binMid, -0.8, 0.9) + (1 - trainPWeight) * gaussPDF(binMid, 0.8, 0.9));
+                    Q_b = (pWeight * gaussPDF(binMid, -0.8, 0.9) + (1 - pWeight) * gaussPDF(binMid, 0.8, 0.9));
+                } else {
+                    P_b = gaussPDF(binMid, trainMean, trainStd);
+                    Q_b = gaussPDF(binMid, meanProd, stdProd);
+                }
                 const diff = Math.abs(P_b - Q_b);
-                const barColor = (diff > 0.15) ? 'rgba(255, 51, 102, 0.5)' : (diff > 0.08 ? 'rgba(255, 170, 0, 0.4)' : 'rgba(0, 243, 255, 0.2)');
+                const barColor = (diff > 0.12) ? 'rgba(255, 51, 102, 0.65)' : (diff > 0.05 ? 'rgba(255, 170, 0, 0.5)' : 'rgba(0, 243, 255, 0.25)');
 
                 ctx.fillStyle = barColor;
                 ctx.fillRect(bx, barY, bw, barH);
@@ -2377,17 +2393,17 @@ const PedagogyInteractive = {
             // Légende
             ctx.font = '11px monospace';
             ctx.fillStyle = '#00f3ff';
-            ctx.fillText('■ RÉFÉRENCE (TRAIN P)', 70, 28);
+            ctx.fillText('■ DISTRIBUTION MODÈLE (TRAIN P)', 70, 28);
             ctx.fillStyle = '#e879f9';
-            ctx.fillText(isRetrained ? '■ MODÈLE RÉENTRAÎNÉ SUR PROD Q' : '■ DÉRIVE ACTUELLE (PROD Q)', 240, 28);
+            ctx.fillText('┄ FLUX EN DIRECT (PROD Q)', 310, 28);
 
-            // Mise à jour métriques
+            // Métriques
             if (psiVal) psiVal.textContent = psiSum.toFixed(3);
             if (accVal) accVal.textContent = accuracy.toFixed(1) + ' %';
 
             if (statusVal) {
                 if (psiSum < 0.10) {
-                    statusVal.textContent = 'DISTRIBUTION STABLE (VERT)';
+                    statusVal.textContent = 'DISTRIBUTION ALIGNÉE (STABLE)';
                     statusVal.className = 'sim-metric-val';
                 } else if (psiSum <= 0.25) {
                     statusVal.textContent = 'DÉRIVE MODÉRÉE (SURVEILLANCE)';
@@ -2399,20 +2415,58 @@ const PedagogyInteractive = {
             }
 
             if (actionVal) {
-                if (isRetrained) {
+                if (psiSum < 0.10) {
                     actionVal.textContent = 'MODÈLE RECALIBRÉ & OPÉRATIONNEL';
                     actionVal.className = 'sim-metric-val';
                 } else if (psiSum > 0.25) {
                     actionVal.textContent = 'RÉENTRAÎNEMENT REQUIS IMMÉDIAT';
                     actionVal.className = 'sim-metric-val accent';
-                } else if (psiSum >= 0.10) {
-                    actionVal.textContent = 'SURVEILLANCE RENFORCÉE (SHADOW)';
-                    actionVal.className = 'sim-metric-val';
                 } else {
-                    actionVal.textContent = 'AUCUNE ACTION (NOMINAL)';
+                    actionVal.textContent = 'SURVEILLANCE RENFORCÉE (SHADOW)';
                     actionVal.className = 'sim-metric-val';
                 }
             }
+        };
+
+        // Animation fluide lors du réentraînement : la distribution P (Cyan) glisse pour s'aligner sur Q (Magenta)
+        const triggerRetrain = () => {
+            const { meanProd, stdProd, pWeight } = getProdParams();
+            const startMean = trainMean;
+            const startStd = trainStd;
+            const startPWeight = trainPWeight;
+            let progress = 0;
+
+            if (animTimer) cancelAnimationFrame(animTimer);
+
+            const step = () => {
+                progress += 0.06;
+                if (progress >= 1.0) {
+                    trainMean = meanProd;
+                    trainStd = stdProd;
+                    trainPWeight = pWeight;
+                    render();
+                } else {
+                    const ease = 1 - Math.pow(1 - progress, 3);
+                    trainMean = startMean + (meanProd - startMean) * ease;
+                    trainStd = startStd + (stdProd - startStd) * ease;
+                    trainPWeight = startPWeight + (pWeight - startPWeight) * ease;
+                    render();
+                    animTimer = requestAnimationFrame(step);
+                }
+            };
+            animTimer = requestAnimationFrame(step);
+        };
+
+        const resetToNominal = () => {
+            if (animTimer) cancelAnimationFrame(animTimer);
+            trainMean = 0.0;
+            trainStd = 1.0;
+            trainPWeight = 0.5;
+            intensity = 0;
+            noiseActive = false;
+            if (intensitySlider) intensitySlider.value = "0";
+            if (intensityVal) intensityVal.textContent = "0 %";
+            render();
         };
 
         driftBtns.forEach(btn => {
@@ -2420,7 +2474,6 @@ const PedagogyInteractive = {
                 driftBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 driftType = btn.getAttribute('data-drift') || 'covariate';
-                isRetrained = false;
                 render();
             });
         });
@@ -2429,16 +2482,12 @@ const PedagogyInteractive = {
             this.addListener(intensitySlider, 'input', () => {
                 intensity = parseInt(intensitySlider.value, 10);
                 if (intensityVal) intensityVal.textContent = intensity + ' %';
-                isRetrained = false;
                 render();
             });
         }
 
         if (retrainBtn) {
-            this.addListener(retrainBtn, 'click', () => {
-                isRetrained = true;
-                render();
-            });
+            this.addListener(retrainBtn, 'click', triggerRetrain);
         }
 
         if (noiseBtn) {
@@ -2446,6 +2495,10 @@ const PedagogyInteractive = {
                 noiseActive = !noiseActive;
                 render();
             });
+        }
+
+        if (resetBtn) {
+            this.addListener(resetBtn, 'click', resetToNominal);
         }
 
         this.addListener(window, 'resize', render);
