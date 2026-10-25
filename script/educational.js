@@ -54,9 +54,19 @@ const Educational = {
 
         this.initPromise = (async () => {
             try {
-                const response = await fetch('config/educational.json?v=4.3');
+                const response = await fetch('config/educational.json?v=4.4');
                 if (!response.ok) throw new Error("Impossible de charger les cours");
                 this.courses = await response.json();
+
+                // Assainissement systématique des watermarks (port cyzanfar/text-watermark-remover)
+                if (window.TextWatermarkRemover && Array.isArray(this.courses)) {
+                    this.courses.forEach(c => {
+                        if (c.title) c.title = window.TextWatermarkRemover.sanitize(c.title);
+                        if (c.chapterTitle) c.chapterTitle = window.TextWatermarkRemover.sanitize(c.chapterTitle);
+                        if (c.chapterShort) c.chapterShort = window.TextWatermarkRemover.sanitize(c.chapterShort);
+                        if (c.content) c.content = window.TextWatermarkRemover.sanitize(c.content);
+                    });
+                }
             } catch (error) {
                 console.error("Erreur critique Pédagogie:", error);
                 listContainer.innerHTML = '<div style="color:red; padding:15px;">Erreur de chargement des cours.</div>';
@@ -302,6 +312,9 @@ const Educational = {
 
         this.currentSlideIndex = 0;
         let htmlContent = course.content;
+        if (window.TextWatermarkRemover && htmlContent) {
+            htmlContent = window.TextWatermarkRemover.sanitize(htmlContent);
+        }
 
         // Slideshow si présent
         if (course.slides && course.slides.length > 0) {
