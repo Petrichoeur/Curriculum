@@ -2170,11 +2170,21 @@ body {
     .pedagogy-viewer {
         height: auto;
         min-height: 350px;
-        padding: 18px 12px;
-        overflow: visible;
+        padding: 16px 10px;
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         background: rgba(15, 10, 25, 0.65);
         border: 1px solid rgba(189, 0, 255, 0.2);
         border-radius: 6px;
+    }
+
+    #pedagogy-content {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     .pedagogy-viewer h2 {
@@ -3427,6 +3437,10 @@ input[type="range"]::-moz-range-thumb {
     margin: 30px 0;
     box-shadow: 0 0 25px rgba(0, 243, 255, 0.08), inset 0 0 15px rgba(189, 0, 255, 0.05);
     position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .sim-header {
@@ -3438,12 +3452,17 @@ input[type="range"]::-moz-range-thumb {
     gap: 8px;
     border-bottom: 1px solid rgba(0, 243, 255, 0.2);
     padding-bottom: 10px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
 }
 
 .sim-title-group {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .sim-badge {
@@ -3461,6 +3480,7 @@ input[type="range"]::-moz-range-thumb {
     letter-spacing: 0.5px;
     border: none !important;
     padding: 0 !important;
+    word-break: break-word;
 }
 
 .sim-status-pulse {
@@ -3474,6 +3494,7 @@ input[type="range"]::-moz-range-thumb {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
 }
 
 .sim-status-pulse::before {
@@ -3496,6 +3517,7 @@ input[type="range"]::-moz-range-thumb {
     font-size: 0.92rem !important;
     margin-bottom: 20px !important;
     line-height: 1.6 !important;
+    word-break: break-word;
 }
 
 .sim-controls-grid {
@@ -3507,12 +3529,19 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 6px;
     padding: 16px;
     margin-bottom: 20px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
 }
 
 .sim-control-item {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .sim-control-item label {
@@ -3521,17 +3550,24 @@ input[type="range"]::-moz-range-thumb {
     color: #cfd8dc;
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    word-break: break-word;
 }
 
 .sim-val {
     color: var(--neon-cyan);
     font-weight: bold;
+    white-space: nowrap;
 }
 
 .sim-slider {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     height: 6px;
     border-radius: 3px;
     background: rgba(255, 255, 255, 0.15);
@@ -3564,11 +3600,20 @@ input[type="range"]::-moz-range-thumb {
     font-family: var(--font-tech);
     font-size: 0.8rem;
     outline: none;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .sim-btn-group {
     display: flex;
     gap: 6px;
+    flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .sim-pill-btn {
@@ -3581,6 +3626,8 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 4px;
     cursor: pointer;
     transition: 0.2s;
+    box-sizing: border-box;
+    text-align: center;
 }
 
 .sim-pill-btn:hover {
@@ -3598,6 +3645,8 @@ input[type="range"]::-moz-range-thumb {
 
 .sim-btn-cell {
     justify-content: flex-end;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .sim-action-btn {
@@ -3612,6 +3661,8 @@ input[type="range"]::-moz-range-thumb {
     transition: 0.2s;
     letter-spacing: 0.5px;
     text-align: center;
+    box-sizing: border-box;
+    max-width: 100%;
 }
 
 .sim-action-btn:hover {
@@ -3622,6 +3673,8 @@ input[type="range"]::-moz-range-thumb {
 .sim-canvas-wrapper {
     position: relative;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     background: #090312;
     border: 1px solid rgba(189, 0, 255, 0.25);
     border-radius: 6px;
@@ -3633,6 +3686,7 @@ input[type="range"]::-moz-range-thumb {
 .sim-canvas {
     display: block;
     width: 100%;
+    max-width: 100%;
     height: 340px;
     cursor: crosshair;
 }
@@ -3641,6 +3695,9 @@ input[type="range"]::-moz-range-thumb {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
 }
 
 .sim-metric-box {
@@ -3651,6 +3708,9 @@ input[type="range"]::-moz-range-thumb {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .metric-label {
@@ -3659,6 +3719,8 @@ input[type="range"]::-moz-range-thumb {
     color: #8e9aaf;
     letter-spacing: 0.5px;
     text-transform: uppercase;
+    word-break: break-word;
+    line-height: 1.3;
 }
 
 .metric-val {
@@ -3666,6 +3728,7 @@ input[type="range"]::-moz-range-thumb {
     font-size: 1.05rem;
     color: #fff;
     font-weight: bold;
+    word-break: break-all;
 }
 
 .metric-val.accent {
@@ -3685,23 +3748,62 @@ input[type="range"]::-moz-range-thumb {
     .interactive-sim-card {
         padding: 14px 10px;
         margin: 18px 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     .sim-controls-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) !important;
         padding: 12px 10px;
         gap: 14px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sim-control-item {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .sim-select {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        font-size: 0.78rem;
+    }
+
+    .sim-btn-cell {
+        justify-content: stretch !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sim-action-btn {
+        width: 100% !important;
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        font-size: 0.78rem;
     }
 
     .sim-btn-group {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .sim-pill-btn {
         flex: 1 1 calc(50% - 6px);
-        min-width: 120px;
+        min-width: 110px;
         text-align: center;
         padding: 8px 10px;
         font-size: 0.72rem;
@@ -3709,12 +3811,15 @@ input[type="range"]::-moz-range-thumb {
         display: flex;
         align-items: center;
         justify-content: center;
+        box-sizing: border-box;
     }
 
     .sim-btn-cell .sim-btn-group {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     #harness-run-btn {
@@ -3731,22 +3836,38 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .sim-metrics-bar {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
         gap: 8px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .sim-metric-box {
         padding: 8px 10px;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .metric-label {
+        font-size: 0.62rem;
+        word-break: break-word;
+        line-height: 1.25;
     }
 
     .metric-val {
-        font-size: 0.85rem;
+        font-size: 0.88rem;
+        word-break: break-all;
     }
 
     .harness-terminal {
         font-size: 0.72rem;
         padding: 10px;
         max-height: 160px;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
     }
 
     .sim-slider::-webkit-slider-thumb {
@@ -3756,17 +3877,34 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @media (max-width: 540px) {
+    .sim-canvas {
+        height: 210px;
+    }
+
     #harness-canvas {
-        height: 380px !important;
+        height: 360px !important;
     }
 
     .sim-pill-btn {
         flex: 1 1 100%;
-        min-height: 34px;
+        min-height: 36px;
     }
 
     .sim-metrics-bar {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 6px;
+    }
+
+    .sim-metric-box {
+        padding: 6px 8px;
+    }
+
+    .metric-label {
+        font-size: 0.58rem;
+    }
+
+    .metric-val {
+        font-size: 0.82rem;
     }
 
     .harness-hitl-prompt {
@@ -3934,6 +4072,10 @@ input[type="range"]::-moz-range-thumb {
     flex-direction: column;
     gap: 6px;
     animation: fadeIn 0.3s ease;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    word-break: break-word;
 }
 
 .harness-verdict-card.success {
