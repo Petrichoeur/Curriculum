@@ -2249,10 +2249,19 @@ body {
     }
 
     .edu-figure-zoom-badge {
-        font-size: 0.58rem;
-        padding: 2px 6px;
-        top: 6px;
-        right: 8px;
+        width: 24px;
+        height: 24px;
+        top: 8px;
+        left: 8px;
+        right: auto;
+        padding: 0;
+    }
+
+    .edu-figure-zoom-badge .edu-zoom-svg-icon {
+        width: 12px !important;
+        height: 12px !important;
+        max-width: 12px !important;
+        max-height: 12px !important;
     }
 
     .modal-next,
@@ -3145,28 +3154,42 @@ input[type="range"]::-moz-range-thumb {
 .edu-figure-zoom-badge {
     position: absolute;
     top: 10px;
-    right: 12px;
+    left: 10px;
+    right: auto;
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     background: rgba(10, 6, 20, 0.85);
-    border: 1px solid rgba(0, 243, 255, 0.4);
+    border: 1px solid rgba(0, 243, 255, 0.45);
     color: var(--neon-cyan);
-    font-family: var(--font-tech);
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    padding: 3px 8px;
     border-radius: 4px;
     pointer-events: none;
-    opacity: 0.75;
-    transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    opacity: 0.8;
+    z-index: 5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     user-select: none;
+}
+
+.edu-figure-zoom-badge .edu-zoom-svg-icon {
+    width: 14px !important;
+    height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+    stroke: var(--neon-cyan);
+    fill: none;
+    display: block;
+    margin: 0 !important;
 }
 
 .edu-figure:hover .edu-figure-zoom-badge {
     opacity: 1;
-    background: rgba(0, 243, 255, 0.15);
+    background: rgba(0, 243, 255, 0.2);
     border-color: var(--neon-cyan);
+    box-shadow: 0 0 12px rgba(0, 243, 255, 0.45);
+    transform: scale(1.08);
 }
 
 .edu-figure svg {

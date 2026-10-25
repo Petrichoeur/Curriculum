@@ -370,12 +370,13 @@ const Educational = {
             fig.style.cursor = 'zoom-in';
             fig.setAttribute('title', 'Cliquer pour agrandir le schéma');
 
-            // Ajout du badge visuel s'il n'existe pas encore
+            // Ajout du bouton d'agrandissement en haut a gauche s'il n'existe pas encore
             if (!fig.querySelector('.edu-figure-zoom-badge')) {
                 const badge = document.createElement('div');
                 badge.className = 'edu-figure-zoom-badge';
-                badge.setAttribute('aria-hidden', 'true');
-                badge.textContent = 'AGRANDIR';
+                badge.setAttribute('aria-label', 'Agrandir le schéma');
+                badge.setAttribute('title', 'Cliquer pour agrandir le schéma');
+                badge.innerHTML = `<svg class="edu-zoom-svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`;
                 fig.appendChild(badge);
             }
 
@@ -402,7 +403,7 @@ const Educational = {
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
 
-        const svgEl = figureEl.querySelector('svg');
+        const svgEl = figureEl.querySelector('svg:not(.edu-zoom-svg-icon)');
         const imgEl = figureEl.querySelector('img');
         const figcaptionEl = figureEl.querySelector('figcaption');
 
