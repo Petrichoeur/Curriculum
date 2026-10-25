@@ -3723,50 +3723,6 @@ body:has(#digital-twin.active) .mirza-widget-root {
     padding: 4px 7px;
 }
 
-/* Egaliseur Vocal Audio */
-.mirza-audio-meter {
-    display: none;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 14px;
-    background: rgba(239, 68, 68, 0.1);
-    border-bottom: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.mirza-audio-meter.active {
-    display: flex;
-}
-
-.mirza-meter-bar {
-    width: 3px;
-    height: 12px;
-    background: #ef4444;
-    border-radius: 1px;
-    animation: mirzaEqualizer 0.7s ease-in-out infinite alternate;
-}
-
-.mirza-meter-bar:nth-child(1) { animation-delay: 0.05s; }
-.mirza-meter-bar:nth-child(2) { animation-delay: 0.2s; }
-.mirza-meter-bar:nth-child(3) { animation-delay: 0.4s; }
-.mirza-meter-bar:nth-child(4) { animation-delay: 0.1s; }
-.mirza-meter-bar:nth-child(5) { animation-delay: 0.35s; }
-.mirza-meter-bar:nth-child(6) { animation-delay: 0.15s; }
-.mirza-meter-bar:nth-child(7) { animation-delay: 0.3s; }
-.mirza-meter-bar:nth-child(8) { animation-delay: 0.25s; }
-
-@keyframes mirzaEqualizer {
-    0% { height: 4px; opacity: 0.4; }
-    100% { height: 16px; opacity: 1; }
-}
-
-.mirza-meter-text {
-    font-size: 0.62rem;
-    color: #ef4444;
-    margin-left: 8px;
-    letter-spacing: 0.8px;
-    font-weight: bold;
-}
-
 /* Zone des messages */
 .mirza-chat-messages {
     flex: 1;
@@ -3854,30 +3810,6 @@ body:has(#digital-twin.active) .mirza-widget-root {
 @keyframes mirzaBlink {
     0%, 100% { opacity: 0.2; }
     50% { opacity: 1; }
-}
-
-.mirza-msg-actions {
-    margin-top: 4px;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.mirza-replay-btn {
-    background: transparent;
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #ef4444;
-    font-size: 0.62rem;
-    padding: 2px 6px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s ease;
-}
-
-.mirza-replay-btn:hover {
-    background: rgba(239, 68, 68, 0.25);
-    color: #ffffff;
-    border-color: #ef4444;
 }
 
 /* Zone de Saisie */

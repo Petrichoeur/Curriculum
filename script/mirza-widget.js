@@ -12,6 +12,13 @@
 (function () {
     'use strict';
 
+    // Neutralisation proactive de toute synthese vocale restante en memoire
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try {
+            window.speechSynthesis.cancel();
+        } catch (_) {}
+    }
+
     // -------------------------------------------------------------
     // Configuration & Etats
     // -------------------------------------------------------------
