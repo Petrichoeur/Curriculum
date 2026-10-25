@@ -54,7 +54,7 @@ const Educational = {
 
         this.initPromise = (async () => {
             try {
-                const response = await fetch('config/educational.json?v=5.4');
+                const response = await fetch('config/educational.json?v=5.5');
                 if (!response.ok) throw new Error("Impossible de charger les cours");
                 this.courses = await response.json();
             } catch (error) {
@@ -441,6 +441,7 @@ const Educational = {
         const figcaptionEl = figureEl.querySelector('figcaption');
 
         schemaContainer.innerHTML = '';
+        schemaContainer.classList.add('edu-figure');
         if (svgEl) {
             const clone = svgEl.cloneNode(true);
             clone.setAttribute('width', '100%');

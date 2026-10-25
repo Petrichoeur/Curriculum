@@ -3251,36 +3251,38 @@ input[type="range"]::-moz-range-thumb {
     font-style: italic;
 }
 
-/* Styles des elements SVG */
-.edu-figure text {
+/* Styles des elements SVG (cours et zoom modale) */
+.edu-figure text,
+.modal-schema-container text {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     fill: #f1f5f9;
     font-size: 13px;
     letter-spacing: -0.1px;
     text-rendering: geometricPrecision;
 }
-.edu-figure .ts { font-size: 11.5px; fill: #94a3b8; font-weight: 400; }
-.edu-figure .tc { fill: #00f3ff; font-weight: 600; font-size: 13.5px; }
-.edu-figure .tp { fill: #e879f9; font-weight: 600; font-size: 13.5px; }
-.edu-figure .tg { fill: #00ffaa; font-weight: 600; font-size: 13.5px; }
-.edu-figure .ta { fill: #ffaa00; font-weight: 600; font-size: 13.5px; }
+.edu-figure .t, .modal-schema-container .t { fill: #f1f5f9; font-size: 13px; }
+.edu-figure .ts, .modal-schema-container .ts { font-size: 11.5px; fill: #94a3b8; font-weight: 400; }
+.edu-figure .tc, .modal-schema-container .tc { fill: #00f3ff; font-weight: 600; font-size: 13.5px; }
+.edu-figure .tp, .modal-schema-container .tp { fill: #e879f9; font-weight: 600; font-size: 13.5px; }
+.edu-figure .tg, .modal-schema-container .tg { fill: #00ffaa; font-weight: 600; font-size: 13.5px; }
+.edu-figure .ta, .modal-schema-container .ta { fill: #ffaa00; font-weight: 600; font-size: 13.5px; }
 
-.edu-figure .b-c { fill: rgba(0, 243, 255, 0.08); stroke: #00f3ff; stroke-width: 1.4; }
-.edu-figure .b-p { fill: rgba(232, 121, 249, 0.12); stroke: #e879f9; stroke-width: 1.2; }
-.edu-figure .b-g { fill: rgba(0, 255, 170, 0.18); stroke: #00ffaa; stroke-width: 1.2; }
-.edu-figure .b-a { fill: rgba(255, 170, 0, 0.12); stroke: #ffaa00; stroke-width: 1.4; }
-.edu-figure .b-w { fill: rgba(255, 255, 255, 0.05); stroke: #888; stroke-width: 1.2; }
+.edu-figure .b-c, .modal-schema-container .b-c { fill: rgba(0, 243, 255, 0.08); stroke: #00f3ff; stroke-width: 1.4; }
+.edu-figure .b-p, .modal-schema-container .b-p { fill: rgba(232, 121, 249, 0.12); stroke: #e879f9; stroke-width: 1.2; }
+.edu-figure .b-g, .modal-schema-container .b-g { fill: rgba(0, 255, 170, 0.18); stroke: #00ffaa; stroke-width: 1.2; }
+.edu-figure .b-a, .modal-schema-container .b-a { fill: rgba(255, 170, 0, 0.12); stroke: #ffaa00; stroke-width: 1.4; }
+.edu-figure .b-w, .modal-schema-container .b-w { fill: rgba(255, 255, 255, 0.05); stroke: #888; stroke-width: 1.2; }
 
-.edu-figure .l-c { stroke: #00f3ff; stroke-width: 1.8; }
-.edu-figure .l-p { stroke: #e879f9; stroke-width: 1.8; }
-.edu-figure .l-g { stroke: #00ffaa; stroke-width: 1.8; }
-.edu-figure .l-a { stroke: #ffaa00; stroke-width: 1.8; }
-.edu-figure .l-w { stroke: #bbbbbb; stroke-width: 1.6; }
+.edu-figure .l-c, .modal-schema-container .l-c { stroke: #00f3ff; stroke-width: 1.8; }
+.edu-figure .l-p, .modal-schema-container .l-p { stroke: #e879f9; stroke-width: 1.8; }
+.edu-figure .l-g, .modal-schema-container .l-g { stroke: #00ffaa; stroke-width: 1.8; }
+.edu-figure .l-a, .modal-schema-container .l-a { stroke: #ffaa00; stroke-width: 1.8; }
+.edu-figure .l-w, .modal-schema-container .l-w { stroke: #bbbbbb; stroke-width: 1.6; }
 
-.edu-figure .d-c { fill: #00f3ff; }
-.edu-figure .d-p { fill: #e879f9; }
-.edu-figure .d-g { fill: #00ffaa; }
-.edu-figure .d-a { fill: #ffaa00; }
+.edu-figure .d-c, .modal-schema-container .d-c { fill: #00f3ff; }
+.edu-figure .d-p, .modal-schema-container .d-p { fill: #e879f9; }
+.edu-figure .d-g, .modal-schema-container .d-g { fill: #00ffaa; }
+.edu-figure .d-a, .modal-schema-container .d-a { fill: #ffaa00; }
 
 .edu-callout {
     display: flex;
