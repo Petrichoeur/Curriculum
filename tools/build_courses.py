@@ -8,9 +8,12 @@ Usage : python3 tools/build_courses.py
 """
 import json
 import os
+import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JSON_PATH = os.path.join(ROOT, 'config', 'educational.json')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from watermark_remover import sanitize
 
 
 # ---------------------------------------------------------------- helpers SVG
@@ -1273,10 +1276,17 @@ def main():
     data = [c for c in data if c.get('id') not in new_ids]
     for cid, title, fn in COURSES:
         data.append({'id': cid, 'title': title, 'content': fn(), 'colabLink': None, 'slides': []})
+
+    # Assainissement amont systématique de tous les cours (cyzanfar/text-watermark-remover)
+    for c in data:
+        for field in ('title', 'chapterTitle', 'chapterShort', 'domainTitle', 'content'):
+            if isinstance(c.get(field), str):
+                c[field] = sanitize(c[field])
+
     with open(JSON_PATH, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         f.write('\n')
-    print(f'{len(data)} cours écrits dans {JSON_PATH}')
+    print(f'{len(data)} cours assainis et écrits dans {JSON_PATH}')
 
 
 if __name__ == '__main__':
