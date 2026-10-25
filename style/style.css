@@ -859,29 +859,35 @@ body {
 .pedagogy-filter-bar {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
     margin-bottom: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .pedagogy-filter-pill {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(189, 0, 255, 0.25);
-    color: #9aa;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(189, 0, 255, 0.3);
+    color: #cbd5e1;
     font-family: var(--font-tech);
-    font-size: 0.65rem;
-    padding: 4px 7px;
-    border-radius: 3px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.2s ease;
     letter-spacing: 0.5px;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .pedagogy-filter-pill:hover {
     color: #fff;
     border-color: var(--neon-cyan);
-    background: rgba(0, 243, 255, 0.12);
+    background: rgba(0, 243, 255, 0.15);
+    box-shadow: 0 0 8px rgba(0, 243, 255, 0.3);
 }
 
 .pedagogy-filter-pill.active {
@@ -889,21 +895,26 @@ body {
     background: var(--neon-cyan);
     border-color: var(--neon-cyan);
     font-weight: bold;
-    box-shadow: 0 0 10px rgba(0, 243, 255, 0.45);
+    box-shadow: 0 0 12px rgba(0, 243, 255, 0.5);
 }
 
 .pedagogy-chapters-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .pedagogy-chapter-group {
     background: rgba(15, 10, 25, 0.55);
-    border: 1px solid rgba(189, 0, 255, 0.2);
+    border: 1px solid rgba(189, 0, 255, 0.22);
     border-radius: 6px;
     overflow: hidden;
-    transition: all 0.25s ease;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.pedagogy-chapter-group.active-group {
+    border-color: rgba(0, 243, 255, 0.45);
+    box-shadow: 0 0 16px rgba(0, 243, 255, 0.12);
 }
 
 .pedagogy-chapter-group.hidden {
@@ -914,80 +925,114 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 10px;
-    background: rgba(0, 0, 0, 0.35);
-    border-bottom: 1px solid rgba(189, 0, 255, 0.15);
+    padding: 9px 12px;
+    background: rgba(0, 0, 0, 0.45);
+    border-bottom: 1px solid rgba(189, 0, 255, 0.18);
     cursor: pointer;
     user-select: none;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s;
+    min-height: 42px;
+}
+
+.pedagogy-chapter-group.collapsed .pedagogy-chapter-header {
+    border-bottom-color: transparent;
 }
 
 .pedagogy-chapter-header:hover {
-    background: rgba(189, 0, 255, 0.12);
+    background: rgba(189, 0, 255, 0.18);
 }
 
 .chapter-header-left {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     overflow: hidden;
+    flex: 1;
 }
 
 .chapter-num-badge {
     background: rgba(189, 0, 255, 0.25);
     color: var(--neon-purple);
-    border: 1px solid rgba(189, 0, 255, 0.4);
+    border: 1px solid rgba(189, 0, 255, 0.45);
     font-family: var(--font-tech);
     font-size: 0.65rem;
     font-weight: bold;
-    padding: 2px 5px;
+    padding: 2px 6px;
     border-radius: 3px;
     white-space: nowrap;
+    letter-spacing: 0.5px;
 }
 
 .chapter-title-text {
     font-family: var(--font-tech);
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     color: #e5e5f5;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-weight: 600;
 }
 
 .chapter-header-right {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .chapter-count-badge {
     background: rgba(255, 255, 255, 0.08);
-    color: #889;
+    color: #94a3b8;
     font-size: 0.65rem;
     font-family: var(--font-tech);
-    padding: 1px 5px;
+    padding: 2px 6px;
     border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .chapter-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
     color: var(--neon-cyan);
-    font-size: 0.68rem;
-    transition: transform 0.2s;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: rotate(0deg);
+}
+
+.chapter-chevron svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+}
+
+.pedagogy-chapter-group.collapsed .chapter-chevron {
+    transform: rotate(-90deg);
 }
 
 .pedagogy-chapter-courses {
     list-style: none;
-    padding: 4px;
+    margin: 0;
+    padding: 6px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+    max-height: 800px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, padding 0.25s ease;
 }
 
-.pedagogy-chapter-courses.collapsed {
-    display: none;
+.pedagogy-chapter-group.collapsed .pedagogy-chapter-courses {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    pointer-events: none !important;
 }
 
 .course-btn {
@@ -2083,30 +2128,9 @@ body {
         }
     }
 
-    .pedagogy-menu-desktop-header {
-        display: none;
-    }
-
+    .pedagogy-menu-desktop-header,
     .pedagogy-filter-bar {
-        display: flex;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
-        gap: 6px;
-        padding: 4px 0 10px 0;
-        margin-bottom: 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .pedagogy-filter-pill {
-        flex-shrink: 0;
-        white-space: nowrap;
-        min-height: 32px;
-        padding: 6px 12px;
-        font-size: 0.7rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        display: none !important;
     }
 
     .pedagogy-chapters-container {
@@ -2116,11 +2140,19 @@ body {
     }
 
     .pedagogy-chapter-courses {
-        display: flex !important;
-        flex-direction: column !important;
-        flex-wrap: nowrap !important;
-        padding: 4px;
-        gap: 2px;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding: 4px 6px;
+        gap: 3px;
+    }
+
+    .pedagogy-chapter-group.collapsed .pedagogy-chapter-courses {
+        max-height: 0 !important;
+        opacity: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        pointer-events: none !important;
     }
 
     .pedagogy-chapter-courses .course-btn {

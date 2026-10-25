@@ -40,7 +40,7 @@ const Educational = {
     },
 
     isMobile: function() {
-        return window.innerWidth <= 980;
+        return window.innerWidth <= 900;
     },
 
     /**
@@ -135,15 +135,16 @@ const Educational = {
         this.chapters.forEach((ch, chIdx) => {
             const isVisible = (this.activeFilter === 'ALL' || this.activeFilter === ch.id);
             const groupEl = document.createElement('div');
-            groupEl.className = `pedagogy-chapter-group ${isVisible ? '' : 'hidden'}`;
+            // Seul le premier chapitre est déplié par défaut, les autres sont repliés
+            const startCollapsed = chIdx > 0;
+            groupEl.className = `pedagogy-chapter-group ${isVisible ? '' : 'hidden'} ${startCollapsed ? 'collapsed' : ''} ${chIdx === 0 ? 'active-group' : ''}`;
             groupEl.id = `chapter-group-${ch.id}`;
 
             const headerEl = document.createElement('div');
             headerEl.className = 'pedagogy-chapter-header';
+            headerEl.setAttribute('role', 'button');
+            headerEl.setAttribute('aria-expanded', startCollapsed ? 'false' : 'true');
             headerEl.onclick = () => this.toggleChapter(ch.id);
-            
-            // Sur mobile, seul le premier chapitre est déplié par défaut
-            const startCollapsed = this.isMobile() && chIdx > 0;
 
             headerEl.innerHTML = `
                 <div class="chapter-header-left">
@@ -152,12 +153,16 @@ const Educational = {
                 </div>
                 <div class="chapter-header-right">
                     <span class="chapter-count-badge">${ch.courses.length}</span>
-                    <span class="chapter-chevron" id="chevron-${ch.id}">${startCollapsed ? '▶' : '▼'}</span>
+                    <span class="chapter-chevron" id="chevron-${ch.id}" aria-hidden="true">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </span>
                 </div>
             `;
 
             const coursesUl = document.createElement('ul');
-            coursesUl.className = `pedagogy-chapter-courses ${startCollapsed ? 'collapsed' : ''}`;
+            coursesUl.className = 'pedagogy-chapter-courses';
             coursesUl.id = `courses-ul-${ch.id}`;
 
             ch.courses.forEach(({ course, index }) => {
@@ -231,17 +236,32 @@ const Educational = {
     },
 
     /**
-     * Dépliage / repliage d'un chapitre
+     * Dépliage / repliage d'un chapitre (effet accordéon fluide)
      */
     toggleChapter: function(chapterId) {
-        const coursesUl = document.getElementById(`courses-ul-${chapterId}`);
-        const chevron = document.getElementById(`chevron-${chapterId}`);
-        if (!coursesUl) return;
+        const targetGroup = document.getElementById(`chapter-group-${chapterId}`);
+        if (!targetGroup) return;
 
-        const isCollapsed = coursesUl.classList.toggle('collapsed');
-        if (chevron) {
-            chevron.textContent = isCollapsed ? '▶' : '▼';
+        const isCurrentlyCollapsed = targetGroup.classList.contains('collapsed');
+
+        // Sur mobile : mode accordéon pour préserver l'espace vertical
+        if (isCurrentlyCollapsed && this.isMobile()) {
+            this.chapters.forEach(ch => {
+                if (ch.id !== chapterId) {
+                    const otherGroup = document.getElementById(`chapter-group-${ch.id}`);
+                    if (otherGroup) {
+                        otherGroup.classList.add('collapsed');
+                        const header = otherGroup.querySelector('.pedagogy-chapter-header');
+                        if (header) header.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            });
         }
+
+        const willBeCollapsed = !isCurrentlyCollapsed;
+        targetGroup.classList.toggle('collapsed', willBeCollapsed);
+        const header = targetGroup.querySelector('.pedagogy-chapter-header');
+        if (header) header.setAttribute('aria-expanded', willBeCollapsed ? 'false' : 'true');
     },
 
     /**
@@ -274,18 +294,29 @@ const Educational = {
             course.btnElement.classList.add('active');
         }
 
-        // Dépliage du chapitre parent si replié ou masqué
+        // Dépliage automatique du chapitre parent et mise en surbrillance
         if (course.domainId) {
-            const group = document.getElementById(`chapter-group-${course.domainId}`);
-            if (group && group.classList.contains('hidden')) {
+            if (this.activeFilter !== 'ALL' && this.activeFilter !== course.domainId) {
                 this.setFilter('ALL');
             }
-            const coursesUl = document.getElementById(`courses-ul-${course.domainId}`);
-            const chevron = document.getElementById(`chevron-${course.domainId}`);
-            if (coursesUl && coursesUl.classList.contains('collapsed')) {
-                coursesUl.classList.remove('collapsed');
-                if (chevron) chevron.textContent = '▼';
-            }
+            this.chapters.forEach(ch => {
+                const group = document.getElementById(`chapter-group-${ch.id}`);
+                if (group) {
+                    if (ch.id === course.domainId) {
+                        group.classList.remove('collapsed');
+                        group.classList.add('active-group');
+                        const header = group.querySelector('.pedagogy-chapter-header');
+                        if (header) header.setAttribute('aria-expanded', 'true');
+                    } else if (this.isMobile()) {
+                        group.classList.add('collapsed');
+                        group.classList.remove('active-group');
+                        const header = group.querySelector('.pedagogy-chapter-header');
+                        if (header) header.setAttribute('aria-expanded', 'false');
+                    } else {
+                        group.classList.remove('active-group');
+                    }
+                }
+            });
         }
 
         // Mise à jour de l'indicateur mobile du cours courant
@@ -294,11 +325,13 @@ const Educational = {
             mobileTitle.textContent = course.title;
         }
 
-        // Si on est sur mobile, replier le menu pour laisser 100% de place au texte
+        // Si on est sur mobile, replier le menu pour laisser 100% de place au texte et scroller en haut
         if (this.isMobile()) {
             this.closeMobileMenu();
             const viewer = document.querySelector('.pedagogy-viewer');
-            if (viewer) viewer.scrollTop = 0;
+            if (viewer) {
+                viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         this.currentSlideIndex = 0;
