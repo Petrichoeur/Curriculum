@@ -22,6 +22,14 @@ const PedagogyInteractive = {
             this.initNormalDist();
         } else if (courseId === 'loi_weibull') {
             this.initWeibull();
+        } else if (courseId === 'vc_dimension') {
+            this.initVCDimensionSim();
+        } else if (courseId === 'DataShift') {
+            this.initDataShiftSim();
+        } else if (courseId === 'perceptron') {
+            this.initPerceptronSim();
+        } else if (courseId === 'GreenAI') {
+            this.initGreenAISim();
         } else if (courseId === 'llm_harness') {
             this.initHarnessSim();
         }
@@ -1836,7 +1844,1121 @@ const PedagogyInteractive = {
 
         // Démarrage initial
         resetSim();
+    },
+
+    /* =========================================================================
+       5. SIMULATEUR DE LA DIMENSION VC & PULVÉRISATION (vc_dimension)
+       ========================================================================= */
+    initVCDimensionSim: function() {
+        const canvas = document.getElementById('vc-canvas');
+        if (!canvas) return;
+
+        const modelSelect = document.getElementById('vc-model-select');
+        const nSlider = document.getElementById('vc-n-slider');
+        const nVal = document.getElementById('vc-n-val');
+        const randomBtn = document.getElementById('vc-random-config-btn');
+        const xorBtn = document.getElementById('vc-xor-btn');
+        const resetBtn = document.getElementById('vc-reset-btn');
+
+        const dvcVal = document.getElementById('vc-dvc-val');
+        const configsVal = document.getElementById('vc-configs-val');
+        const statusVal = document.getElementById('vc-status-val');
+        const boundVal = document.getElementById('vc-bound-val');
+
+        let currentModel = modelSelect ? modelSelect.value : 'line';
+        let N = parseInt(nSlider ? nSlider.value : '4', 10);
+        let points = [];
+
+        const initPoints = (count, mode = 'standard') => {
+            N = count;
+            points = [];
+            if (count === 4 && mode === 'xor') {
+                points = [
+                    { x: -0.5, y: -0.5, label: 1 },
+                    { x: 0.5, y: -0.5, label: -1 },
+                    { x: -0.5, y: 0.5, label: -1 },
+                    { x: 0.5, y: 0.5, label: 1 }
+                ];
+            } else if (count === 3) {
+                points = [
+                    { x: 0, y: -0.6, label: 1 },
+                    { x: -0.6, y: 0.5, label: 1 },
+                    { x: 0.6, y: 0.5, label: -1 }
+                ];
+            } else {
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
+                    const r = 0.62;
+                    points.push({
+                        x: Math.cos(angle) * r,
+                        y: Math.sin(angle) * r,
+                        label: (i % 2 === 0) ? 1 : -1
+                    });
+                }
+            }
+        };
+
+        initPoints(N, 'xor');
+
+        const checkLinearSeparability = () => {
+            const pos = points.filter(p => p.label === 1);
+            const neg = points.filter(p => p.label === -1);
+            if (pos.length === 0 || neg.length === 0) {
+                return { separable: true, w1: 0, w2: 1, b: 2 };
+            }
+
+            let bestSep = null;
+            let maxMargin = -Infinity;
+
+            for (let deg = 0; deg < 360; deg += 1) {
+                const rad = deg * Math.PI / 180;
+                const ux = Math.cos(rad);
+                const uy = Math.sin(rad);
+
+                let minPos = Infinity, maxPos = -Infinity;
+                for (let p of pos) {
+                    const proj = p.x * ux + p.y * uy;
+                    if (proj < minPos) minPos = proj;
+                    if (proj > maxPos) maxPos = proj;
+                }
+
+                let minNeg = Infinity, maxNeg = -Infinity;
+                for (let p of neg) {
+                    const proj = p.x * ux + p.y * uy;
+                    if (proj < minNeg) minNeg = proj;
+                    if (proj > maxNeg) maxNeg = proj;
+                }
+
+                if (minPos > maxNeg) {
+                    const margin = minPos - maxNeg;
+                    if (margin > maxMargin) {
+                        maxMargin = margin;
+                        const threshold = (minPos + maxNeg) / 2;
+                        bestSep = { separable: true, w1: ux, w2: uy, b: -threshold };
+                    }
+                } else if (minNeg > maxPos) {
+                    const margin = minNeg - maxPos;
+                    if (margin > maxMargin) {
+                        maxMargin = margin;
+                        const threshold = (minNeg + maxPos) / 2;
+                        bestSep = { separable: true, w1: -ux, w2: -uy, b: threshold };
+                    }
+                }
+            }
+
+            if (bestSep) return bestSep;
+            return { separable: false, w1: 0, w2: 1, b: 0 };
+        };
+
+        const checkCircularSeparability = () => {
+            const pos = points.filter(p => p.label === 1);
+            const neg = points.filter(p => p.label === -1);
+            if (pos.length === 0 || neg.length === 0) return { separable: true, cx: 0, cy: 0, r: 0.1 };
+
+            let cx = pos.reduce((s, p) => s + p.x, 0) / pos.length;
+            let cy = pos.reduce((s, p) => s + p.y, 0) / pos.length;
+
+            let maxPosDistSq = Math.max(...pos.map(p => (p.x - cx)**2 + (p.y - cy)**2));
+            let minNegDistSq = Math.min(...neg.map(p => (p.x - cx)**2 + (p.y - cy)**2));
+
+            if (maxPosDistSq < minNegDistSq) {
+                const r = Math.sqrt((maxPosDistSq + minNegDistSq) / 2);
+                return { separable: true, cx, cy, r };
+            }
+            return { separable: false, cx, cy, r: Math.sqrt(maxPosDistSq) };
+        };
+
+        const render = () => {
+            const { ctx, width, height } = this.setupCanvasDPR(canvas);
+            const cx = width / 2;
+            const cy = height / 2;
+            const scale = Math.min(width, height) * 0.38;
+
+            ctx.fillStyle = '#090312';
+            ctx.fillRect(0, 0, width, height);
+
+            // Grille cartésienne
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let g = -1; g <= 1; g += 0.5) {
+                const gx = cx + g * scale;
+                const gy = cy + g * scale;
+                ctx.beginPath();
+                ctx.moveTo(gx, 0); ctx.lineTo(gx, height);
+                ctx.moveTo(0, gy); ctx.lineTo(width, gy);
+                ctx.stroke();
+            }
+
+            // Axes
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(cx, 0); ctx.lineTo(cx, height);
+            ctx.moveTo(0, cy); ctx.lineTo(width, cy);
+            ctx.stroke();
+
+            let isSeparable = false;
+
+            if (currentModel === 'line') {
+                const sepInfo = checkLinearSeparability();
+                isSeparable = sepInfo.separable;
+
+                if (isSeparable) {
+                    const w1 = sepInfo.w1;
+                    const w2 = sepInfo.w2;
+                    const b = sepInfo.b;
+
+                    ctx.save();
+                    ctx.strokeStyle = '#00f3ff';
+                    ctx.lineWidth = 2.5;
+                    ctx.shadowColor = '#00f3ff';
+                    ctx.shadowBlur = 12;
+
+                    let p1, p2;
+                    if (Math.abs(w2) > 0.001) {
+                        const xA = -2, yA = -(w1 * xA + b) / w2;
+                        const xB = 2, yB = -(w1 * xB + b) / w2;
+                        p1 = { x: cx + xA * scale, y: cy - yA * scale };
+                        p2 = { x: cx + xB * scale, y: cy - yB * scale };
+                    } else {
+                        const xVal = -b / w1;
+                        p1 = { x: cx + xVal * scale, y: 0 };
+                        p2 = { x: cx + xVal * scale, y: height };
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                    ctx.restore();
+                } else {
+                    ctx.save();
+                    ctx.strokeStyle = '#ff3366';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 6]);
+                    ctx.beginPath();
+                    ctx.moveTo(cx - scale * 1.2, cy);
+                    ctx.lineTo(cx + scale * 1.2, cy);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            } else if (currentModel === 'circle') {
+                const sepInfo = checkCircularSeparability();
+                isSeparable = sepInfo.separable;
+                const cpx = cx + sepInfo.cx * scale;
+                const cpy = cy - sepInfo.cy * scale;
+                const cpr = sepInfo.r * scale;
+
+                ctx.save();
+                ctx.fillStyle = isSeparable ? 'rgba(0, 243, 255, 0.12)' : 'rgba(255, 51, 102, 0.08)';
+                ctx.beginPath();
+                ctx.arc(cpx, cpy, cpr, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.strokeStyle = isSeparable ? '#00f3ff' : '#ff3366';
+                ctx.lineWidth = 2.5;
+                if (!isSeparable) ctx.setLineDash([5, 5]);
+                ctx.shadowColor = isSeparable ? '#00f3ff' : '#ff3366';
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.restore();
+            } else if (currentModel === 'quad') {
+                isSeparable = true;
+                ctx.save();
+                ctx.strokeStyle = '#e879f9';
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = '#e879f9';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, scale * 0.75, scale * 0.45, Math.PI / 4, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(232, 121, 249, 0.12)';
+                ctx.fill();
+                ctx.restore();
+            } else if (currentModel === 'knn') {
+                isSeparable = true;
+                ctx.save();
+                ctx.strokeStyle = '#00ffaa';
+                ctx.lineWidth = 1.8;
+                ctx.shadowColor = '#00ffaa';
+                ctx.shadowBlur = 8;
+                for (let i = 0; i < points.length; i++) {
+                    for (let j = i + 1; j < points.length; j++) {
+                        if (points[i].label !== points[j].label) {
+                            const p1x = cx + points[i].x * scale;
+                            const p1y = cy - points[i].y * scale;
+                            const p2x = cx + points[j].x * scale;
+                            const p2y = cy - points[j].y * scale;
+                            const mx = (p1x + p2x) / 2;
+                            const my = (p1y + p2y) / 2;
+                            const dx = p2x - p1x;
+                            const dy = p2y - p1y;
+                            ctx.beginPath();
+                            ctx.moveTo(mx - dy * 0.6, my + dx * 0.6);
+                            ctx.lineTo(mx + dy * 0.6, my - dx * 0.6);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                ctx.restore();
+            }
+
+            // Dessin des points
+            points.forEach((p) => {
+                const px = cx + p.x * scale;
+                const py = cy - p.y * scale;
+                const isPos = (p.label === 1);
+                const ptColor = isPos ? '#00f3ff' : '#e879f9';
+
+                ctx.save();
+                ctx.fillStyle = isPos ? 'rgba(0, 243, 255, 0.25)' : 'rgba(232, 121, 249, 0.25)';
+                ctx.beginPath();
+                ctx.arc(px, py, 18, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = ptColor;
+                ctx.shadowColor = ptColor;
+                ctx.shadowBlur = 14;
+                ctx.beginPath();
+                ctx.arc(px, py, 11, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 13px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(isPos ? '+' : '−', px, py);
+                ctx.restore();
+            });
+
+            // Métriques
+            const dvcMap = { line: 3, circle: 3, quad: 6, knn: Infinity };
+            const currentDvc = dvcMap[currentModel];
+            if (dvcVal) dvcVal.textContent = (currentDvc === Infinity) ? '∞ (Infinie)' : String(currentDvc);
+            if (configsVal) configsVal.textContent = String(Math.pow(2, N));
+
+            if (statusVal) {
+                if (isSeparable) {
+                    statusVal.textContent = (currentModel === 'knn') ? '100 % (SURAPPRENTISSAGE)' : 'SÉPARATION CONFORME (100 %)';
+                    statusVal.className = 'sim-metric-val';
+                } else {
+                    statusVal.textContent = 'ÉCHEC LINÉAIRE (PIÈGE XOR)';
+                    statusVal.className = 'sim-metric-val accent';
+                }
+            }
+
+            if (boundVal) {
+                if (currentDvc === Infinity) {
+                    boundVal.textContent = 'NON BORNÉ (RISQUE MAXIMUM)';
+                    boundVal.className = 'sim-metric-val accent';
+                } else {
+                    const penalty = Math.sqrt((currentDvc * (Math.log(2 * 100 / currentDvc) + 1) + 2) / 100);
+                    boundVal.textContent = `+ ${penalty.toFixed(2)} (R_emp + pénalité)`;
+                    boundVal.className = 'sim-metric-val';
+                }
+            }
+        };
+
+        this.addListener(canvas, 'click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            const { width, height } = { width: rect.width, height: rect.height };
+            const cx = width / 2;
+            const cy = height / 2;
+            const scale = Math.min(width, height) * 0.38;
+
+            for (let p of points) {
+                const px = cx + p.x * scale;
+                const py = cy - p.y * scale;
+                const dist = Math.hypot(clickX - px, clickY - py);
+                if (dist <= 25) {
+                    p.label = -p.label;
+                    render();
+                    return;
+                }
+            }
+        });
+
+        if (modelSelect) {
+            this.addListener(modelSelect, 'change', () => {
+                currentModel = modelSelect.value;
+                render();
+            });
+        }
+
+        if (nSlider) {
+            this.addListener(nSlider, 'input', () => {
+                N = parseInt(nSlider.value, 10);
+                if (nVal) nVal.textContent = String(N);
+                initPoints(N, 'standard');
+                render();
+            });
+        }
+
+        if (randomBtn) {
+            this.addListener(randomBtn, 'click', () => {
+                points.forEach(p => { p.label = Math.random() > 0.5 ? 1 : -1; });
+                render();
+            });
+        }
+
+        if (xorBtn) {
+            this.addListener(xorBtn, 'click', () => {
+                N = 4;
+                if (nSlider) nSlider.value = '4';
+                if (nVal) nVal.textContent = '4';
+                initPoints(4, 'xor');
+                render();
+            });
+        }
+
+        if (resetBtn) {
+            this.addListener(resetBtn, 'click', () => {
+                initPoints(N, 'standard');
+                render();
+            });
+        }
+
+        this.addListener(window, 'resize', render);
+        render();
+    },
+
+    /* =========================================================================
+       6. SIMULATEUR DE DATA SHIFT & DÉTECTION PSI (DataShift)
+       ========================================================================= */
+    initDataShiftSim: function() {
+        const canvas = document.getElementById('ds-canvas');
+        if (!canvas) return;
+
+        const driftBtns = document.querySelectorAll('#ds-drift-type-btns .sim-pill-btn');
+        const intensitySlider = document.getElementById('ds-intensity-slider');
+        const intensityVal = document.getElementById('ds-intensity-val');
+        const retrainBtn = document.getElementById('ds-retrain-btn');
+        const noiseBtn = document.getElementById('ds-noise-btn');
+
+        const psiVal = document.getElementById('ds-psi-val');
+        const statusVal = document.getElementById('ds-status-val');
+        const accVal = document.getElementById('ds-acc-val');
+        const actionVal = document.getElementById('ds-action-val');
+
+        let driftType = 'covariate';
+        let intensity = 45;
+        let isRetrained = false;
+        let noiseActive = false;
+
+        const gaussPDF = (x, m, s) => (1 / (s * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * ((x - m) / s)**2);
+
+        const render = () => {
+            const { ctx, width, height } = this.setupCanvasDPR(canvas);
+
+            ctx.fillStyle = '#090312';
+            ctx.fillRect(0, 0, width, height);
+
+            const shiftFraction = intensity / 100;
+            let meanProd = 0;
+            let stdProd = 1;
+            let pWeight = 0.5;
+
+            if (driftType === 'covariate') {
+                meanProd = shiftFraction * 2.2;
+                stdProd = 1 + shiftFraction * 0.4;
+            } else if (driftType === 'prior') {
+                pWeight = 0.5 - shiftFraction * 0.42;
+            } else if (driftType === 'concept') {
+                meanProd = shiftFraction * 1.5;
+            }
+
+            if (noiseActive) {
+                stdProd += 0.25;
+            }
+
+            const numBins = 10;
+            const minX = -3.5;
+            const maxX = 3.5;
+            const binW = (maxX - minX) / numBins;
+            let psiSum = 0;
+
+            for (let b = 0; b < numBins; b++) {
+                const xMid = minX + (b + 0.5) * binW;
+                let P_bin, Q_bin;
+                if (driftType === 'prior') {
+                    P_bin = Math.max(0.001, (0.5 * gaussPDF(xMid, -0.8, 0.9) + 0.5 * gaussPDF(xMid, 0.8, 0.9)) * binW);
+                    Q_bin = Math.max(0.001, (pWeight * gaussPDF(xMid, -0.8, 0.9) + (1 - pWeight) * gaussPDF(xMid, 0.8, 0.9)) * binW);
+                } else {
+                    P_bin = Math.max(0.001, gaussPDF(xMid, 0, 1) * binW);
+                    Q_bin = Math.max(0.001, gaussPDF(xMid, meanProd, stdProd) * binW);
+                }
+                const term = (P_bin - Q_bin) * Math.log(P_bin / Q_bin);
+                psiSum += term;
+            }
+
+            if (isRetrained) {
+                psiSum = 0.015;
+            }
+
+            let accuracy = 98.2 - shiftFraction * 36;
+            if (isRetrained) accuracy = 97.6;
+            if (driftType === 'concept' && !isRetrained) accuracy = 98.2 - shiftFraction * 48;
+
+            const chartHeight = height * 0.62;
+            const chartBottom = height * 0.72;
+            const toCanvasX = (x) => 60 + ((x - minX) / (maxX - minX)) * (width - 120);
+            const maxPDF = 0.45;
+            const toCanvasY = (pdf) => chartBottom - (pdf / maxPDF) * chartHeight;
+
+            // Distribution Train P (Cyan)
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 243, 255, 0.12)';
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 2.2;
+            ctx.shadowColor = '#00f3ff';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(minX), chartBottom);
+            for (let x = minX; x <= maxX; x += 0.05) {
+                let yVal = (driftType === 'prior') ? (0.5 * gaussPDF(x, -0.8, 0.9) + 0.5 * gaussPDF(x, 0.8, 0.9)) : gaussPDF(x, 0, 1);
+                ctx.lineTo(toCanvasX(x), toCanvasY(yVal));
+            }
+            ctx.lineTo(toCanvasX(maxX), chartBottom);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // Distribution Prod Q (Magenta)
+            ctx.save();
+            ctx.fillStyle = 'rgba(232, 121, 249, 0.14)';
+            ctx.strokeStyle = '#e879f9';
+            ctx.lineWidth = 2.2;
+            ctx.shadowColor = '#e879f9';
+            ctx.shadowBlur = 8;
+            if (!isRetrained && shiftFraction > 0.05) ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(minX), chartBottom);
+            for (let x = minX; x <= maxX; x += 0.05) {
+                let yVal;
+                if (driftType === 'prior') {
+                    yVal = pWeight * gaussPDF(x, -0.8, 0.9) + (1 - pWeight) * gaussPDF(x, 0.8, 0.9);
+                } else {
+                    yVal = gaussPDF(x, meanProd, stdProd);
+                }
+                ctx.lineTo(toCanvasX(x), toCanvasY(yVal));
+            }
+            ctx.lineTo(toCanvasX(maxX), chartBottom);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // Axe
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(minX), chartBottom);
+            ctx.lineTo(toCanvasX(maxX), chartBottom);
+            ctx.stroke();
+
+            // Barres de décomposition par décile
+            const barY = height * 0.80;
+            const barH = height * 0.14;
+            for (let b = 0; b < numBins; b++) {
+                const bx = toCanvasX(minX + b * binW);
+                const bw = (width - 120) / numBins - 4;
+                const binMid = minX + (b + 0.5) * binW;
+                const P_b = gaussPDF(binMid, 0, 1);
+                const Q_b = gaussPDF(binMid, meanProd, stdProd);
+                const diff = Math.abs(P_b - Q_b);
+                const barColor = (diff > 0.15) ? 'rgba(255, 51, 102, 0.5)' : (diff > 0.08 ? 'rgba(255, 170, 0, 0.4)' : 'rgba(0, 243, 255, 0.2)');
+
+                ctx.fillStyle = barColor;
+                ctx.fillRect(bx, barY, bw, barH);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.strokeRect(bx, barY, bw, barH);
+            }
+
+            // Légende
+            ctx.font = '11px monospace';
+            ctx.fillStyle = '#00f3ff';
+            ctx.fillText('■ RÉFÉRENCE (TRAIN P)', 70, 28);
+            ctx.fillStyle = '#e879f9';
+            ctx.fillText(isRetrained ? '■ MODÈLE RÉENTRAÎNÉ SUR PROD Q' : '■ DÉRIVE ACTUELLE (PROD Q)', 240, 28);
+
+            // Mise à jour métriques
+            if (psiVal) psiVal.textContent = psiSum.toFixed(3);
+            if (accVal) accVal.textContent = accuracy.toFixed(1) + ' %';
+
+            if (statusVal) {
+                if (psiSum < 0.10) {
+                    statusVal.textContent = 'DISTRIBUTION STABLE (VERT)';
+                    statusVal.className = 'sim-metric-val';
+                } else if (psiSum <= 0.25) {
+                    statusVal.textContent = 'DÉRIVE MODÉRÉE (SURVEILLANCE)';
+                    statusVal.className = 'sim-metric-val accent';
+                } else {
+                    statusVal.textContent = 'DÉVIATION CRITIQUE (ALERTE PSI)';
+                    statusVal.className = 'sim-metric-val accent';
+                }
+            }
+
+            if (actionVal) {
+                if (isRetrained) {
+                    actionVal.textContent = 'MODÈLE RECALIBRÉ & OPÉRATIONNEL';
+                    actionVal.className = 'sim-metric-val';
+                } else if (psiSum > 0.25) {
+                    actionVal.textContent = 'RÉENTRAÎNEMENT REQUIS IMMÉDIAT';
+                    actionVal.className = 'sim-metric-val accent';
+                } else if (psiSum >= 0.10) {
+                    actionVal.textContent = 'SURVEILLANCE RENFORCÉE (SHADOW)';
+                    actionVal.className = 'sim-metric-val';
+                } else {
+                    actionVal.textContent = 'AUCUNE ACTION (NOMINAL)';
+                    actionVal.className = 'sim-metric-val';
+                }
+            }
+        };
+
+        driftBtns.forEach(btn => {
+            this.addListener(btn, 'click', () => {
+                driftBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                driftType = btn.getAttribute('data-drift') || 'covariate';
+                isRetrained = false;
+                render();
+            });
+        });
+
+        if (intensitySlider) {
+            this.addListener(intensitySlider, 'input', () => {
+                intensity = parseInt(intensitySlider.value, 10);
+                if (intensityVal) intensityVal.textContent = intensity + ' %';
+                isRetrained = false;
+                render();
+            });
+        }
+
+        if (retrainBtn) {
+            this.addListener(retrainBtn, 'click', () => {
+                isRetrained = true;
+                render();
+            });
+        }
+
+        if (noiseBtn) {
+            this.addListener(noiseBtn, 'click', () => {
+                noiseActive = !noiseActive;
+                render();
+            });
+        }
+
+        this.addListener(window, 'resize', render);
+        render();
+    },
+
+    /* =========================================================================
+       7. SIMULATEUR DU PERCEPTRON DE ROSENBLATT (perceptron)
+       ========================================================================= */
+    initPerceptronSim: function() {
+        const canvas = document.getElementById('perc-canvas');
+        if (!canvas) return;
+
+        const classBtns = document.querySelectorAll('#perc-class-btns .sim-pill-btn');
+        const presetSelect = document.getElementById('perc-preset-select');
+        const lrSlider = document.getElementById('perc-lr-slider');
+        const lrVal = document.getElementById('perc-lr-val');
+
+        const stepBtn = document.getElementById('perc-step-btn');
+        const autoBtn = document.getElementById('perc-auto-btn');
+        const resetWeightsBtn = document.getElementById('perc-reset-weights-btn');
+
+        const epochVal = document.getElementById('perc-epoch-val');
+        const weightsVal = document.getElementById('perc-weights-val');
+        const accVal = document.getElementById('perc-acc-val');
+        const statusVal = document.getElementById('perc-status-val');
+
+        let currentAddClass = 1;
+        let learningRate = 0.10;
+        let w1 = 0.0;
+        let w2 = 0.0;
+        let b = 0.0;
+        let epoch = 0;
+        let isRunningAuto = false;
+        let autoTimer = null;
+
+        let points = [];
+
+        const loadPreset = (presetName) => {
+            points = [];
+            epoch = 0;
+            w1 = (Math.random() - 0.5) * 0.2;
+            w2 = (Math.random() - 0.5) * 0.2;
+            b = 0.0;
+
+            if (presetName === 'linearly_separable') {
+                points = [
+                    { x: -1.2, y: -0.8, label: -1 },
+                    { x: -0.8, y: -1.4, label: -1 },
+                    { x: -1.5, y: -0.2, label: -1 },
+                    { x: -0.5, y: -0.9, label: -1 },
+                    { x: 0.8, y: 0.9, label: 1 },
+                    { x: 1.4, y: 0.6, label: 1 },
+                    { x: 0.6, y: 1.5, label: 1 },
+                    { x: 1.1, y: 1.2, label: 1 }
+                ];
+            } else if (presetName === 'gaussian_clusters') {
+                for (let i = 0; i < 10; i++) {
+                    points.push({
+                        x: -1.0 + (Math.random() - 0.5) * 0.9,
+                        y: -0.8 + (Math.random() - 0.5) * 0.9,
+                        label: -1
+                    });
+                    points.push({
+                        x: 0.9 + (Math.random() - 0.5) * 0.9,
+                        y: 0.8 + (Math.random() - 0.5) * 0.9,
+                        label: 1
+                    });
+                }
+            } else if (presetName === 'xor_trap') {
+                points = [
+                    { x: 1.0, y: 1.0, label: -1 },
+                    { x: -1.0, y: -1.0, label: -1 },
+                    { x: 1.0, y: -1.0, label: 1 },
+                    { x: -1.0, y: 1.0, label: 1 }
+                ];
+            }
+        };
+
+        loadPreset('linearly_separable');
+
+        const trainOneStep = () => {
+            if (points.length === 0) return true;
+            let misclassifiedCount = 0;
+
+            for (let p of points) {
+                const z = w1 * p.x + w2 * p.y + b;
+                const pred = z >= 0 ? 1 : -1;
+                if (pred !== p.label) {
+                    misclassifiedCount++;
+                    const error = p.label - pred; // +2 ou -2
+                    w1 += learningRate * error * p.x;
+                    w2 += learningRate * error * p.y;
+                    b += learningRate * error;
+                    epoch++;
+                    return false; // une étape effectuée
+                }
+            }
+
+            epoch++;
+            return (misclassifiedCount === 0);
+        };
+
+        const render = () => {
+            const { ctx, width, height } = this.setupCanvasDPR(canvas);
+            const cx = width / 2;
+            const cy = height / 2;
+            const scale = Math.min(width, height) * 0.22;
+
+            ctx.fillStyle = '#090312';
+            ctx.fillRect(0, 0, width, height);
+
+            // Grille cartésienne
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let g = -2; g <= 2; g += 0.5) {
+                const gx = cx + g * scale;
+                const gy = cy + g * scale;
+                ctx.beginPath();
+                ctx.moveTo(gx, 0); ctx.lineTo(gx, height);
+                ctx.moveTo(0, gy); ctx.lineTo(width, gy);
+                ctx.stroke();
+            }
+
+            // Axes
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(cx, 0); ctx.lineTo(cx, height);
+            ctx.moveTo(0, cy); ctx.lineTo(width, cy);
+            ctx.stroke();
+
+            // Régions de décision (demi-plans colorés)
+            if (Math.abs(w1) > 0.001 || Math.abs(w2) > 0.001) {
+                // Tracer la droite de décision w1*x + w2*y + b = 0
+                ctx.save();
+                ctx.strokeStyle = '#00f3ff';
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = '#00f3ff';
+                ctx.shadowBlur = 10;
+
+                let p1, p2;
+                if (Math.abs(w2) > 0.001) {
+                    const xA = -3, yA = -(w1 * xA + b) / w2;
+                    const xB = 3, yB = -(w1 * xB + b) / w2;
+                    p1 = { x: cx + xA * scale, y: cy - yA * scale };
+                    p2 = { x: cx + xB * scale, y: cy - yB * scale };
+                } else {
+                    const xVal = -b / w1;
+                    p1 = { x: cx + xVal * scale, y: 0 };
+                    p2 = { x: cx + xVal * scale, y: height };
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+
+                // Flèche du vecteur de poids w = (w1, w2)
+                const arrowLen = Math.hypot(w1, w2);
+                if (arrowLen > 0.01) {
+                    const normW1 = (w1 / arrowLen) * 50;
+                    const normW2 = (w2 / arrowLen) * 50;
+                    ctx.strokeStyle = '#00ffaa';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#00ffaa';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + normW1, cy - normW2);
+                    ctx.stroke();
+                    ctx.fillStyle = '#00ffaa';
+                    ctx.font = '10px monospace';
+                    ctx.fillText('w', cx + normW1 + 8, cy - normW2 - 4);
+                }
+                ctx.restore();
+            }
+
+            // Dessin des points d'apprentissage
+            let correctCount = 0;
+            points.forEach(p => {
+                const px = cx + p.x * scale;
+                const py = cy - p.y * scale;
+                const isPos = (p.label === 1);
+                const ptColor = isPos ? '#00f3ff' : '#e879f9';
+
+                // Prédiction actuelle
+                const z = w1 * p.x + w2 * p.y + b;
+                const pred = z >= 0 ? 1 : -1;
+                const isCorrect = (pred === p.label);
+                if (isCorrect) correctCount++;
+
+                ctx.save();
+                if (!isCorrect) {
+                    ctx.strokeStyle = '#ff3366';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 16, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = isPos ? 'rgba(0, 243, 255, 0.25)' : 'rgba(232, 121, 249, 0.25)';
+                ctx.beginPath();
+                ctx.arc(px, py, 13, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = ptColor;
+                ctx.shadowColor = ptColor;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(px, py, 8, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 11px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(isPos ? '+' : '−', px, py);
+                ctx.restore();
+            });
+
+            // Mise à jour de la barre des métriques
+            if (epochVal) epochVal.textContent = String(epoch);
+            if (weightsVal) weightsVal.textContent = `[${w1.toFixed(2)}, ${w2.toFixed(2)}, ${b.toFixed(2)}]`;
+            if (accVal) {
+                const total = points.length;
+                const pct = total > 0 ? ((correctCount / total) * 100).toFixed(0) : '100';
+                accVal.textContent = `${correctCount} / ${total} (${pct} %)`;
+            }
+
+            if (statusVal) {
+                const total = points.length;
+                if (total === 0) {
+                    statusVal.textContent = 'PRÊT (AJOUTEZ DES POINTS)';
+                    statusVal.className = 'sim-metric-val';
+                } else if (correctCount === total) {
+                    statusVal.textContent = 'CONVERGENCE PARFAITE (0 ERREUR)';
+                    statusVal.className = 'sim-metric-val';
+                } else if (presetSelect && presetSelect.value === 'xor_trap' && epoch > 20) {
+                    statusVal.textContent = 'ÉCHEC XOR (MINSKY & PAPERT 1969)';
+                    statusVal.className = 'sim-metric-val accent';
+                } else {
+                    statusVal.textContent = 'APPRENTISSAGE EN COURS';
+                    statusVal.className = 'sim-metric-val accent';
+                }
+            }
+        };
+
+        // Ajout de points par clic
+        this.addListener(canvas, 'click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            const { width, height } = { width: rect.width, height: rect.height };
+            const cx = width / 2;
+            const cy = height / 2;
+            const scale = Math.min(width, height) * 0.22;
+
+            const cartX = (clickX - cx) / scale;
+            const cartY = -(clickY - cy) / scale;
+
+            points.push({ x: cartX, y: cartY, label: currentAddClass });
+            render();
+        });
+
+        classBtns.forEach(btn => {
+            this.addListener(btn, 'click', () => {
+                classBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentAddClass = parseInt(btn.getAttribute('data-class') || '1', 10);
+            });
+        });
+
+        if (presetSelect) {
+            this.addListener(presetSelect, 'change', () => {
+                if (isRunningAuto) {
+                    isRunningAuto = false;
+                    clearInterval(autoTimer);
+                    if (autoBtn) autoBtn.textContent = 'LANCER APPRENTISSAGE';
+                }
+                loadPreset(presetSelect.value);
+                render();
+            });
+        }
+
+        if (lrSlider) {
+            this.addListener(lrSlider, 'input', () => {
+                learningRate = parseInt(lrSlider.value, 10) / 100;
+                if (lrVal) lrVal.textContent = learningRate.toFixed(2);
+            });
+        }
+
+        if (stepBtn) {
+            this.addListener(stepBtn, 'click', () => {
+                trainOneStep();
+                render();
+            });
+        }
+
+        if (autoBtn) {
+            this.addListener(autoBtn, 'click', () => {
+                if (isRunningAuto) {
+                    isRunningAuto = false;
+                    clearInterval(autoTimer);
+                    autoBtn.textContent = 'LANCER APPRENTISSAGE';
+                } else {
+                    isRunningAuto = true;
+                    autoBtn.textContent = 'PAUSE';
+                    autoTimer = setInterval(() => {
+                        const done = trainOneStep();
+                        render();
+                        if (done && presetSelect && presetSelect.value !== 'xor_trap') {
+                            isRunningAuto = false;
+                            clearInterval(autoTimer);
+                            autoBtn.textContent = 'LANCER APPRENTISSAGE';
+                        }
+                    }, 100);
+                }
+            });
+        }
+
+        if (resetWeightsBtn) {
+            this.addListener(resetWeightsBtn, 'click', () => {
+                if (isRunningAuto) {
+                    isRunningAuto = false;
+                    clearInterval(autoTimer);
+                    if (autoBtn) autoBtn.textContent = 'LANCER APPRENTISSAGE';
+                }
+                w1 = 0.0; w2 = 0.0; b = 0.0; epoch = 0;
+                render();
+            });
+        }
+
+        this.addListener(window, 'resize', render);
+        render();
+    },
+
+    /* =========================================================================
+       8. SIMULATEUR GREEN AI & ÉCO-CONCEPTION (GreenAI)
+       ========================================================================= */
+    initGreenAISim: function() {
+        const canvas = document.getElementById('grn-canvas');
+        if (!canvas) return;
+
+        const modelSelect = document.getElementById('grn-model-select');
+        const trafficSlider = document.getElementById('grn-traffic-slider');
+        const trafficVal = document.getElementById('grn-traffic-val');
+        const tokensSlider = document.getElementById('grn-tokens-slider');
+        const tokensVal = document.getElementById('grn-tokens-val');
+
+        const toggleQuant = document.getElementById('grn-toggle-quant');
+        const toggleDistill = document.getElementById('grn-toggle-distill');
+        const toggleRouting = document.getElementById('grn-toggle-routing');
+        const toggleDatacenter = document.getElementById('grn-toggle-datacenter');
+
+        const energySavedVal = document.getElementById('grn-energy-saved-val');
+        const co2Val = document.getElementById('grn-co2-val');
+        const equivVal = document.getElementById('grn-equiv-val');
+        const costVal = document.getElementById('grn-cost-val');
+
+        let modelParams = 70; // 7, 14, 32, 70B
+        let dailyReq = 1000000;
+        let avgTokens = 500;
+
+        let quantEnabled = true;
+        let distillEnabled = true;
+        let routingEnabled = true;
+        let datacenterEnabled = true;
+
+        const render = () => {
+            const { ctx, width, height } = this.setupCanvasDPR(canvas);
+
+            ctx.fillStyle = '#090312';
+            ctx.fillRect(0, 0, width, height);
+
+            // Calcul de consommation de base (Red AI, naïve FP16)
+            // Énergie de base en kWh par 1 000 tokens proportionnelle aux paramètres
+            const baseKwhPer1k = (modelParams / 70) * 0.0035;
+            const annualTokens = dailyReq * avgTokens * 365;
+            const baseAnnualMWh = (annualTokens / 1000) * baseKwhPer1k * 1.6 / 1000; // PUE 1.6
+            const baseCarbonFactor = 0.45; // 450g CO2 / kWh
+            const baseCO2Tonnes = baseAnnualMWh * 1000 * baseCarbonFactor / 1000;
+
+            // Facteurs de réduction cumulés (Green AI)
+            let reductionFactor = 1.0;
+            if (quantEnabled) reductionFactor *= 0.38; // -62%
+            if (distillEnabled) reductionFactor *= 0.45; // -55%
+            if (routingEnabled) reductionFactor *= 0.40; // -60%
+            const optimizedPUE = datacenterEnabled ? 1.15 : 1.6;
+            const optimizedCarbonFactor = datacenterEnabled ? 0.04 : 0.45; // 40g vs 450g
+
+            const optAnnualMWh = baseAnnualMWh * reductionFactor * (optimizedPUE / 1.6);
+            const optCO2Tonnes = optAnnualMWh * 1000 * optimizedCarbonFactor / 1000;
+
+            const energySavedPct = ((1 - optAnnualMWh / baseAnnualMWh) * 100).toFixed(1);
+            const co2SavedTonnes = Math.max(0, baseCO2Tonnes - optCO2Tonnes);
+            const costSavedDollars = Math.round((baseAnnualMWh - optAnnualMWh) * 160 + (dailyReq * 0.0003 * 365 * (1 - reductionFactor)));
+
+            // Visualisation : Diagramme comparatif des deux architectures
+            const barW = Math.min(width * 0.32, 180);
+            const maxBarH = height * 0.58;
+            const groundY = height * 0.78;
+
+            const bar1X = width * 0.28 - barW / 2;
+            const bar2X = width * 0.72 - barW / 2;
+
+            // Barre 1 : Red AI (Naïve)
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 100, 50, 0.25)';
+            ctx.strokeStyle = '#ff6633';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#ff6633';
+            ctx.shadowBlur = 12;
+            ctx.fillRect(bar1X, groundY - maxBarH, barW, maxBarH);
+            ctx.strokeRect(bar1X, groundY - maxBarH, barW, maxBarH);
+
+            // Texte Barre 1
+            ctx.fillStyle = '#ffaa88';
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('RED AI (NAÏVE)', bar1X + barW / 2, groundY - maxBarH - 24);
+            ctx.font = '11px monospace';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(`${baseAnnualMWh.toFixed(0)} MWh / an`, bar1X + barW / 2, groundY - maxBarH - 8);
+            ctx.fillText(`${baseCO2Tonnes.toFixed(0)} t CO₂`, bar1X + barW / 2, groundY - maxBarH / 2);
+            ctx.restore();
+
+            // Barre 2 : Green AI (Optimisée)
+            const optBarH = Math.max(16, maxBarH * (optAnnualMWh / baseAnnualMWh));
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 255, 170, 0.25)';
+            ctx.strokeStyle = '#00ffaa';
+            ctx.lineWidth = 2.2;
+            ctx.shadowColor = '#00ffaa';
+            ctx.shadowBlur = 14;
+            ctx.fillRect(bar2X, groundY - optBarH, barW, optBarH);
+            ctx.strokeRect(bar2X, groundY - optBarH, barW, optBarH);
+
+            // Texte Barre 2
+            ctx.fillStyle = '#00ffaa';
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('GREEN AI (ÉCO)', bar2X + barW / 2, groundY - optBarH - 24);
+            ctx.font = '11px monospace';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(`${optAnnualMWh.toFixed(0)} MWh / an`, bar2X + barW / 2, groundY - optBarH - 8);
+            ctx.fillText(`${optCO2Tonnes.toFixed(1)} t CO₂`, bar2X + barW / 2, groundY - optBarH / 2 + 5);
+            ctx.restore();
+
+            // Ligne de sol
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(30, groundY);
+            ctx.lineTo(width - 30, groundY);
+            ctx.stroke();
+
+            // Légende didactique inférieure
+            ctx.font = '11px monospace';
+            ctx.fillStyle = '#00ffaa';
+            ctx.textAlign = 'center';
+            ctx.fillText(`GAIN TOTAL ÉNERGÉTIQUE : −${energySavedPct} % // RÉDUCTION CARBONE MASSIVE`, width / 2, height - 16);
+
+            // Mise à jour des cartes métriques
+            if (energySavedVal) energySavedVal.textContent = `− ${energySavedPct} %`;
+            if (co2Val) co2Val.textContent = `${co2SavedTonnes.toFixed(0)} Tonnes CO₂eq`;
+            if (equivVal) equivVal.textContent = `~ ${Math.round(co2SavedTonnes * 1.1)} Vols A/R Paris-NY`;
+            if (costVal) costVal.textContent = `− ${costSavedDollars.toLocaleString('fr-FR')} $ / an`;
+        };
+
+        const setupToggleBtn = (el, getVal, setVal) => {
+            if (!el) return;
+            this.addListener(el, 'click', () => {
+                const newVal = !getVal();
+                setVal(newVal);
+                el.classList.toggle('active', newVal);
+                render();
+            });
+        };
+
+        setupToggleBtn(toggleQuant, () => quantEnabled, (v) => quantEnabled = v);
+        setupToggleBtn(toggleDistill, () => distillEnabled, (v) => distillEnabled = v);
+        setupToggleBtn(toggleRouting, () => routingEnabled, (v) => routingEnabled = v);
+        setupToggleBtn(toggleDatacenter, () => datacenterEnabled, (v) => datacenterEnabled = v);
+
+        if (modelSelect) {
+            this.addListener(modelSelect, 'change', () => {
+                modelParams = parseInt(modelSelect.value, 10);
+                render();
+            });
+        }
+
+        if (trafficSlider) {
+            this.addListener(trafficSlider, 'input', () => {
+                dailyReq = parseInt(trafficSlider.value, 10);
+                if (trafficVal) trafficVal.textContent = dailyReq.toLocaleString('fr-FR');
+                render();
+            });
+        }
+
+        if (tokensSlider) {
+            this.addListener(tokensSlider, 'input', () => {
+                avgTokens = parseInt(tokensSlider.value, 10);
+                if (tokensVal) tokensVal.textContent = String(avgTokens);
+                render();
+            });
+        }
+
+        this.addListener(window, 'resize', render);
+        render();
     }
-    };
+
+};
 
 window.PedagogyInteractive = PedagogyInteractive;
