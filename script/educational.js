@@ -347,6 +347,9 @@ const Educational = {
             // Liaison interactive des figures et schémas SVG (zoom modal)
             this.bindSchemaModals(display);
 
+            // Rendu des formules mathématiques KaTeX
+            this.renderMath(display);
+
             // Montage des simulations interactives Canvas
             if (window.PedagogyInteractive) {
                 window.PedagogyInteractive.initForCourse(course.id);
@@ -523,6 +526,46 @@ const Educational = {
                 this.closeModal();
             }
         });
+    },
+
+    /**
+     * Rendu des formules mathématiques au format LaTeX via KaTeX
+     */
+    renderMath: function(container) {
+        if (!container) return;
+        const mathElements = container.querySelectorAll('.math-tex');
+        if (mathElements.length === 0) return;
+
+        const renderAll = () => {
+            if (!window.katex) return;
+            mathElements.forEach(el => {
+                const tex = el.getAttribute('data-tex') || el.textContent;
+                const isDisplay = el.classList.contains('math-display') || el.tagName === 'DIV';
+                try {
+                    window.katex.render(tex, el, {
+                        displayMode: isDisplay,
+                        throwOnError: false
+                    });
+                } catch (err) {
+                    console.warn('Erreur rendu KaTeX:', err);
+                }
+            });
+        };
+
+        if (window.katex) {
+            renderAll();
+        } else {
+            let attempts = 0;
+            const timer = setInterval(() => {
+                attempts++;
+                if (window.katex) {
+                    clearInterval(timer);
+                    renderAll();
+                } else if (attempts > 30) {
+                    clearInterval(timer);
+                }
+            }, 100);
+        }
     }
 };
 
