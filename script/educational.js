@@ -98,6 +98,7 @@ const Educational = {
                 this.loadCourse(0);
             }
 
+            this.initModalListeners();
             this.isInitialized = true;
         })();
 
@@ -343,11 +344,89 @@ const Educational = {
             display.style.opacity = 1;
             display.scrollTop = 0;
 
+            // Liaison interactive des figures et schémas SVG (zoom modal)
+            this.bindSchemaModals(display);
+
             // Montage des simulations interactives Canvas
             if (window.PedagogyInteractive) {
                 window.PedagogyInteractive.initForCourse(course.id);
             }
         }, 150);
+    },
+
+    /**
+     * Attache les gestionnaires d'agrandissement modal sur les figures et schémas
+     */
+    bindSchemaModals: function(container) {
+        if (!container) return;
+        const figures = container.querySelectorAll('.edu-figure, .edu-svg-wrap');
+        figures.forEach(fig => {
+            const hasSvgOrImg = fig.querySelector('svg, img');
+            if (!hasSvgOrImg) return;
+
+            fig.style.cursor = 'zoom-in';
+            fig.setAttribute('title', 'Cliquer pour agrandir le schéma');
+
+            // Ajout du badge visuel s'il n'existe pas encore
+            if (!fig.querySelector('.edu-figure-zoom-badge')) {
+                const badge = document.createElement('div');
+                badge.className = 'edu-figure-zoom-badge';
+                badge.setAttribute('aria-hidden', 'true');
+                badge.textContent = 'AGRANDIR';
+                fig.appendChild(badge);
+            }
+
+            fig.onclick = (e) => {
+                if (e.target.closest('a, button, input, select')) return;
+                this.openSchemaModal(fig);
+            };
+        });
+    },
+
+    /**
+     * Ouvre la modale pour un schéma SVG ou une image de cours
+     */
+    openSchemaModal: function(figureEl) {
+        const modal = document.getElementById('slide-modal');
+        const modalImg = document.getElementById('modal-img');
+        const schemaContainer = document.getElementById('modal-schema-container');
+        const captionText = document.getElementById('modal-caption');
+        const prevBtn = document.getElementById('modal-prev-btn');
+        const nextBtn = document.getElementById('modal-next-btn');
+        if (!modal || !schemaContainer) return;
+
+        if (modalImg) modalImg.style.display = 'none';
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+
+        const svgEl = figureEl.querySelector('svg');
+        const imgEl = figureEl.querySelector('img');
+        const figcaptionEl = figureEl.querySelector('figcaption');
+
+        schemaContainer.innerHTML = '';
+        if (svgEl) {
+            const clone = svgEl.cloneNode(true);
+            clone.setAttribute('width', '100%');
+            clone.removeAttribute('height');
+            clone.style.maxWidth = '100%';
+            clone.style.height = 'auto';
+            schemaContainer.appendChild(clone);
+        } else if (imgEl) {
+            const cloneImg = document.createElement('img');
+            cloneImg.src = imgEl.src;
+            cloneImg.alt = imgEl.alt || 'Schéma agrandi';
+            schemaContainer.appendChild(cloneImg);
+        } else {
+            return;
+        }
+
+        schemaContainer.style.display = 'flex';
+        if (captionText) {
+            captionText.innerHTML = figcaptionEl ? figcaptionEl.innerHTML : 'SCHÉMA PÉDAGOGIQUE DÉTAILLÉ';
+        }
+
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
     },
 
     changeSlide: function(direction) {
@@ -368,36 +447,82 @@ const Educational = {
 
     openModal: function(slideIndex) {
         const modal = document.getElementById('slide-modal');
-        const modalImg = document.getElementById("modal-img");
-        const captionText = document.getElementById("modal-caption");
+        const modalImg = document.getElementById('modal-img');
+        const schemaContainer = document.getElementById('modal-schema-container');
+        const captionText = document.getElementById('modal-caption');
+        const prevBtn = document.getElementById('modal-prev-btn');
+        const nextBtn = document.getElementById('modal-next-btn');
 
         const currentSlides = this.courses[this.currentCourseIndex].slides;
         if (!currentSlides) return;
 
         this.currentSlideIndex = slideIndex;
-        modal.style.display = "block";
-        modalImg.src = currentSlides[this.currentSlideIndex];
-        captionText.innerHTML = `DATA_VISUALIZATION: ${this.currentSlideIndex + 1} / ${currentSlides.length}`;
+        if (schemaContainer) {
+            schemaContainer.innerHTML = '';
+            schemaContainer.style.display = 'none';
+        }
+        if (modalImg) {
+            modalImg.style.display = 'block';
+            modalImg.src = currentSlides[this.currentSlideIndex];
+        }
+        if (prevBtn) prevBtn.style.display = currentSlides.length > 1 ? 'block' : 'none';
+        if (nextBtn) nextBtn.style.display = currentSlides.length > 1 ? 'block' : 'none';
+        if (captionText) {
+            captionText.innerHTML = `DATA_VISUALIZATION: ${this.currentSlideIndex + 1} / ${currentSlides.length}`;
+        }
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
     },
 
     closeModal: function() {
         const modal = document.getElementById('slide-modal');
-        if (modal) modal.style.display = "none";
+        const modalImg = document.getElementById('modal-img');
+        const schemaContainer = document.getElementById('modal-schema-container');
+        if (modal) modal.style.display = 'none';
+        if (modalImg) modalImg.style.display = 'none';
+        if (schemaContainer) {
+            schemaContainer.innerHTML = '';
+            schemaContainer.style.display = 'none';
+        }
+        document.body.style.overflow = '';
     },
 
     changeModalSlide: function(n) {
         const modal = document.getElementById('slide-modal');
-        if (!modal || modal.style.display !== "block") return;
+        if (!modal || modal.style.display !== 'block') return;
 
         const currentSlides = this.courses[this.currentCourseIndex].slides;
+        if (!currentSlides || currentSlides.length === 0) return;
         const total = currentSlides.length;
 
         this.currentSlideIndex += n;
         if (this.currentSlideIndex >= total) this.currentSlideIndex = 0;
         if (this.currentSlideIndex < 0) this.currentSlideIndex = total - 1;
 
-        document.getElementById("modal-img").src = currentSlides[this.currentSlideIndex];
-        document.getElementById("modal-caption").innerHTML = `DATA_VISUALIZATION: ${this.currentSlideIndex + 1} / ${total}`;
+        const modalImg = document.getElementById('modal-img');
+        if (modalImg) modalImg.src = currentSlides[this.currentSlideIndex];
+        const caption = document.getElementById('modal-caption');
+        if (caption) caption.innerHTML = `DATA_VISUALIZATION: ${this.currentSlideIndex + 1} / ${total}`;
+    },
+
+    initModalListeners: function() {
+        const modal = document.getElementById('slide-modal');
+        if (!modal || this._modalListenersBound) return;
+        this._modalListenersBound = true;
+
+        // Fermeture par clic sur l'arrière-plan sombre
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal();
+            }
+        });
+
+        // Fermeture via la touche Échap
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.style.display === 'block') {
+                this.closeModal();
+            }
+        });
     }
 };
 

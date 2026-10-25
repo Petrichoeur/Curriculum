@@ -29,7 +29,7 @@
     <meta name="twitter:description" content="Portail interactif IA &amp; MLOps : Jumeau Numérique en temps réel, simulateurs CPU vs GPU et MLP Studio, projets open source et 25 modules de vulgarisation technique.">
     <meta name="twitter:image" content="https://www.iaops.fr/data/1792676251311.jpg">
 
-    <link rel="stylesheet" href="style/style.css?v=4.4">
+    <link rel="stylesheet" href="style/style.css?v=4.6">
 </head>
 
 <body>
@@ -369,18 +369,19 @@
 
     <canvas id="neural-canvas"></canvas>
 
-    <div id="slide-modal" class="modal">
-        <span class="close-modal" onclick="Educational.closeModal()">&times;</span>
-        <img class="modal-content" id="modal-img" alt="Slide Fullscreen">
-        <a class="modal-prev" onclick="Educational.changeModalSlide(-1)">❮</a>
-        <a class="modal-next" onclick="Educational.changeModalSlide(1)">❯</a>
+    <div id="slide-modal" class="modal" role="dialog" aria-modal="true" aria-label="Visualisation agrandie">
+        <span class="close-modal" id="modal-close-btn" onclick="Educational.closeModal()" title="Fermer la vue (Échap)">&times;</span>
+        <img class="modal-content" id="modal-img" alt="Slide Fullscreen" style="display: none;">
+        <div class="modal-schema-container" id="modal-schema-container" style="display: none;"></div>
+        <a class="modal-prev" id="modal-prev-btn" onclick="Educational.changeModalSlide(-1)">❮</a>
+        <a class="modal-next" id="modal-next-btn" onclick="Educational.changeModalSlide(1)">❯</a>
         <div id="modal-caption"></div>
     </div>
 
     <script src="script/digital-twin.js?v=3.9"></script>
     <script src="script/projects.js?v=3.1"></script>
     <script src="script/pedagogy-interactive.js?v=1.3"></script>
-    <script src="script/educational.js?v=4.5"></script>
+    <script src="script/educational.js?v=4.6"></script>
     <script src="script/hardware-lab.js?v=3.1"></script>
     <script type="module" src="script/mlp/app.js?v=3.1"></script>
     <script src="script/main.js?v=3.1"></script>

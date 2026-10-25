@@ -791,8 +791,19 @@ body {
 .pedagogy-panel {
     display: flex;
     padding: 0;
-    height: 80vh;
+    width: 100%;
+    max-width: min(1560px, 96vw);
+    height: calc(100vh - 120px);
+    min-height: 620px;
+    max-height: 960px;
     overflow: hidden;
+}
+
+@media (min-width: 1440px) {
+    .pedagogy-panel {
+        max-width: min(1680px, 96vw);
+        height: calc(100vh - 110px);
+    }
 }
 
 .pedagogy-menu {
@@ -1012,8 +1023,15 @@ body {
 
 .pedagogy-viewer {
     flex: 1;
-    padding: 40px;
+    min-width: 0;
+    padding: 32px 48px;
     overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+#pedagogy-content {
+    max-width: 1150px;
+    margin: 0 auto;
 }
 
 .pedagogy-viewer h2 {
@@ -1276,6 +1294,39 @@ body {
     animation: zoomIn 0.3s;
 }
 
+/* Conteneur modale pour schémas SVG / Canvas grand format */
+.modal-schema-container {
+    margin: 10px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: min(1300px, 94vw);
+    max-height: 82vh;
+    padding: 24px;
+    background: rgba(9, 4, 18, 0.96);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 8px;
+    box-shadow: 0 0 50px rgba(0, 243, 255, 0.3), 0 20px 60px rgba(0, 0, 0, 0.95);
+    overflow: auto;
+    animation: zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-schema-container svg {
+    width: 100%;
+    max-width: 1200px;
+    height: auto;
+    max-height: 75vh;
+    display: block;
+}
+
+.modal-schema-container img {
+    max-width: 100%;
+    max-height: 75vh;
+    height: auto;
+    display: block;
+    object-fit: contain;
+}
+
 @keyframes zoomIn {
     from {
         transform: scale(0.8);
@@ -1290,19 +1341,31 @@ body {
 
 .close-modal {
     position: absolute;
-    top: 20px;
-    right: 35px;
+    top: 16px;
+    right: 28px;
     color: #f1f1f1;
-    font-size: 40px;
+    font-size: 34px;
+    line-height: 1;
     font-weight: bold;
     cursor: pointer;
-    z-index: 2001;
-    transition: 0.3s;
+    z-index: 2002;
+    transition: 0.25s;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(10, 6, 20, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    user-select: none;
 }
 
 .close-modal:hover {
     color: var(--neon-red);
-    text-shadow: 0 0 10px var(--neon-red);
+    border-color: var(--neon-red);
+    background: rgba(255, 0, 60, 0.25);
+    box-shadow: 0 0 15px rgba(255, 0, 60, 0.6);
 }
 
 #modal-caption {
@@ -2156,11 +2219,40 @@ body {
         font-size: 0.75rem;
     }
 
-    /* ---------- MODALES ---------- */
+    /* ---------- MODALES & SCHÉMAS ---------- */
 
     .modal-content {
         width: 95%;
         max-height: 80vh;
+    }
+
+    .modal-schema-container {
+        width: 96%;
+        max-width: 96vw;
+        max-height: 84vh;
+        padding: 12px;
+    }
+
+    .modal-schema-container svg {
+        min-width: 320px;
+        max-height: 76vh;
+    }
+
+    .edu-figure {
+        padding: 12px 10px;
+        margin: 18px 0;
+    }
+
+    .edu-figure svg {
+        min-width: 480px;
+        max-width: 100%;
+    }
+
+    .edu-figure-zoom-badge {
+        font-size: 0.58rem;
+        padding: 2px 6px;
+        top: 6px;
+        right: 8px;
     }
 
     .modal-next,
@@ -2171,8 +2263,11 @@ body {
     }
 
     .close-modal {
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
+        font-size: 28px;
+        top: 10px;
+        right: 14px;
     }
 
     .video-container {
@@ -3030,42 +3125,80 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .edu-figure {
-    margin: 22px 0;
-    padding: 14px;
+    margin: 24px 0;
+    padding: 16px;
     background: rgba(8, 6, 16, 0.85);
     border: 1px solid rgba(189, 0, 255, 0.25);
     border-radius: 8px;
+    position: relative;
+    cursor: zoom-in;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.edu-figure:hover {
+    border-color: rgba(0, 243, 255, 0.5);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+}
+
+.edu-figure-zoom-badge {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(10, 6, 20, 0.85);
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    color: var(--neon-cyan);
+    font-family: var(--font-tech);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0.75;
+    transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    user-select: none;
+}
+
+.edu-figure:hover .edu-figure-zoom-badge {
+    opacity: 1;
+    background: rgba(0, 243, 255, 0.15);
+    border-color: var(--neon-cyan);
 }
 
 .edu-figure svg {
     display: block;
     width: 100%;
-    max-width: 620px;
+    max-width: 940px;
     height: auto;
     margin: 0 auto;
 }
 
 .edu-figure figcaption {
-    margin-top: 10px;
+    margin-top: 12px;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     line-height: 1.5;
-    color: #999;
+    color: #a0a0b5;
     font-style: italic;
 }
 
 /* Styles des elements SVG */
 .edu-figure text {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    fill: #e8e8e8;
-    font-size: 11px;
+    fill: #f1f5f9;
+    font-size: 13px;
     letter-spacing: -0.1px;
+    text-rendering: geometricPrecision;
 }
-.edu-figure .ts { font-size: 9.8px; fill: #a4a4b5; font-weight: 400; }
-.edu-figure .tc { fill: #00f3ff; font-weight: 600; }
-.edu-figure .tp { fill: #e879f9; font-weight: 600; }
-.edu-figure .tg { fill: #00ffaa; font-weight: 600; }
-.edu-figure .ta { fill: #ffaa00; font-weight: 600; }
+.edu-figure .ts { font-size: 11.5px; fill: #94a3b8; font-weight: 400; }
+.edu-figure .tc { fill: #00f3ff; font-weight: 600; font-size: 13.5px; }
+.edu-figure .tp { fill: #e879f9; font-weight: 600; font-size: 13.5px; }
+.edu-figure .tg { fill: #00ffaa; font-weight: 600; font-size: 13.5px; }
+.edu-figure .ta { fill: #ffaa00; font-weight: 600; font-size: 13.5px; }
 
 .edu-figure .b-c { fill: rgba(0, 243, 255, 0.08); stroke: #00f3ff; stroke-width: 1.4; }
 .edu-figure .b-p { fill: rgba(232, 121, 249, 0.12); stroke: #e879f9; stroke-width: 1.2; }
