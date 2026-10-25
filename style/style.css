@@ -3863,6 +3863,112 @@ input[type="range"]::-moz-range-thumb {
     box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
 }
 
+/* --- Bilan Didactique Dynamique du Simulateur Harness --- */
+.sim-pill-btn.inactive {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
+    color: #fca5a5 !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.25) !important;
+}
+
+.harness-verdict-card {
+    margin-top: 14px;
+    padding: 14px 18px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeIn 0.3s ease;
+}
+
+.harness-verdict-card.success {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.harness-verdict-card.defense {
+    background: rgba(0, 243, 255, 0.12);
+    border: 1px solid rgba(0, 243, 255, 0.45);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+}
+
+.harness-verdict-card.warning {
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.15);
+}
+
+.harness-verdict-card.critical {
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(239, 68, 68, 0.65);
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.35);
+    animation: alertPulse 1.5s infinite alternate;
+}
+
+@keyframes alertPulse {
+    from { border-color: rgba(239, 68, 68, 0.5); }
+    to { border-color: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
+}
+
+.harness-verdict-badge {
+    align-self: flex-start;
+    font-family: var(--font-tech);
+    font-size: 0.68rem;
+    font-weight: bold;
+    letter-spacing: 0.8px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+.harness-verdict-card.success .harness-verdict-badge {
+    background: rgba(16, 185, 129, 0.25);
+    color: #10b981;
+    border: 1px solid #10b981;
+}
+
+.harness-verdict-card.defense .harness-verdict-badge {
+    background: rgba(0, 243, 255, 0.25);
+    color: #00f3ff;
+    border: 1px solid #00f3ff;
+}
+
+.harness-verdict-card.warning .harness-verdict-badge {
+    background: rgba(251, 191, 36, 0.25);
+    color: #fbbf24;
+    border: 1px solid #fbbf24;
+}
+
+.harness-verdict-card.critical .harness-verdict-badge {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
+.harness-verdict-title {
+    font-family: var(--font-tech);
+    font-size: 0.88rem;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.harness-verdict-text {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #e2e8f0;
+}
+
+.harness-verdict-takeaway {
+    font-size: 0.78rem;
+    color: #a0aec0;
+    font-style: italic;
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+    padding-top: 4px;
+    margin-top: 2px;
+}
+
 /* ==========================================================================
    MIRZA // COPILOTE VOCAL FLOTTANT (STYLE CYBERPUNK CRIMSON & GLASS)
    ========================================================================== */
