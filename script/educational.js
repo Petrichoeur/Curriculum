@@ -54,7 +54,7 @@ const Educational = {
 
         this.initPromise = (async () => {
             try {
-                const response = await fetch('config/educational.json?v=5.2');
+                const response = await fetch('config/educational.json?v=5.3');
                 if (!response.ok) throw new Error("Impossible de charger les cours");
                 this.courses = await response.json();
             } catch (error) {
