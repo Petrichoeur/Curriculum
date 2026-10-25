@@ -32,10 +32,11 @@ const Educational = {
         15: 'kv_cache',
         16: 'llm_router',
         17: 'agentic',
-        18: 'mcp',
-        19: 'jepa_latent',
-        20: 'ensemble_ga',
-        21: 'system_one_jev'
+        18: 'llm_harness',
+        19: 'mcp',
+        20: 'jepa_latent',
+        21: 'system_one_jev',
+        22: 'ensemble_ga'
     },
 
     isMobile: function() {
@@ -53,7 +54,7 @@ const Educational = {
 
         this.initPromise = (async () => {
             try {
-                const response = await fetch('config/educational.json?v=4.2');
+                const response = await fetch('config/educational.json?v=4.3');
                 if (!response.ok) throw new Error("Impossible de charger les cours");
                 this.courses = await response.json();
             } catch (error) {
