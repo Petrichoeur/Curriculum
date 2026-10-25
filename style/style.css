@@ -3472,6 +3472,10 @@ input[type="range"]::-moz-range-thumb {
         height: 240px;
     }
 
+    #harness-canvas {
+        height: 380px !important;
+    }
+
     .interactive-sim-card {
         padding: 14px 10px;
         margin: 18px 0;
@@ -3480,7 +3484,44 @@ input[type="range"]::-moz-range-thumb {
     .sim-controls-grid {
         grid-template-columns: 1fr;
         padding: 12px 10px;
-        gap: 12px;
+        gap: 14px;
+    }
+
+    .sim-btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .sim-pill-btn {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 120px;
+        text-align: center;
+        padding: 8px 10px;
+        font-size: 0.72rem;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sim-btn-cell .sim-btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    #harness-run-btn {
+        flex: 1 1 100%;
+        padding: 10px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    #harness-step-btn, #harness-reset-btn {
+        flex: 1 1 calc(50% - 6px);
+        padding: 8px;
+        font-size: 0.74rem;
     }
 
     .sim-metrics-bar {
@@ -3488,9 +3529,53 @@ input[type="range"]::-moz-range-thumb {
         gap: 8px;
     }
 
+    .sim-metric-box {
+        padding: 8px 10px;
+    }
+
+    .metric-val {
+        font-size: 0.85rem;
+    }
+
+    .harness-terminal {
+        font-size: 0.72rem;
+        padding: 10px;
+        max-height: 160px;
+    }
+
     .sim-slider::-webkit-slider-thumb {
         width: 22px;
         height: 22px;
+    }
+}
+
+@media (max-width: 540px) {
+    #harness-canvas {
+        height: 380px !important;
+    }
+
+    .sim-pill-btn {
+        flex: 1 1 100%;
+        min-height: 34px;
+    }
+
+    .sim-metrics-bar {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .harness-hitl-prompt {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .harness-hitl-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .harness-hitl-btn {
+        flex: 1;
+        text-align: center;
     }
 }
 

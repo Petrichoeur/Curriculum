@@ -1121,19 +1121,91 @@ const PedagogyInteractive = {
                 ctx.stroke();
             }
 
-            // Définition responsive des coordonnées des 4 nœuds
-            const nodeUser = { x: width * 0.16, y: height * 0.50, w: 120, h: 74, label: 'UTILISATEUR', sub: 'Requête & Consigne', color: '#00f3ff' };
-            const nodeHarness = { x: width * 0.50, y: height * 0.28, w: 170, h: 90, label: 'HARNESS ENGINE', sub: 'Code hôte classique (Sécurité)', color: '#d946ef' };
-            const nodeLlm = { x: width * 0.84, y: height * 0.50, w: 130, h: 74, label: 'MODÈLE LLM', sub: 'Texte pur / Poids figés', color: '#a855f7' };
-            const nodeSandbox = { 
-                x: width * 0.50, 
-                y: height * 0.78, 
-                w: 180, 
-                h: 80, 
-                label: sandboxEnabled ? 'SANDBOX ISOLÉE' : 'MACHINE HÔTE (NON ISOLÉE)', 
-                sub: sandboxEnabled ? 'MicroVM jetable (Non-root)' : 'Accès direct terminal hôte', 
-                color: sandboxEnabled ? '#10b981' : '#ff0055' 
-            };
+            // Détection du mode mobile pour agencement adapté
+            const isMobile = width < 600;
+
+            let nodeUser, nodeHarness, nodeLlm, nodeSandbox;
+
+            if (isMobile) {
+                // Disposition hiérarchique verticale pour mobile (zéro collision)
+                const centerX = width * 0.5;
+                nodeUser = {
+                    x: centerX,
+                    y: 38,
+                    w: Math.min(width - 32, 210),
+                    h: 46,
+                    label: '1. UTILISATEUR',
+                    sub: 'Requête & Consigne',
+                    color: '#00f3ff'
+                };
+                nodeHarness = {
+                    x: centerX,
+                    y: 128,
+                    w: Math.min(width - 24, 250),
+                    h: 56,
+                    label: '2. HARNESS (CODE HÔTE)',
+                    sub: 'Médiateur & Filtre Sécurité',
+                    color: '#d946ef'
+                };
+                const colW = Math.min((width - 32) * 0.48, 150);
+                const colY = 238;
+                nodeSandbox = {
+                    x: width * 0.28,
+                    y: colY,
+                    w: colW,
+                    h: 68,
+                    label: sandboxEnabled ? '4. SANDBOX' : '4. HÔTE (DANGER)',
+                    sub: sandboxEnabled ? 'MicroVM isolée' : 'Non isolé (Root)',
+                    color: sandboxEnabled ? '#10b981' : '#ff0055'
+                };
+                nodeLlm = {
+                    x: width * 0.72,
+                    y: colY,
+                    w: colW,
+                    h: 68,
+                    label: '3. MODÈLE LLM',
+                    sub: 'Texte pur figé',
+                    color: '#a855f7'
+                };
+            } else {
+                // Disposition en losange pour écran de bureau (desktop)
+                nodeUser = {
+                    x: width * 0.16,
+                    y: height * 0.46,
+                    w: 130,
+                    h: 70,
+                    label: '1. UTILISATEUR',
+                    sub: 'Requête & Consigne',
+                    color: '#00f3ff'
+                };
+                nodeHarness = {
+                    x: width * 0.50,
+                    y: height * 0.25,
+                    w: 180,
+                    h: 84,
+                    label: '2. HARNESS ENGINE',
+                    sub: 'Code hôte classique (Sécurité)',
+                    color: '#d946ef'
+                };
+                nodeLlm = {
+                    x: width * 0.84,
+                    y: height * 0.46,
+                    w: 130,
+                    h: 70,
+                    label: '3. MODÈLE LLM',
+                    sub: 'Texte pur / Poids figés',
+                    color: '#a855f7'
+                };
+                nodeSandbox = {
+                    x: width * 0.50,
+                    y: height * 0.75,
+                    w: 190,
+                    h: 76,
+                    label: sandboxEnabled ? '4. SANDBOX ISOLÉE' : '4. HÔTE (NON ISOLÉ)',
+                    sub: sandboxEnabled ? 'MicroVM jetable (Non-root)' : 'Accès direct terminal hôte',
+                    color: sandboxEnabled ? '#10b981' : '#ff0055'
+                };
+            }
 
             // Tracé des bus de communication (câblage)
             const drawBus = (n1, n2, isActive, color = '#64748b') => {
@@ -1142,7 +1214,7 @@ const PedagogyInteractive = {
                 ctx.lineWidth = isActive ? 3 : 1.5;
                 if (isActive) {
                     ctx.shadowColor = color;
-                    ctx.shadowBlur = 8;
+                    ctx.shadowBlur = isMobile ? 6 : 8;
                 }
                 ctx.moveTo(n1.x, n1.y);
                 ctx.lineTo(n2.x, n2.y);
@@ -1173,7 +1245,7 @@ const PedagogyInteractive = {
                     const cy = p1.y + (p2.y - p1.y) * particleProgress;
 
                     ctx.beginPath();
-                    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                    ctx.arc(cx, cy, isMobile ? 5 : 6, 0, Math.PI * 2);
                     ctx.fillStyle = pColor;
                     ctx.shadowColor = pColor;
                     ctx.shadowBlur = 12;
@@ -1193,7 +1265,7 @@ const PedagogyInteractive = {
 
                 if (isHighlight) {
                     ctx.shadowColor = n.color;
-                    ctx.shadowBlur = 15;
+                    ctx.shadowBlur = isMobile ? 8 : 15;
                 }
 
                 ctx.beginPath();
@@ -1204,20 +1276,20 @@ const PedagogyInteractive = {
 
                 // Titre
                 ctx.fillStyle = isHighlight ? n.color : '#e2e8f0';
-                ctx.font = 'bold 11px monospace';
+                ctx.font = isMobile ? 'bold 9.5px monospace' : 'bold 11px monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText(n.label, n.x, n.y - 10);
+                ctx.fillText(n.label, n.x, n.y - (isMobile ? 6 : 9));
 
                 // Sous-titre
                 ctx.fillStyle = '#94a3b8';
-                ctx.font = '9px monospace';
-                ctx.fillText(n.sub, n.x, n.y + 8);
+                ctx.font = isMobile ? '8px monospace' : '9px monospace';
+                ctx.fillText(n.sub, n.x, n.y + (isMobile ? 7 : 8));
 
                 // Indicateur de statut
                 if (isHighlight) {
                     ctx.fillStyle = n.color;
-                    ctx.font = 'bold 8px monospace';
-                    ctx.fillText('● EN COURS', n.x, n.y + 24);
+                    ctx.font = isMobile ? 'bold 7px monospace' : 'bold 8px monospace';
+                    ctx.fillText('● EN COURS', n.x, n.y + (isMobile ? 18 : 23));
                 }
             };
 
@@ -1227,22 +1299,41 @@ const PedagogyInteractive = {
             drawNode(nodeSandbox, currentStep === 4);
 
             // Banderole centrale d'état didactique
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillRect(width * 0.2, height - 30, width * 0.6, 22);
-            ctx.strokeStyle = 'rgba(189, 0, 255, 0.3)';
-            ctx.strokeRect(width * 0.2, height - 30, width * 0.6, 22);
+            const bannerW = isMobile ? Math.min(width - 24, 340) : Math.min(width * 0.7, 540);
+            const bannerH = isMobile ? 26 : 22;
+            const bannerY = isMobile ? height - 26 : height - 22;
+            const bannerX = width * 0.5;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+            ctx.fillRect(bannerX - bannerW / 2, bannerY - bannerH / 2, bannerW, bannerH);
+            ctx.strokeStyle = 'rgba(189, 0, 255, 0.4)';
+            ctx.strokeRect(bannerX - bannerW / 2, bannerY - bannerH / 2, bannerW, bannerH);
 
             ctx.fillStyle = '#00f3ff';
-            ctx.font = '10px monospace';
+            ctx.font = isMobile ? 'bold 8.5px monospace' : '10px monospace';
             ctx.textAlign = 'center';
-            const bannerText = currentStep === 0 ? "Prêt. Cliquez sur 'LANCER LE CYCLE' pour démarrer." :
-                currentStep === 1 ? "Étape 1 : L'Utilisateur envoie sa requête au Harness classique." :
-                currentStep === 2 ? "Étape 2 : Le LLM calcule la suite textuelle et prédit un appel d'outil." :
-                currentStep === 3 ? "Étape 3 : Le Harness intercepte le texte et applique les règles de sécurité." :
-                currentStep === 4 ? "Étape 4 : Le Harness commande l'exécution réelle dans la Sandbox." :
-                currentStep === 5 ? "Étape 5 : Le résultat est réinjecté dans le LLM pour synthèse." :
-                "Étape 6 : Réponse finale transmise à l'utilisateur. Cycle complet !";
-            ctx.fillText(bannerText, width * 0.5, height - 15);
+            ctx.textBaseline = 'middle';
+
+            let bannerText = "";
+            if (isMobile) {
+                bannerText = currentStep === 0 ? "Prêt. Cliquez sur 'LANCER LE CYCLE'." :
+                    currentStep === 1 ? "1. Requête envoyée au Harness" :
+                    currentStep === 2 ? "2. LLM prédit l'outil (texte pur)" :
+                    currentStep === 3 ? "3. Filtre de sécurité Harness" :
+                    currentStep === 4 ? "4. Exécution réelle en Sandbox" :
+                    currentStep === 5 ? "5. Résultat réinjecté au modèle" :
+                    "6. Réponse transmise (Succès)";
+            } else {
+                bannerText = currentStep === 0 ? "Prêt. Cliquez sur 'LANCER LE CYCLE' pour démarrer." :
+                    currentStep === 1 ? "Étape 1 : L'Utilisateur envoie sa requête au Harness classique." :
+                    currentStep === 2 ? "Étape 2 : Le LLM calcule la suite textuelle et prédit un appel d'outil." :
+                    currentStep === 3 ? "Étape 3 : Le Harness intercepte le texte et applique les règles de sécurité." :
+                    currentStep === 4 ? "Étape 4 : Le Harness commande l'exécution réelle dans la Sandbox." :
+                    currentStep === 5 ? "Étape 5 : Le résultat est réinjecté dans le LLM pour synthèse." :
+                    "Étape 6 : Réponse finale transmise à l'utilisateur. Cycle complet !";
+            }
+            ctx.fillText(bannerText, bannerX, bannerY);
+            ctx.textBaseline = 'alphabetic';
         };
 
         const animLoop = () => {
